@@ -10,6 +10,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { all, get, run } from './db.js';
+import { mountSocial } from './social.js';
 
 const PORT = Number(process.env.PORT || 3000);
 const PROD = process.env.NODE_ENV === 'production';
@@ -272,22 +273,6 @@ for (const [route, table] of [['library', 'library'], ['wishlist', 'wishlist']])
 }
 
 /* ---------- comunidade ---------- */
-app.get('/api/posts', wrap((req, res) => {
-  const me = (() => { const h = req.headers.authorization || ''; return h.startsWith('Bearer ') ? userFromToken(h.slice(7)) : null; })();
-  const rows = all(`SELECT p.id, p.text, p.created_at, p.game_id, u.name AS author, g.title AS game_title,
-    (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS likes,
-    (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked
-    FROM posts p JOIN users u ON u.id = p.user_id LEFT JOIN games g ON g.id = p.game_id AND g.status = 'published'
-    ORDER BY p.id DESC LIMIT 50`, me ? me.id : 0);
-  res.json({ posts: rows.map(r => ({ ...r, liked: !!r.liked })) });
-}));
-app.post('/api/posts', auth, wrap((req, res) => {
-  const text = str(req.body.text, 'Texto', 1, 240);
-  let gameId = null;
-  if (req.body.gameId) gameId = loadGame(int(req.body.gameId, 'gameId'), req.user).id;
-  const r = run('INSERT INTO posts (user_id, game_id, text) VALUES (?,?,?)', req.user.id, gameId, text);
-  res.status(201).json({ id: Number(r.lastInsertRowid) });
-}));
 app.post('/api/posts/:id/like', auth, wrap((req, res) => {
   const id = int(req.params.id, 'id');
   if (!get('SELECT 1 FROM posts WHERE id = ?', id)) bad('Post não encontrado', 404);
@@ -309,22 +294,11 @@ const online = new Map(); // userId -> Set<WebSocket>
 const isOnline = id => (online.get(id)?.size || 0) > 0;
 app.get('/api/friends', auth, (req, res) => {
   const rows = all(`SELECT f.status, f.requester_id, f.addressee_id,
-    u.id AS id, u.name AS name FROM friends f
+    u.id AS id, u.name AS name, u.avatar AS avatar FROM friends f
     JOIN users u ON u.id = CASE WHEN f.requester_id = ? THEN f.addressee_id ELSE f.requester_id END
     WHERE f.requester_id = ? OR f.addressee_id = ?`, req.user.id, req.user.id, req.user.id);
-  res.json({ friends: rows.map(r => ({ id: r.id, name: r.name, status: r.status, incoming: r.status === 'pending' && r.addressee_id === req.user.id, online: r.status === 'accepted' && isOnline(r.id) })) });
+  res.json({ friends: rows.map(r => ({ id: r.id, name: r.name, avatar: r.avatar, status: r.status, incoming: r.status === 'pending' && r.addressee_id === req.user.id, online: r.status === 'accepted' && isOnline(r.id) })) });
 });
-app.post('/api/friends/request', auth, wrap((req, res) => {
-  const name = str(req.body.name, 'Nome', 3, 20);
-  const t = get('SELECT * FROM users WHERE name = ? AND status = ?', name, 'active');
-  if (!t) bad('Jogador não encontrado', 404);
-  if (t.id === req.user.id) bad('Você não pode adicionar a si mesmo');
-  const ex = get('SELECT * FROM friends WHERE (requester_id=? AND addressee_id=?) OR (requester_id=? AND addressee_id=?)', req.user.id, t.id, t.id, req.user.id);
-  if (ex) bad(ex.status === 'accepted' ? 'Vocês já são amigos' : 'Já existe um pedido pendente', 409);
-  run('INSERT INTO friends (requester_id, addressee_id) VALUES (?,?)', req.user.id, t.id);
-  notify(t.id, 'Pedido de amizade', `${req.user.name} quer ser seu amigo.`);
-  res.status(201).json({ ok: true });
-}));
 app.post('/api/friends/:id/accept', auth, wrap((req, res) => {
   const r = run("UPDATE friends SET status='accepted' WHERE requester_id = ? AND addressee_id = ? AND status='pending'", int(req.params.id, 'id'), req.user.id);
   if (!r.changes) bad('Pedido não encontrado', 404);
@@ -338,28 +312,10 @@ app.delete('/api/friends/:id', auth, wrap((req, res) => {
 
 /* ---------- mensagens ---------- */
 const areFriends = (a, b) => !!get("SELECT 1 FROM friends WHERE status='accepted' AND ((requester_id=? AND addressee_id=?) OR (requester_id=? AND addressee_id=?))", a, b, b, a);
-app.get('/api/messages/:userId', auth, wrap((req, res) => {
-  const o = int(req.params.userId, 'userId');
-  if (!areFriends(req.user.id, o)) bad('Só é possível conversar com amigos', 403);
-  const rows = all('SELECT id, from_id, to_id, text, created_at FROM messages WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?) ORDER BY id DESC LIMIT 100', req.user.id, o, o, req.user.id);
-  res.json({ messages: rows.reverse() });
-}));
 function pushTo(userId, payload) {
   for (const ws of online.get(userId) || []) if (ws.readyState === 1) ws.send(JSON.stringify(payload));
 }
-app.post('/api/messages', auth, wrap((req, res) => {
-  const to = int(req.body.to, 'to'), text = str(req.body.text, 'Mensagem', 1, 300);
-  if (!areFriends(req.user.id, to)) bad('Só é possível conversar com amigos', 403);
-  const r = run('INSERT INTO messages (from_id, to_id, text) VALUES (?,?,?)', req.user.id, to, text);
-  const msg = get('SELECT id, from_id, to_id, text, created_at FROM messages WHERE id = ?', r.lastInsertRowid);
-  pushTo(to, { type: 'message', message: { ...msg, from_name: req.user.name } });
-  res.status(201).json({ message: msg });
-}));
-
 /* ---------- notificações e denúncias ---------- */
-app.get('/api/notifications', auth, (req, res) => {
-  res.json({ notifications: all('SELECT id, title, body, created_at FROM notifications WHERE user_id = ? OR user_id IS NULL ORDER BY id DESC LIMIT 50', req.user.id) });
-});
 app.post('/api/reports', auth, wrap((req, res) => {
   const type = req.body.targetType; if (!['game', 'post', 'user'].includes(type)) bad('Tipo de denúncia inválido');
   const id = int(req.body.targetId, 'targetId'), reason = str(req.body.reason, 'Motivo', 3, 200);
@@ -458,6 +414,9 @@ app.post('/api/admin/games/:id/feature', auth, adminOnly, wrap((req, res) => {
 app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
   res.json({ logs: all('SELECT id, actor, action, detail, created_at FROM logs ORDER BY id DESC LIMIT 60') });
 });
+
+/* ---------- chat e comunidade ---------- */
+mountSocial({ app, auth, softAuth, wrap, bad, str, int, get, all, run, areFriends, pushTo, isOnline, publicUser, loadGame, COVER_RE, userFromToken, categories });
 
 /* ---------- app estático (opcional) e erros ---------- */
 const here = path.dirname(fileURLToPath(import.meta.url));

@@ -134,3 +134,16 @@ Enquanto não há servidor, **Perfil > Configurações > Modo administrador (loc
 ## App limpo
 
 Não existe mais nenhum jogo, post, amigo, usuário, avaliação ou número de exemplo. O app começa vazio e só mostra o que usuários criaram de verdade. Quem atualizar de uma versão antiga tem os dados de demonstração apagados uma única vez (a conta, o servidor e os jogos criados por você são mantidos).
+
+## Chat e comunidade
+
+Tudo fica na tela **Comunidade** (atalhos no Início e no Perfil), com seis abas:
+
+- **Comunidade:** feed com avatar, nome, tempo, texto, jogo relacionado, curtidas e comentários. Filtros *Para você*, *Seguindo* e *Jogos*; botão **Seguir** em cada autor; menções com `@nome` avisam o jogador.
+- **Grupos:** criar (nome, descrição, capa, público ou privado, membros iniciais por nome ou #ID). Dentro: chat, membros (com online) e regras. Privado só aparece para quem foi convidado.
+- **Comunidades:** criar (nome, descrição, capa, categoria, regras, aberta ou restrita). Página própria com publicações, chat geral, membros, eventos e regras. Em comunidade restrita o pedido de entrada é aprovado por quem administra.
+- **Mensagens:** lista de conversas diretas, de grupos e de comunidades, com prévia, horário e contador de não lidas. No chat dá para enviar imagem e mencionar um jogo.
+- **Amigos:** adicionar por nome ou `#ID`, online/offline, **Mensagem**, **Convidar para jogo** e remover.
+- **Avisos:** convites de grupo e comunidade, pedidos de entrada, novos seguidores, menções, respostas, amizades, convites para jogo e eventos.
+
+Sem conta, essas telas pedem login e não mostram nada inventado. No servidor: rotas `/api/posts` (filtros e comentários), `/api/users/search`, `/api/users/:id/follow`, `/api/spaces/...`, `/api/conversations`, `/api/messages` e `/api/friends/:id/invite-game`; as tabelas novas são criadas sozinhas ao iniciar. Mensagens de grupo chegam em tempo real pelo WebSocket.

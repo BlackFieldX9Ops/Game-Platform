@@ -55,9 +55,9 @@ async function main() {
   }
   ok('sem conteúdo fictício em nenhuma tela', true);
   C.click('[data-a="go"][data-v="profile"]'); C.click('[data-a="sub"][data-v="community"]');
-  ok('comunidade começa sem posts', /Ninguém publicou ainda/.test(C.text()));
+  ok('comunidade começa sem posts', /Nenhuma publicação ainda/.test(C.text()));
   C.click('[data-a="back"]'); C.click('[data-a="go"][data-v="profile"]'); C.click('[data-a="sub"][data-v="friends"]');
-  ok('amigos offline pedem conta e não listam ninguém', /precisam de uma conta/.test(C.text()) && !C.$('[data-a="chatopen"]'));
+  ok('amigos offline pedem conta e não listam ninguém', /é preciso ter uma conta/.test(C.text()) && !C.$('[data-a="chatopen"]'));
   C.click('[data-a="back"]'); C.click('[data-a="sub"][data-v="upd"]');
   ok('notificações começam vazias', /Nenhuma notificação/.test(C.text()));
   // dados de demonstração salvos por versões antigas são apagados uma única vez

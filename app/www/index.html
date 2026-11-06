@@ -402,6 +402,63 @@ button.card:active{transform:scale(.985);border-color:var(--accent)}
 .stt b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
 .stt span{color:var(--muted);font-size:11px}
 .star-btn[disabled]{opacity:.4;pointer-events:none}
+
+/* ---------- chat e comunidade ---------- */
+.social{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 4px}
+.social button{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-weight:700;font-size:11.5px;color:var(--fg)}
+.social button svg{width:22px;height:22px;color:var(--accent)}
+.avatar.sm{width:40px;height:40px;font-size:15px;border-width:1.5px}
+.avatar.xs{width:28px;height:28px;font-size:12px;border-width:1px}
+.plist{display:flex;flex-direction:column;gap:12px}
+.post{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.post .ph{display:flex;align-items:center;gap:10px}
+.post .ph .body{flex:1;min-width:0}
+.post .ph .body b,.post .ph .body span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.post .pt{font-size:14px;line-height:1.45;word-break:break-word;white-space:pre-wrap}
+.mn{color:#c4b5fd;font-weight:700}
+.chip.sm{min-height:28px;padding:0 12px;font-size:11.5px}
+.gref{display:flex;align-items:center;gap:8px;width:100%;min-height:38px;padding:0 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);font-weight:700;font-size:12.5px;text-align:left;color:var(--fg)}
+.gref svg{width:16px;height:16px;color:var(--accent);flex:none}
+.gref span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gref.off{opacity:.65}
+.pa{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pa button:not(.del){display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);font-weight:700;font-size:12px;color:var(--muted)}
+.pa button svg{width:15px;height:15px}
+.pa button.on{color:#f472b6;border-color:#f472b6}
+.pa button.on svg{fill:#f472b6}
+.pa button[aria-pressed=true]:not(.on){color:#fff;background:var(--accent2);border-color:var(--accent)}
+.pa .del{margin-left:auto}
+.cms{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:10px}
+.cm{display:flex;gap:8px;align-items:flex-start;font-size:13px}
+.cm .body{flex:1;min-width:0;word-break:break-word}
+.sp{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;color:var(--fg)}
+.sp .body,.conv .body{flex:1;min-width:0}
+.sp .body b,.sp .body span,.conv .body b,.conv .body span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spc{width:52px;height:52px;border-radius:16px;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,#6d3df0,#22d3ee);overflow:hidden}
+.spc svg{width:24px;height:24px;color:#fff}
+.spc img{width:100%;height:100%;object-fit:cover}
+.spc.lg{width:68px;height:68px;border-radius:20px}
+.sphead{display:flex;align-items:center;gap:14px}
+.sphead .body{min-width:0}
+.sphead .body span{display:block}
+.conv{width:100%;text-align:left;color:var(--fg)}
+.conv .cmeta,.li .cmeta{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+.dot2{font-style:normal;min-width:20px;height:20px;border-radius:99px;background:var(--accent2);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 6px}
+.av-wrap{position:relative;flex:none}
+.av-wrap .sd{position:absolute;right:0;bottom:0;border:2px solid var(--surface)}
+.bub .who{display:block;font-size:11px;color:#c4b5fd;margin-bottom:2px}
+.bub .mimg{display:block;max-width:100%;max-height:240px;border-radius:12px;margin-bottom:6px}
+.bub .gref{margin-top:6px;background:#0a0d1c66}
+.cbar{position:sticky;bottom:0;background:var(--bg);padding:8px 0;align-items:center}
+.cbar .in{min-width:0}
+.cbar .ib{flex:none}
+.atts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.att{position:relative;display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:12px;font-weight:700}
+.att img{width:48px;height:48px;border-radius:8px;object-fit:cover}
+.att button{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--surface2);color:var(--fg)}
+.att button svg{width:12px;height:12px}
+.gpick .chips{flex-wrap:wrap;margin:8px 0 0;padding:0}
+.chat{max-height:none}
 </style>
 
 </head>
@@ -512,19 +569,20 @@ var DEF_UPD=[];
 var SEED_POSTS=[];
 var SEED_REV={};
 var AGES=['Livre','10+','12+','14+','16+','18+'];
-var SUBTAB={editprof:'profile',community:'home',upd:'home',friends:'profile',chat:'profile',ach:'profile',wish:'profile',settings:'profile',admin:'profile',auth:'profile'};
+var SUBTAB={editprof:'profile',community:'home',space:'home',cform:'home',upd:'home',chat:'home',ach:'profile',wish:'profile',settings:'profile',admin:'profile',auth:'profile'};
 var PAL=[['#7c3aed','#06b6d4'],['#db2777','#f59e0b'],['#059669','#3b82f6'],['#dc2626','#7c3aed'],['#0ea5e9','#6d28d9'],['#1e3a8a','#7c3aed']];
 var LIBS=[['three','Three.js','https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'],['phaser','Phaser','https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js'],['p5','p5.js','https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js'],['pixi','PixiJS','https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.2/pixi.min.js']];
 var TEMPLATE='<!doctype html>\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<style>html,body{margin:0;height:100%;background:#0b0e1f;overflow:hidden}canvas{width:100%;height:100%;display:block}</style>\n<canvas id="c"></canvas>\n<script>\nconst c=document.getElementById("c"),x=c.getContext("2d");\nfunction rs(){c.width=innerWidth;c.height=innerHeight}rs();addEventListener("resize",rs);\nlet t=0;\nfunction loop(){\n  t++;\n  x.fillStyle="#0b0e1f";x.fillRect(0,0,c.width,c.height);\n  x.fillStyle="#a78bfa";\n  x.beginPath();x.arc(c.width/2+Math.cos(t/30)*80,c.height/2+Math.sin(t/20)*80,24,0,7);x.fill();\n  requestAnimationFrame(loop);\n}\nloop();\n<\/script>';
 function today(){var d=new Date();return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()}
 function rel(s){var t=Date.parse(String(s).replace(' ','T')+'Z');if(isNaN(t))return '';var m=Math.max(0,Math.round((Date.now()-t)/60000));return m<1?'agora':m<60?m+' min':m<1440?Math.round(m/60)+' h':Math.round(m/1440)+' d'}
 function metaServer(){var m=document.querySelector('meta[name=gp-server]');return m&&m.content?m.content.trim():''}
-function init(){return{tab:'home',sub:null,stab:'pub',dtab:'rev',stars:5,detail:null,chat:null,chatId:null,q:'',cat:'Todos',dim:'Todos',confirmReset:false,authTab:'login',srvOk:false,
+function init0(){return{tab:'home',sub:null,stab:'pub',dtab:'rev',stars:5,detail:null,chat:null,chatId:null,q:'',cat:'Todos',dim:'Todos',confirmReset:false,authTab:'login',srvOk:false,
  draft:{rev:'',post:'',pg:''},
  server:ld('gp_server',metaServer()),token:ld('gp_token',''),user:ld('gp_user',null),
  rgames:[],rposts:[],rfriends:[],rupd:[],rvc:{},rmsgs:{},rstats:null,radmin:null,
  lib:ld('gp_lib',{}),mine:ld('gp_mine',[]),xp:ld('gp_xp',0),plays:ld('gp_plays',0),pc:ld('gp_pc',{}),wish:ld('gp_wish',{}),rev:ld('gp_rev',{}),posts:ld('gp_posts',[]),likes:ld('gp_likes',{}),friends:ld('gp_friends',D(DEF_FRIENDS)),chats:ld('gp_chats',{}),cfg:Object.assign({sound:1,notif:1,saver:0,admin:0,fs:1,ori:'auto',autoupd:1},ld('gp_cfg',{}),{admin:0}),admOk:false,admForm:null,mod:ld('gp_mod',D(DEF_MOD)),users:ld('gp_users',D(DEF_USERS)),mon:ld('gp_mon',{ads:0,iap:0,pass:0}),name:ld('gp_name','Jogador'),avatar:ld('gp_avatar',''),bio:ld('gp_bio',''),pf:null,gdel:null,ud:null,mdel:null,gst:null,saves:ld('gp_saves',{}),agf:{creator:'all',status:'all',q:'',owner:0,ownerName:''},upd:ld('gp_upd',D(DEF_UPD)),seen:ld('gp_seen',[]),
  studio:null,feat:ld('gp_feat',{}),cats:ld('gp_cats',null),logs:ld('gp_logs',[]),drafts:ld('gp_drafts',[]),srvCats:null,atab:'resumo'}}
+function init(){var o=init0(),x=SOC0();for(var k in x)o[k]=x[k];return o}
 var S=init();
 function save(k){sv('gp_'+k,S[k])}
 var $=function(s){return document.querySelector(s)};
@@ -666,22 +724,22 @@ async function probe(){
  return S.srvOk;
 }
 function mapGame(g){var st=g.settings||{};return{ai:!!g.ai,tags:g.tags||[],ver:g.version||'1.0.0',vis:g.visibility||'public',status:g.status||'published',cfg:st,created:g.created_at||'',rc:g.review_count||0,ori:g.orientation||'auto',cover:g.cover||'',featured:!!g.featured,id:'r'+g.id,rid:g.id,remote:1,title:g.title,genre:g.category,cat:g.category,dim:g.dim,age:g.age,desc:g.description,rating:g.rating,dl:String(g.plays),color:PAL[g.id%PAL.length],icon:g.dim==='3D'?'cube':'pad',dev:g.developer,owner:g.owner_id}}
-function mapNotif(n){return{id:'n'+n.id,t:n.title,d:n.body,a:rel(n.created_at)}}
+function mapNotif(n){return{id:'n'+n.id,t:n.title,d:n.body,a:rel(n.created_at),k:n.kind||'sys',ref:n.ref||''}}
 function libsMap(a){var o={};(a||[]).forEach(function(k){o[k]=true});return o}
 async function refreshAll(){
  if(!on())return;
  try{
-  var r=await Promise.all([api('GET','/games?limit=60'),api('GET','/my/games'),api('GET','/library'),api('GET','/wishlist'),api('GET','/posts'),api('GET','/friends'),api('GET','/notifications'),api('GET','/me'),api('GET','/categories')]);
+  var r=await Promise.all([api('GET','/games?limit=60'),api('GET','/my/games'),api('GET','/library'),api('GET','/wishlist'),api('GET','/posts?filter='+S.cf),api('GET','/friends'),api('GET','/notifications'),api('GET','/me'),api('GET','/categories')]);
   var seen={},list=[];r[0].games.concat(r[1].games).forEach(function(g){if(!seen[g.id]){seen[g.id]=1;list.push(mapGame(g))}});
   S.rgames=list;
   [S.lib,S.wish].forEach(function(o){Object.keys(o).forEach(function(k){if(k[0]==='r')delete o[k]})});
   r[2].games.forEach(function(g){S.lib['r'+g.id]=1});r[3].games.forEach(function(g){S.wish['r'+g.id]=1});
-  S.rposts=r[4].posts;S.rfriends=r[5].friends;S.rupd=r[6].notifications.map(mapNotif);S.user=r[7].user;S.srvCats=r[8].categories;
+  S.rposts=r[4].posts;S.rfriends=r[5].friends;S.rupd=r[6].notifications.map(mapNotif);S.user=r[7].user;S.srvCats=r[8].categories;loadConvs();
   sv('gp_user',S.user);save('lib');save('wish');
  }catch(e){toast(e.message)}
  render(true);
 }
-async function refreshFriends(){if(!on())return;try{S.rfriends=(await api('GET','/friends')).friends;if(S.sub==='friends'||(!S.sub&&!S.detail&&S.tab==='home'))render(true)}catch(e){}}
+async function refreshFriends(){if(!on())return;try{S.rfriends=(await api('GET','/friends')).friends;if((S.sub==='community'&&(S.ctab==='friends'))||(!S.sub&&!S.detail&&S.tab==='home'))render(true);loadConvs()}catch(e){}}
 async function loadReviews(id){var g=find(id);if(!g||!g.remote)return;try{S.rvc[id]=(await api('GET','/games/'+g.rid+'/reviews')).reviews.map(function(r){return{n:r.author,s:r.stars,t:r.text,d:rel(r.created_at)}});if(S.detail===id)render(true)}catch(e){toast(e.message)}}
 async function loadStats(){try{S.rstats=await api('GET','/creator/stats');render(true)}catch(e){toast(e.message)}}
 async function loadMsgs(id){try{S.rmsgs[id]=(await api('GET','/messages/'+id)).messages;if(S.sub==='chat'&&S.chatId===id){render(true);view.scrollTop=view.scrollHeight}}catch(e){toast(e.message)}}
@@ -692,18 +750,28 @@ function connectWs(){
  var u=base()?base().replace(/^http/,'ws'):((location.protocol==='https:'?'wss://':'ws://')+location.host);
  try{ws=new WebSocket(u+'/ws?token='+encodeURIComponent(S.token))}catch(e){return}
  ws.onopen=function(){wsTry=0};
- ws.onmessage=function(ev){var m;try{m=JSON.parse(ev.data)}catch(e){return}if(m.type==='message')onIncoming(m.message)};
+ ws.onmessage=function(ev){var m;try{m=JSON.parse(ev.data)}catch(e){return}if(m.type==='message')onIncoming(m.message);else if(m.type==='room')onRoom(m)};
  ws.onclose=function(e){if(e.code===4401||!on())return;clearTimeout(wsTimer);wsTimer=setTimeout(connectWs,Math.min(30000,1000*Math.pow(2,wsTry++)))};
 }
 function onIncoming(m){
- (S.rmsgs[m.from_id]=S.rmsgs[m.from_id]||[]).push(m);
- if(S.sub==='chat'&&S.chatId===m.from_id){render(true);view.scrollTop=view.scrollHeight}else toast('Mensagem de '+m.from_name+': '+m.text.slice(0,40));
+ (S.rooms['direct:'+m.from_id]=S.rooms['direct:'+m.from_id]||[]).push(m);
+ if(S.sub==='chat'&&S.room&&S.room.type==='direct'&&S.room.id===m.from_id){render(true);view.scrollTop=view.scrollHeight;api('GET','/messages/'+m.from_id).catch(function(){})}
+ else toast('Mensagem de '+m.from_name+': '+(m.text||(m.image?'Foto':'Jogo')).slice(0,40));
+ loadConvs();
+}
+function onRoom(e){
+ var m=e.message,k=e.space.kind+':'+e.space.id;
+ if(S.rooms[k])S.rooms[k].push(m);
+ if(S.sub==='space'&&S.spc&&S.spc.space.id===e.space.id){if(S.spc.msgs)S.spc.msgs.push(m);render(true);view.scrollTop=view.scrollHeight;api('GET','/spaces/'+e.space.id+'/messages').catch(function(){})}
+ else if(S.sub==='chat'&&S.room&&S.room.type===e.space.kind&&S.room.id===e.space.id){render(true);view.scrollTop=view.scrollHeight;api('GET','/spaces/'+e.space.id+'/messages').catch(function(){})}
+ else toast(m.author+' em '+e.space.name+': '+(m.text||(m.image?'Foto':'Jogo')).slice(0,40));
+ loadConvs();
 }
 function logout(silent){
- closeWs();S.token='';S.user=null;S.rgames=[];S.rposts=[];S.rfriends=[];S.rupd=[];S.rvc={};S.rmsgs={};S.rstats=null;S.radmin=null;
+ closeWs();S.token='';S.user=null;S.rgames=[];S.rposts=[];S.rfriends=[];S.rupd=[];S.rvc={};S.rmsgs={};S.rstats=null;S.radmin=null;S.rconv=[];S.cun=0;S.rooms={};S.spc=null;S.room=null;S.rsp={group:[],community:[]};
  [S.lib,S.wish].forEach(function(o){Object.keys(o).forEach(function(k){if(k[0]==='r')delete o[k]})});
  rmk('gp_token');rmk('gp_user');
- if(S.sub==='chat'||S.sub==='admin'){S.sub=null}
+ if(S.sub==='chat'||S.sub==='admin'||S.sub==='space'||S.sub==='cform'){S.sub=null}
  if(!silent)toast('Você saiu da conta');
  render();
 }
@@ -729,7 +797,7 @@ function friendCount(){return on()?S.rfriends.filter(function(f){return f.status
 function postCount(){return on()?S.rposts.filter(function(p){return p.author===S.user.name}).length:S.posts.length}
 function unseen(){return updList().filter(function(u){return S.seen.indexOf(u.id)<0}).length}
 function friendsVM(rm){
- if(on())return S.rfriends.map(function(f){var pend=f.status==='pending';return{n:f.name,id:f.id,st:pend?'pending':(f.online?'online':'offline'),pending:pend,incoming:f.incoming,g:pend?(f.incoming?'Quer ser seu amigo':'Pedido enviado'):(f.online?'Online agora':'Offline'),rm:rm?['rmfriendr',f.id,pend?(f.incoming?'Recusar':'Cancelar'):'Remover']:null}});
+ if(on())return S.rfriends.map(function(f){var pend=f.status==='pending';return{n:f.name,id:f.id,avatar:f.avatar,st:pend?'pending':(f.online?'online':'offline'),pending:pend,incoming:f.incoming,g:pend?(f.incoming?'Quer ser seu amigo':'Pedido enviado'):(f.online?'Online agora':'Offline'),rm:rm?['rmfriendr',f.id,pend?(f.incoming?'Recusar':'Cancelar'):'Remover']:null}});
  return S.friends.map(function(f){return{n:f.n,st:f.st,g:f.g,rm:rm?['rmfriend',f.n,'Remover']:null}});
 }
 function postsVM(){
@@ -749,18 +817,12 @@ function subhead(t){return '<div class="row" style="margin:4px 0 12px;justify-co
 function mrow(i,l,a,v,b){return '<button class="mrow" data-a="'+a+'"'+(v?' data-v="'+v+'"':'')+'>'+ic(i)+'<span>'+l+'</span>'+(b!==undefined&&b!==''?'<em>'+b+'</em>':'')+ic('chev','chv')+'</button>'}
 function starRow(n){var s='';for(var i=1;i<=5;i++)s+='<svg viewBox="0 0 24 24" width="13" height="13" fill="'+(i<=n?'#fbbf24':'none')+'" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px">'+P.star+'</svg>';return s}
 function sw(label,key){return '<label class="tg"><span>'+label+'</span><input type="checkbox" data-cfg="'+key+'"'+(S.cfg[key]?' checked':'')+'></label>'}
-function friendRow(f){
- var act='';
- if(f.incoming)act='<button class="btn sm" data-a="accept" data-v="'+f.id+'">Aceitar</button>';
- else if(!f.pending)act='<button class="ib" data-a="chatopen" data-v="'+esc(f.n)+'" data-id="'+(f.id||'')+'" aria-label="Mensagem para '+esc(f.n)+'">'+ic('chat')+'</button>';
- var rm=f.rm?'<button class="del" data-a="'+f.rm[0]+'" data-v="'+esc(f.rm[1])+'">'+f.rm[2]+'</button>':'';
- return '<div class="li"><div class="avatar" style="width:42px;height:42px;font-size:16px">'+esc(f.n[0].toUpperCase())+'</div><div class="body"><b>'+esc(f.n)+'</b><div class="note" style="margin:2px 0 0"><span class="sd '+(f.st==='online'?'on':'')+'"></span> '+esc(f.g)+'</div></div>'+rm+act+'</div>';
-}
 function updRow(u){return '<div class="li"><div class="avatar" style="width:38px;height:38px;font-size:14px">'+ic('bell')+'</div><div class="body"><b>'+esc(u.t)+'</b><div class="note" style="margin:2px 0 0">'+esc(u.d)+'</div></div><span class="note" style="margin:0">'+u.a+'</span></div>'}
 
 /* ---------- telas ---------- */
 function home(){
  return updBanner()+'<div class="hero"><canvas id="hc"></canvas><h1>Jogue. Crie. Compartilhe.</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="go" data-v="store">'+ic('play')+'Jogar agora</button><button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button></div></div>'
+ +'<div class="social"><button data-a="ctab" data-v="feed">'+ic('users')+'<span>Comunidade</span></button><button data-a="ctab" data-v="msgs">'+ic('chat')+'<span>Mensagens</span>'+(S.cun?'<i class="dot">'+S.cun+'</i>':'')+'</button><button data-a="ctab" data-v="groups">'+ic('users')+'<span>Grupos</span></button><button data-a="ctab" data-v="friends">'+ic('user')+'<span>Amigos</span></button></div>'
  +'<div class="sec"><h2>Categorias</h2></div><div class="cats">'+CATL().map(function(c){return '<button class="cat" data-a="cat" data-v="'+c[0]+'">'+ic(c[1])+c[0]+'</button>'}).join('')+'</div>'
  +'<div class="sec"><h2>Jogos lançados</h2><button data-a="go" data-v="store">Ver todos</button></div>'+(released().length?'<div class="grid sm">'+featFirst(released()).slice(0,8).map(card).join('')+'</div>':'<div class="empty">Ainda não há jogos publicados.<br>Seja o primeiro: crie e publique o seu no Game Studio.<div style="margin-top:12px"><button class="btn sm" data-a="go" data-v="studio">'+ic('studio')+'Criar um jogo</button></div></div>')
 }
@@ -938,7 +1000,7 @@ function profile(){
  +(on()?'':'<div class="panel" style="margin-top:14px"><b>Jogue com amigos</b><div class="note">Entre ou crie uma conta para publicar jogos na Loja, fazer amigos e conversar.</div><button class="btn sm" style="margin-top:10px" data-a="sub" data-v="auth">Entrar ou criar conta</button></div>')
  +'<div class="sec"><h2>Meu legado</h2><button data-a="sub" data-v="ach">Ver todos</button></div><div class="legacy">'+leg.map(function(x){return '<div class="lg'+(x.ok?' ok':'')+'"><i>'+(x.ok?ic(x.i):ic('lock'))+'</i>'+esc(x.n)+'</div>'}).join('')+'</div>'
  +'<div class="pbanner"><h3>Legado não se herda. Se constrói.</h3><button class="btn ghost" data-a="sub" data-v="editprof">'+ic('edit')+'Personalizar</button></div>'
- +'<div class="list" style="margin-top:14px">'+mrow('edit','Editar perfil','sub','editprof','')+mrow('trophy','Conquistas','sub','ach',done+'/'+al.length)+mrow('users','Amigos e mensagens','sub','friends',friendCount())+mrow('users','Comunidade','sub','community','')+mrow('heart','Lista de desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mrow('bell','Notificações','sub','upd',unseen()||'')+(isAdm?mrow('shield','Administração','sub','admin',on()?'':S.mod.length):'')+mrow('cog','Configurações','sub','settings','')+'</div>'
+ +'<div class="list" style="margin-top:14px">'+mrow('edit','Editar perfil','sub','editprof','')+mrow('trophy','Conquistas','sub','ach',done+'/'+al.length)+mrow('users','Amigos','sub','friends',friendCount())+mrow('chat','Mensagens','ctab','msgs',S.cun||'')+mrow('users','Comunidade','sub','community','')+mrow('heart','Lista de desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mrow('bell','Notificações','sub','upd',unseen()||'')+(isAdm?mrow('shield','Administração','sub','admin',on()?'':S.mod.length):'')+mrow('cog','Configurações','sub','settings','')+'</div>'
 }
 function pfInit(){return{name:myName(),bio:myBio(),avatar:myAvatar()}}
 function editprof(){
@@ -956,29 +1018,7 @@ function wish(){
  var ids=Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)});
  return subhead('Lista de desejos')+(ids.length?'<div class="grid">'+ids.map(function(i){return card(find(i))}).join('')+'</div>':'<div class="empty">Toque no coração de um jogo para guardá-lo aqui.</div>')
 }
-function community(){
- var posts=postsVM();
- return subhead('Comunidade')
- +'<div class="panel"><textarea class="in" id="postText" style="min-height:70px;white-space:normal;font-family:var(--font);font-size:14px" maxlength="240" placeholder="Compartilhe uma dica ou um recorde">'+esc(S.draft.post)+'</textarea><div class="row" style="margin-top:8px"><select class="in" id="postGame" style="max-width:55%"><option value="">Sem jogo</option>'+all().map(function(g){return '<option value="'+g.id+'"'+(S.draft.pg===g.id?' selected':'')+'>'+esc(g.title)+'</option>'}).join('')+'</select><button class="btn sm" data-a="post">'+ic('send')+'Publicar</button></div></div>'
- +'<div class="list" style="margin-top:12px">'+(posts.length?posts.map(function(p){var g=p.g&&find(p.g),lk=!!p.liked;return '<div class="li" style="align-items:flex-start"><div class="avatar" style="width:40px;height:40px;font-size:15px">'+esc(p.n[0].toUpperCase())+'</div><div class="body"><div class="row"><b>'+esc(p.n)+'</b>'+''+'</div><div style="margin:4px 0">'+esc(p.t)+'</div>'+(g?'<button class="badge" data-a="open" data-v="'+g.id+'">'+esc(g.title)+'</button> ':'')+'<button class="badge" data-a="like" data-v="'+p.id+'" style="'+(lk?'color:#f472b6;border-color:#f472b6':'')+'" aria-pressed="'+lk+'">'+(lk?'Curtido':'Curtir')+(p.remote?' ('+p.likes+')':'')+'</button>'+(p.mine?' <button class="del" data-a="delpost" data-v="'+p.id+'">Excluir</button>':(p.remote?' <button class="del" data-a="report" data-v="post:'+p.rid+'">Denunciar</button>':''))+'</div></div>'}).join(''):'<div class="empty">Ninguém publicou ainda. Seja o primeiro.</div>')+'</div>'
-}
-function friends(){
- var list=friendsVM(true),req=list.filter(function(f){return f.pending}),ok=list.filter(function(f){return !f.pending}),
-  onl=ok.filter(function(f){return f.st==='online'}),off=ok.filter(function(f){return f.st!=='online'});
- function grp(t,a){return a.length?'<div class="sec"><h2>'+t+' ('+a.length+')</h2></div><div class="list">'+a.map(friendRow).join('')+'</div>':''}
- if(!on())return subhead('Amigos')+'<div class="empty">Amigos e conversas precisam de uma conta.<br>Entre ou crie a sua para adicionar jogadores de verdade.<div style="margin-top:12px"><button class="btn sm" data-a="sub" data-v="auth">Entrar ou criar conta</button></div></div>';
- return subhead('Amigos')+'<div class="row" style="gap:8px"><input class="in" id="fName" placeholder="Nome do jogador" maxlength="24" autocapitalize="off"><button class="btn sm" data-a="addfriend" style="flex:none">'+ic('plus')+'Adicionar</button></div>'
- +'<p class="note">Os pedidos chegam para o jogador aceitar. Só amigos conversam.</p>'
- +grp('Pedidos',req)
- +'<div class="sec"><h2>Online agora ('+onl.length+')</h2></div>'+(onl.length?'<div class="list">'+onl.map(friendRow).join('')+'</div>':'<div class="empty">Nenhum amigo online agora.</div>')
- +grp('Offline',off)
- +(list.length?'':'<div class="empty" style="margin-top:10px">Você ainda não tem amigos adicionados.</div>')
-}
-function chat(){
- var n=S.chat,m=on()?(S.rmsgs[S.chatId]||[]).map(function(x){return{me:x.from_id===S.user.id,t:x.text}}):(S.chats[n]||[]);
- return subhead(esc(n))+'<div class="chat">'+(m.length?m.map(function(x){return '<div class="bub'+(x.me?' me':'')+'">'+esc(x.t)+'</div>'}).join(''):'<div class="empty">Nenhuma mensagem ainda. Diga olá.</div>')+'</div><div class="row" style="gap:8px"><input class="in" id="chatIn" placeholder="Escreva uma mensagem" maxlength="300" autocomplete="off"><button class="btn sm" data-a="send" style="flex:none" aria-label="Enviar">'+ic('send')+'</button></div>'
-}
-function upd(){return subhead('Notificações')+'<div class="list">'+(updList().map(updRow).join('')||'<div class="empty">Nenhuma notificação.</div>')+'</div>'}
+function upd(){return subhead('Notificações')+'<div class="list">'+(updList().map(function(u){return u.k&&u.k!=='sys'?notifRow(u):updRow(u)}).join('')||'<div class="empty">Nenhuma notificação.</div>')+'</div>'}
 function authView(){
  var reg=S.authTab==='reg';
  return subhead(reg?'Criar conta':'Entrar')
@@ -1089,7 +1129,7 @@ function render(keep){
  var u=unseen();$('#bell').innerHTML=ic('bell')+(u?'<i class="dot">'+u+'</i>':'');
  var y=view.scrollTop,html;
  if(S.detail){var g=find(S.detail);html=g?detail(g):home()}
- else if(S.sub){html={community:community,friends:friends,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,editprof:editprof}[S.sub]()}
+ else if(S.sub){html={community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,editprof:editprof}[S.sub]()}
  else html={home:home,store:store,lib:library,studio:studio,profile:profile}[S.tab]();
  view.innerHTML=html;
  if(S.sub==='upd'){var ch=false;updList().forEach(function(x){if(S.seen.indexOf(x.id)<0){S.seen.push(x.id);ch=true}});if(ch){save('seen')}}
@@ -1103,6 +1143,217 @@ function spark(){
  var c=$('#hc');if(!c)return;var x=c.getContext('2d'),w=c.width=c.clientWidth,h=c.height=c.clientHeight,pts=[];
  for(var i=0;i<46;i++)pts.push([Math.random()*w,Math.random()*h,Math.random()*1.8+.4]);
  x.fillStyle='#fff';pts.forEach(function(p){x.globalAlpha=.35+p[2]/3;x.beginPath();x.arc(p[0],p[1],p[2],0,7);x.fill()});
+}
+
+
+/* ---------- chat e comunidade ---------- */
+P.img='<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/>';
+P.x='<path d="M6 6l12 12M18 6 6 18"/>';
+P.cal='<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/>';
+function SOC0(){return{ctab:'feed',cf:'foryou',rsp:{group:[],community:[]},rconv:[],cun:0,spc:null,sptab:'feed',rcm:{},ocm:null,cform:null,room:null,rooms:{},pimg:'',pgame:'',fres:null,sq:'',fol:{}}}
+var SOCTABS=[['feed','Comunidade','users'],['groups','Grupos','users'],['comms','Comunidades','star'],['msgs','Mensagens','chat'],['friends','Amigos','user'],['notif','Avisos','bell']];
+function needAcc(t){return '<div class="empty">Para usar '+t+', é preciso ter uma conta.<br>Entre ou crie a sua para conversar com jogadores de verdade.<div style="margin-top:12px"><button class="btn sm" data-a="sub" data-v="auth">Entrar ou criar conta</button></div></div>'}
+function socNotifs(){return S.rupd.filter(function(n){return n.k&&n.k!=='sys'})}
+function socUnseen(){return socNotifs().filter(function(n){return S.seen.indexOf(n.id)<0}).length}
+function who(n,url,cls){return avatarEl(url,n,cls)}
+function tabsBar(){
+ return '<div class="tabs">'+SOCTABS.map(function(t){var b=t[0]==='msgs'?S.cun:t[0]==='notif'?socUnseen():0;return '<button data-a="ctab" data-v="'+t[0]+'" aria-pressed="'+(S.ctab===t[0])+'">'+ic(t[2])+t[1]+(b?'<em>'+b+'</em>':'')+'</button>'}).join('')+'</div>';
+}
+/* ----- feed ----- */
+function postCard(p){
+ var g=p.game_id&&find('r'+p.game_id),lk=!!p.liked,mine=on()&&S.user&&p.author_id===S.user.id,open=S.ocm===p.id,cs=S.rcm[p.id]||[];
+ return '<div class="post"><div class="ph">'+who(p.author,p.author_avatar,'sm')+'<div class="body"><b>'+esc(p.author)+'</b><span class="note">'+rel(p.created_at)+(p.space_name?' · em '+esc(p.space_name):'')+'</span></div>'
+  +(on()&&!mine&&S.user?'<button class="chip sm" data-a="follow" data-v="'+p.author_id+'" aria-pressed="'+!!p.following+'">'+(p.following?'Seguindo':'Seguir')+'</button>':'')+'</div>'
+  +'<div class="pt">'+mentionHtml(p.text)+'</div>'
+  +(g?'<button class="gref" data-a="open" data-v="'+g.id+'">'+ic('pad')+'<span>'+esc(g.title)+'</span>'+ic('chev','chv')+'</button>':(p.game_title?'<div class="gref off">'+ic('pad')+'<span>'+esc(p.game_title)+'</span></div>':''))
+  +'<div class="pa"><button data-a="like" data-v="r'+p.id+'" aria-pressed="'+lk+'" class="'+(lk?'on':'')+'">'+ic('heart')+p.likes+'</button><button data-a="cmt" data-v="'+p.id+'" aria-pressed="'+open+'">'+ic('chat')+p.comments+'</button>'
+  +(mine||(S.user&&S.user.role==='admin')?'<button class="del" data-a="delpost" data-v="r'+p.id+'">Excluir</button>':'<button class="del" data-a="report" data-v="post:'+p.id+'">Denunciar</button>')+'</div>'
+  +(open?'<div class="cms">'+(cs.length?cs.map(function(k){return '<div class="cm">'+who(k.author,k.author_avatar,'xs')+'<div class="body"><b>'+esc(k.author)+'</b> <span class="note">'+rel(k.created_at)+'</span><div>'+mentionHtml(k.text)+'</div></div>'+(S.user&&(k.user_id===S.user.id||S.user.role==='admin')?'<button class="ib sm" data-a="delcm" data-v="'+k.id+':'+p.id+'" aria-label="Excluir comentário">'+ic('trash')+'</button>':'')+'</div>'}).join(''):'<div class="note">Seja o primeiro a responder.</div>')
+   +'<div class="row" style="gap:8px;margin-top:8px"><input class="in" id="cmIn" maxlength="300" placeholder="Escreva uma resposta" autocomplete="off"><button class="btn sm" data-a="cmsend" data-v="'+p.id+'" style="flex:none" aria-label="Responder">'+ic('send')+'</button></div></div>':'')
+  +'</div>';
+}
+function mentionHtml(t){return esc(t).replace(/(^|\s)@([A-Za-z0-9_.-]{3,20})/g,'$1<span class="mn">@$2</span>')}
+function composer(spaceId){
+ return '<div class="panel"><textarea class="in" id="postText" style="min-height:70px;white-space:normal;font-family:var(--font);font-size:14px" maxlength="500" placeholder="Compartilhe uma dica, um recorde ou pergunte algo">'+esc(S.draft.post)+'</textarea><div class="row" style="margin-top:8px;gap:8px"><select class="in" id="postGame" style="max-width:55%"><option value="">Sem jogo</option>'+all().map(function(g){return '<option value="'+g.id+'"'+(S.draft.pg===g.id?' selected':'')+'>'+esc(g.title)+'</option>'}).join('')+'</select><button class="btn sm" data-a="post"'+(spaceId?' data-v="'+spaceId+'"':'')+'>'+ic('send')+'Criar publicação</button></div></div>';
+}
+function feedView(){
+ if(!on()){
+  var lp=S.posts.map(function(p){return '<div class="post"><div class="ph">'+who(S.name,S.avatar,'sm')+'<div class="body"><b>'+esc(S.name)+'</b></div></div><div class="pt">'+esc(p.t)+'</div><div class="pa"><button class="del" data-a="delpost" data-v="'+p.id+'">Excluir</button></div></div>'}).join('');
+  return composer()+'<p class="note">Sem conta, suas publicações ficam só neste aparelho. Entre para curtir, comentar e seguir jogadores.</p>'+(lp?'<div class="plist">'+lp+'</div>':'<div class="empty" style="margin-top:12px">Nenhuma publicação ainda.</div>');
+ }
+ var F=[['foryou','Para você'],['following','Seguindo'],['games','Jogos']];
+ return composer()+'<div class="seg" style="margin:12px 0">'+F.map(function(f){return '<button data-a="cfilter" data-v="'+f[0]+'" aria-pressed="'+(S.cf===f[0])+'">'+f[1]+'</button>'}).join('')+'</div>'
+  +(S.rposts.length?'<div class="plist">'+S.rposts.map(postCard).join('')+'</div>':'<div class="empty">'+({foryou:'Ainda não há publicações. Escreva a primeira.',following:'Siga jogadores para ver as publicações deles aqui.',games:'Nenhuma publicação com jogo ainda.'}[S.cf])+'</div>');
+}
+/* ----- grupos e comunidades ----- */
+function spaceCard(s){
+ var st=s.my_status,lab=s.kind==='group'?(s.access==='private'?'Privado':'Público'):(s.access==='restricted'?'Restrita':'Aberta');
+ return '<button class="sp" data-a="spopen" data-v="'+s.id+'"><div class="spc">'+(s.cover?'<img src="'+s.cover+'" alt="">':ic(s.kind==='group'?'users':'star'))+'</div><div class="body"><b>'+esc(s.name)+'</b><span class="note">'+s.members+' membro'+(s.members===1?'':'s')+' · '+lab+(s.category?' · '+esc(s.category):'')+'</span></div>'
+  +(st==='active'?'<span class="badge ok">Membro</span>':st==='invited'?'<span class="badge warn">Convite</span>':st==='pending'?'<span class="badge">Pendente</span>':'')+ic('chev','chv')+'</button>';
+}
+function spacesView(kind){
+ if(!on())return needAcc(kind==='group'?'os grupos':'as comunidades');
+ var l=S.rsp[kind],lab=kind==='group'?'grupo':'comunidade';
+ return '<div class="row" style="gap:8px"><input class="in" id="spq" placeholder="Buscar '+(kind==='group'?'grupos':'comunidades')+'" value="'+esc(S.sq)+'" maxlength="40"><button class="btn sm" data-a="spsearch" style="flex:none">Buscar</button></div>'
+  +'<button class="btn" style="width:100%;margin:12px 0" data-a="cnew" data-v="'+kind+'">'+ic('plus')+'Criar '+lab+'</button>'
+  +(l.length?'<div class="list">'+l.map(spaceCard).join('')+'</div>':'<div class="empty">'+(kind==='group'?'Nenhum grupo ainda. Crie o primeiro e convide seus amigos.':'Nenhuma comunidade ainda. Crie a primeira e defina as regras.')+'</div>');
+}
+function coverUp(f,label){
+ return '<label class="cvu '+(f.cover?'':'vazio')+'" for="cfIn">'+(f.cover?'<img src="'+f.cover+'" alt="">':'<div class="ph">'+ic('camera')+'<b>'+label+'</b><span>Toque para escolher uma imagem</span></div>')+(f.cover?'<div class="acts"><span>Trocar</span></div>':'')+'</label><input type="file" id="cfIn" class="vh" accept="image/*">';
+}
+function cformView(){
+ var f=S.cform,g=f.kind==='group',lab=g?'grupo':'comunidade';
+ return subhead('Criar '+lab)+'<div class="panel">'
+  +coverUp(f,g?'Capa do grupo':'Ícone ou capa')
+  +'<label class="f" for="cfName">Nome</label><input class="in" id="cfName" maxlength="40" value="'+esc(f.name)+'" placeholder="Nome d'+(g?'o grupo':'a comunidade')+'">'
+  +'<label class="f" for="cfDesc">Descrição</label><textarea class="in" id="cfDesc" maxlength="300" style="min-height:70px;white-space:normal;font-family:var(--font);font-size:14px">'+esc(f.desc)+'</textarea>'
+  +(g?'':'<label class="f" for="cfCat">Categoria</label><select class="in" id="cfCat"><option value="">Geral</option>'+catNames().map(function(c){return '<option'+(f.cat===c?' selected':'')+'>'+esc(c)+'</option>'}).join('')+'</select>')
+  +'<label class="f">'+(g?'Privacidade':'Acesso')+'</label><div class="seg">'+(g?[['public','Público'],['private','Privado']]:[['open','Aberta'],['restricted','Restrita']]).map(function(o){return '<button data-a="cacc" data-v="'+o[0]+'" aria-pressed="'+(f.access===o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'
+  +'<p class="note">'+(g?(f.access==='private'?'Grupo privado: só quem for convidado entra.':'Grupo público: qualquer jogador pode entrar.'):(f.access==='restricted'?'Comunidade restrita: quem pedir para entrar precisa da sua aprovação.':'Comunidade aberta: qualquer jogador entra direto.'))+'</p>'
+  +'<label class="f" for="cfRules">Regras</label><textarea class="in" id="cfRules" maxlength="600" style="min-height:70px;white-space:normal;font-family:var(--font);font-size:14px" placeholder="Ex.: respeito acima de tudo">'+esc(f.rules)+'</textarea>'
+  +'<label class="f" for="cfMem">Convidar membros iniciais</label><input class="in" id="cfMem" value="'+esc(f.mem)+'" placeholder="Nomes ou #ID, separados por vírgula" autocapitalize="off">'
+  +'</div><button class="btn" style="width:100%;margin-top:14px" data-a="csave">'+ic('check')+'Criar '+lab+'</button>';
+}
+function spaceView(){
+ var d=S.spc;if(!d)return subhead('...')+'<div class="empty">Carregando...</div>';
+ var s=d.space,g=s.kind==='group',m=s.my_status,act=m==='active',T=[['feed','Publicações'],['chat','Chat'],['members','Membros'],['rules','Regras']];
+ if(!g)T.splice(3,0,['events','Eventos']);
+ if(g)T.shift();
+ var tab=T.some(function(t){return t[0]===S.sptab})?S.sptab:T[0][0],h=subhead(esc(s.name))
+  +'<div class="sphead"><div class="spc lg">'+(s.cover?'<img src="'+s.cover+'" alt="">':ic(g?'users':'star'))+'</div><div class="body"><b>'+esc(s.name)+'</b><span class="note">'+s.members+' membro'+(s.members===1?'':'s')+' · '+(g?(s.access==='private'?'Privado':'Público'):(s.access==='restricted'?'Restrita':'Aberta'))+(s.category?' · '+esc(s.category):'')+'</span></div></div>'
+  +(s.description?'<p class="note" style="margin:10px 0">'+esc(s.description)+'</p>':'')
+  +'<div class="row" style="gap:8px;margin:10px 0 14px;justify-content:flex-start;flex-wrap:wrap">'
+  +(act?(s.my_role==='owner'?'':'<button class="btn ghost sm" data-a="spleave">Sair</button>')+(s.my_role==='owner'||(S.user&&S.user.role==='admin')?'<button class="del" data-a="spdel">Excluir</button>':''):m==='invited'?'<button class="btn sm" data-a="spjoin">Aceitar convite</button><button class="btn ghost sm" data-a="spdecline">Recusar</button>':m==='pending'?'<span class="badge">Pedido enviado</span><button class="btn ghost sm" data-a="spdecline">Cancelar</button>':'<button class="btn sm" data-a="spjoin">'+((s.access==='public'||s.access==='open')?'Entrar':'Pedir para entrar')+'</button>')
+  +(act?'<button class="btn ghost sm" data-a="spinv">'+ic('plus')+'Convidar</button>':'')+'</div>'
+  +(S.spdelc?'<div class="panel" style="margin-bottom:12px"><b>Excluir '+(g?'o grupo':'a comunidade')+'?</b><div class="note">Publicações, chat e membros serão apagados. Não dá para desfazer.</div><div class="row" style="gap:8px;margin-top:10px;justify-content:flex-start"><button class="btn danger sm" data-a="spdel">Excluir</button><button class="btn ghost sm" data-a="spdelno">Cancelar</button></div></div>':'')+'<div class="tabs">'+T.map(function(t){return '<button data-a="sptab" data-v="'+t[0]+'" aria-pressed="'+(tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>';
+ if(S.spInv)h+='<div class="panel" style="margin-bottom:12px"><label class="f" for="invIn" style="margin-top:0">Convidar jogador</label><div class="row" style="gap:8px"><input class="in" id="invIn" placeholder="Nome ou #ID" autocapitalize="off"><button class="btn sm" data-a="spinvgo" style="flex:none">Enviar</button></div></div>';
+ if(tab==='feed')h+=(act?composer(s.id):'<div class="note" style="margin-bottom:10px">Entre para publicar.</div>')+(d.posts.length?'<div class="plist" style="margin-top:12px">'+d.posts.map(postCard).join('')+'</div>':'<div class="empty" style="margin-top:12px">Nenhuma publicação aqui ainda.</div>');
+ else if(tab==='chat')h+=act?roomBox('Chat',(d.msgs||[]).map(function(x){return{me:x.user_id===S.user.id,t:x.text,image:x.image,game_id:x.game_id,game_title:x.game_title,author:x.author}}),true):'<div class="empty">Entre para participar do chat.</div>';
+ else if(tab==='members'){
+  var pend=d.members.filter(function(x){return x.status==='pending'}),ok=d.members.filter(function(x){return x.status==='active'});
+  h+=(pend.length&&s.staff?'<div class="sec"><h2>Pedidos ('+pend.length+')</h2></div><div class="list">'+pend.map(function(x){return '<div class="li">'+who(x.name,x.avatar,'sm')+'<div class="body"><b>'+esc(x.name)+'</b></div><button class="btn sm" data-a="spappr" data-v="'+x.id+'">Aceitar</button><button class="del" data-a="spkick" data-v="'+x.id+'">Recusar</button></div>'}).join('')+'</div>':'')
+   +'<div class="sec"><h2>Membros ('+ok.length+')</h2></div><div class="list">'+ok.map(function(x){return '<div class="li">'+who(x.name,x.avatar,'sm')+'<div class="body"><b>'+esc(x.name)+'</b><span class="note"><span class="sd '+(x.online?'on':'')+'"></span> '+(x.role==='owner'?'Criador':x.role==='admin'?'Administrador':x.online?'Online':'Offline')+'</span></div>'+(s.staff&&x.role!=='owner'?'<button class="del" data-a="spkick" data-v="'+x.id+'">Remover</button>':'')+'</div>'}).join('')+'</div>';
+ }else if(tab==='events'){
+  h+=(s.staff?'<div class="panel" style="margin-bottom:12px"><label class="f" for="evT" style="margin-top:0">Novo evento</label><input class="in" id="evT" maxlength="60" placeholder="Título"><input class="in" id="evD" maxlength="200" placeholder="Descrição (opcional)" style="margin-top:8px"><input class="in" id="evW" type="datetime-local" style="margin-top:8px"><button class="btn sm" style="margin-top:10px" data-a="evadd">'+ic('cal')+'Criar evento</button></div>':'')
+   +(d.events.length?'<div class="list">'+d.events.map(function(e){return '<div class="li">'+'<div class="avatar" style="width:42px;height:42px">'+ic('cal')+'</div><div class="body"><b>'+esc(e.title)+'</b><span class="note">'+esc(fmtWhen(e.starts_at))+(e.description?' · '+esc(e.description):'')+'</span></div>'+(s.staff?'<button class="del" data-a="evdel" data-v="'+e.id+'">Excluir</button>':'')+'</div>'}).join('')+'</div>':'<div class="empty">Nenhum evento marcado.</div>');
+ }else h+='<div class="panel"><b>Regras</b><p style="white-space:pre-wrap;margin:8px 0 0;font-size:14px">'+(s.rules?esc(s.rules):'O criador ainda não definiu regras.')+'</p></div>';
+ return h;
+}
+function fmtWhen(s){var d=new Date(s);if(isNaN(d))return s;return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()+(String(s).length>10?' às '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2):'')}
+/* ----- mensagens ----- */
+function bubble(x,showName){
+ var g=x.game_id&&find('r'+x.game_id);
+ return '<div class="bub'+(x.me?' me':'')+'">'+(showName&&!x.me?'<b class="who">'+esc(x.author||'')+'</b>':'')+(x.image?'<img class="mimg" src="'+x.image+'" alt="Imagem enviada">':'')+(x.t?'<div>'+mentionHtml(x.t)+'</div>':'')
+  +(x.game_id?(g?'<button class="gref" data-a="open" data-v="'+g.id+'">'+ic('pad')+'<span>'+esc(g.title)+'</span></button>':'<div class="gref off">'+ic('pad')+'<span>'+esc(x.game_title||'Jogo')+'</span></div>'):'')+'</div>';
+}
+function roomBox(title,msgs,group){
+ var g=S.pgame&&find(S.pgame);
+ return '<div class="chat">'+(msgs.length?msgs.map(function(x){return bubble(x,group)}).join(''):'<div class="empty">Nenhuma mensagem ainda. Diga olá.</div>')+'</div>'
+  +(S.pimg||g?'<div class="atts">'+(S.pimg?'<span class="att"><img src="'+S.pimg+'" alt="">'+'<button data-a="rmimg" aria-label="Remover imagem">'+ic('x')+'</button></span>':'')+(g?'<span class="att g">'+ic('pad')+esc(g.title)+'<button data-a="rmgame" aria-label="Remover jogo">'+ic('x')+'</button></span>':'')+'</div>':'')
+  +'<div class="row cbar" style="gap:6px"><label class="ib" for="chImg" aria-label="Enviar imagem">'+ic('img')+'</label><input type="file" id="chImg" class="vh" accept="image/*"><button class="ib" data-a="pickgame" aria-label="Mencionar um jogo">'+ic('pad')+'</button><input class="in" id="chatIn" placeholder="Escreva uma mensagem" maxlength="300" autocomplete="off" value="'+esc(S.chd||'')+'"><button class="btn sm" data-a="send" style="flex:none" aria-label="Enviar">'+ic('send')+'</button></div>'
+  +(S.gpick?'<div class="panel gpick"><b>'+(S.gpick==='invite'?'Convidar para qual jogo?':'Mencionar qual jogo?')+'</b><div class="chips" style="flex-wrap:wrap;margin-top:8px">'+(all().length?all().slice(0,30).map(function(x){return '<button class="chip" data-a="setgame" data-v="'+x.id+'">'+esc(x.title)+'</button>'}).join(''):'<div class="note">Nenhum jogo publicado para mencionar.</div>')+'</div></div>':'');
+}
+function convRow(c){
+ var key=c.type+':'+c.id;
+ return '<button class="li conv" data-a="convopen" data-v="'+key+'">'+(c.type==='direct'?'<div class="av-wrap">'+who(c.name,c.avatar,'sm')+(c.online?'<i class="sd on"></i>':'')+'</div>':'<div class="spc">'+(c.avatar?'<img src="'+c.avatar+'" alt="">':ic(c.type==='group'?'users':'star'))+'</div>')
+  +'<div class="body"><b>'+esc(c.name)+'</b><span class="note">'+(c.last?esc(c.last):'Sem mensagens')+'</span></div><div class="cmeta"><span class="note">'+(c.at?rel(c.at):'')+'</span>'+(c.unread?'<i class="dot2">'+c.unread+'</i>':'')+'</div></button>';
+}
+function msgsView(){
+ if(!on())return needAcc('as mensagens');
+ return S.rconv.length?'<div class="list">'+S.rconv.map(convRow).join('')+'</div>':'<div class="empty">Nenhuma conversa ainda.<br>Adicione amigos ou entre em um grupo para começar.<div style="margin-top:12px"><button class="btn sm" data-a="ctab" data-v="friends">Ver amigos</button></div></div>';
+}
+function chat(){
+ var r=S.room;if(!r)return subhead('Conversa')+'<div class="empty">Conversa não encontrada.</div>';
+ var m=(S.rooms[r.type+':'+r.id]||[]);
+ if(!on()){
+  m=(S.chats[r.name]||[]);
+  return subhead(esc(r.name))+'<div class="chat">'+(m.length?m.map(function(x){return '<div class="bub'+(x.me?' me':'')+'">'+esc(x.t)+'</div>'}).join(''):'<div class="empty">Nenhuma mensagem ainda. Diga olá.</div>')+'</div><div class="row" style="gap:8px"><input class="in" id="chatIn" placeholder="Escreva uma mensagem" maxlength="300" autocomplete="off"><button class="btn sm" data-a="send" style="flex:none" aria-label="Enviar">'+ic('send')+'</button></div>';
+ }
+ var list=m.map(function(x){return r.type==='direct'?{me:x.from_id===S.user.id,t:x.text,image:x.image,game_id:x.game_id,game_title:x.game_title}:{me:x.user_id===S.user.id,t:x.text,image:x.image,game_id:x.game_id,game_title:x.game_title,author:x.author}});
+ return subhead(esc(r.name))+(r.type!=='direct'?'<button class="btn ghost sm" style="margin:-4px 0 10px" data-a="spopen" data-v="'+r.id+'">'+ic('users')+'Ver '+(r.type==='group'?'grupo':'comunidade')+'</button>':'<button class="btn ghost sm" style="margin:-4px 0 10px" data-a="invgame" data-v="'+r.id+'">'+ic('play')+'Convidar para jogo</button>')
+  +roomBox(r.name,list,r.type!=='direct');
+}
+/* ----- amigos ----- */
+function friendsView(){
+ if(!on())return needAcc('amigos e conversas');
+ var list=friendsVM(true),req=list.filter(function(f){return f.pending}),ok=list.filter(function(f){return !f.pending}),
+  onl=ok.filter(function(f){return f.st==='online'}),off=ok.filter(function(f){return f.st!=='online'});
+ function grp(t,a){return a.length?'<div class="sec"><h2>'+t+' ('+a.length+')</h2></div><div class="list">'+a.map(friendRow).join('')+'</div>':''}
+ return '<div class="row" style="gap:8px"><input class="in" id="fName" placeholder="Nome ou #ID do jogador" maxlength="24" autocapitalize="off"><button class="btn sm" data-a="addfriend" style="flex:none">'+ic('plus')+'Adicionar</button></div>'
+  +'<p class="note">Seu ID é <b>#'+S.user.id+'</b>. Os pedidos chegam para o jogador aceitar. Só amigos conversam.</p>'
+  +grp('Pedidos',req)
+  +'<div class="sec"><h2>Online agora ('+onl.length+')</h2></div>'+(onl.length?'<div class="list">'+onl.map(friendRow).join('')+'</div>':'<div class="empty">Nenhum amigo online agora.</div>')
+  +grp('Offline',off)
+  +(list.length?'':'<div class="empty" style="margin-top:10px">Você ainda não tem amigos adicionados.</div>');
+}
+function friendRow(f){
+ var act='';
+ if(f.incoming)act='<button class="btn sm" data-a="accept" data-v="'+f.id+'">Aceitar</button>';
+ else if(!f.pending)act='<button class="ib" data-a="invgame" data-v="'+(f.id||'')+'" aria-label="Convidar '+esc(f.n)+' para jogo">'+ic('play')+'</button><button class="ib" data-a="chatopen" data-v="'+esc(f.n)+'" data-id="'+(f.id||'')+'" aria-label="Mensagem para '+esc(f.n)+'">'+ic('chat')+'</button>';
+ var rm=f.rm?'<button class="del" data-a="'+f.rm[0]+'" data-v="'+esc(f.rm[1])+'">'+f.rm[2]+'</button>':'';
+ return '<div class="li">'+who(f.n,f.avatar,'sm')+'<div class="body"><b>'+esc(f.n)+'</b><div class="note" style="margin:2px 0 0"><span class="sd '+(f.st==='online'?'on':'')+'"></span> '+esc(f.g)+'</div></div>'+rm+act+'</div>';
+}
+/* ----- avisos sociais ----- */
+function notifRow(n){
+ var go='';
+ if(/^space:/.test(n.ref||''))go='<button class="btn sm" data-a="spopen" data-v="'+n.ref.slice(6)+'">Ver</button>';
+ else if(n.k==='friend')go='<button class="btn sm" data-a="ctab" data-v="friends">Ver</button>';
+ else if(n.k==='gameinvite'&&find('r'+(n.ref||'').slice(5)))go='<button class="btn sm" data-a="open" data-v="r'+n.ref.slice(5)+'">Jogar</button>';
+ else if(/^post:/.test(n.ref||''))go='<button class="btn sm" data-a="ctab" data-v="feed">Ver</button>';
+ var ic2={invite:'users',joinreq:'users',follow:'user',mention:'chat',reply:'chat',friend:'user',gameinvite:'play',event:'cal'}[n.k]||'bell';
+ return '<div class="li"><div class="avatar" style="width:38px;height:38px">'+ic(ic2)+'</div><div class="body"><b>'+esc(n.t)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(n.d)+'</div></div><div class="cmeta"><span class="note">'+n.a+'</span>'+go+'</div></div>';
+}
+function notifView(){
+ if(!on())return needAcc('os avisos sociais');
+ var l=socNotifs();
+ return l.length?'<div class="list">'+l.map(notifRow).join('')+'</div>':'<div class="empty">Nenhum aviso social.<br>Convites, novos seguidores, menções e respostas aparecem aqui.</div>';
+}
+/* ----- tela principal ----- */
+function community(){
+ var body={feed:feedView,groups:function(){return spacesView('group')},comms:function(){return spacesView('community')},msgs:msgsView,friends:friendsView,notif:notifView}[S.ctab]||feedView;
+ return subhead('Comunidade')+tabsBar()+body();
+}
+/* ----- carregamento ----- */
+async function loadFeed(){if(!on())return;try{S.rposts=(await api('GET','/posts?filter='+S.cf)).posts;if(S.sub==='community'&&S.ctab==='feed')render(true)}catch(e){toast(e.message)}}
+async function loadSpaces(kind){
+ if(!on())return;try{var r=await api('GET','/spaces?kind='+kind+(S.sq?'&q='+encodeURIComponent(S.sq):''));S.rsp[kind]=r.spaces;if(S.sub==='community')render(true)}catch(e){toast(e.message)}
+}
+async function loadConvs(){
+ if(!on())return;try{var r=await api('GET','/conversations');S.rconv=r.conversations;S.cun=r.unread;if(S.sub==='community'&&S.ctab==='msgs')render(true);else{var b=document.getElementById('cbadge');if(b)b.textContent=S.cun||''}}catch(e){}
+}
+async function loadSpace(id,keep){
+ try{
+  var r=await api('GET','/spaces/'+id),d={space:r.space,members:r.members,events:r.events,posts:[],msgs:null};
+  if(r.space.my_status==='active'||r.space.access!=='private'){try{d.posts=(await api('GET','/posts?space='+id)).posts}catch(e){}}
+  if(r.space.my_status==='active'){try{d.msgs=(await api('GET','/spaces/'+id+'/messages')).messages.map(function(x){return x})}catch(e){}}
+  S.spc=d;if(S.sub==='space')render(true);
+  if(d.msgs)loadConvs();
+ }catch(e){toast(e.message);if(S.sub==='space'){S.sub='community';render()}}
+}
+async function loadComments(pid){try{S.rcm[pid]=(await api('GET','/posts/'+pid+'/comments')).comments;render(true)}catch(e){toast(e.message)}}
+function openRoom(type,id,name){
+ S.room={type:type,id:id,name:name};S.sub='chat';S.tab='profile';S.detail=null;S.pimg='';S.pgame='';S.gpick=false;render();
+ var k=type+':'+id;
+ if(!on())return;
+ (type==='direct'?api('GET','/messages/'+id):api('GET','/spaces/'+id+'/messages')).then(function(r){S.rooms[k]=r.messages;if(S.sub==='chat'&&S.room&&S.room.type+':'+S.room.id===k){render(true);view.scrollTop=view.scrollHeight}loadConvs()}).catch(function(e){toast(e.message)});
+}
+/* ----- imagem reduzida (capa, ícone, foto de chat) ----- */
+function shrinkImg(f,W,H,steps,limit,cb){
+ if(!/^image\//.test(f.type)){toast('Escolha uma imagem (JPG, PNG ou WebP)');return}
+ var u=URL.createObjectURL(f),im=new Image();
+ im.onload=function(){
+  try{
+   var out='',sc0=Math.min(1,W/im.naturalWidth,H/im.naturalHeight);
+   for(var k=0;k<steps.length;k++){
+    var s=sc0*steps[k][0],c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.naturalWidth*s));c.height=Math.max(1,Math.round(im.naturalHeight*s));
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);out=c.toDataURL('image/jpeg',steps[k][1]);if(out.length<=limit)break;
+   }
+   if(out.length>limit)toast('Imagem grande demais');else cb(out);
+  }catch(er){toast('Não foi possível usar essa imagem')}
+  URL.revokeObjectURL(u);
+ };
+ im.onerror=function(){URL.revokeObjectURL(u);toast('Não foi possível abrir essa imagem')};
+ im.src=u;
 }
 
 /* ---------- player ---------- */
@@ -1159,19 +1410,154 @@ $('#pClose').onclick=closeGame;
 $('#pReload').onclick=function(){if(cur){$('#frame').srcdoc=gameDoc(cur);showBar(false)}};
 
 /* ---------- eventos ---------- */
+/* ---------- chat e comunidade: ações ---------- */
+function socKeep(){
+ var g=function(i){return document.getElementById(i)};
+ if(g('chatIn'))S.chd=g('chatIn').value;
+ if(S.cform&&g('cfName')){var f=S.cform;f.name=g('cfName').value;f.desc=g('cfDesc').value;f.rules=g('cfRules').value;f.mem=g('cfMem').value;if(g('cfCat'))f.cat=g('cfCat').value}
+}
+function setCformCover(f){shrinkImg(f,640,360,[[1,.8],[.7,.7],[.5,.6]],150000,function(o){socKeep();S.cform.cover=o;render(true)})}
+function spaceList(){return (S.rposts||[]).concat(S.spc?S.spc.posts:[])}
+function findPost(id){var l=spaceList();for(var i=0;i<l.length;i++)if(l[i].id===id)return l[i]}
+function hubTab(tab){S.sub='community';S.tab='home';S.detail=null;S.ctab=tab;render()}
+async function reloadPosts(){if(S.sub==='space'&&S.spc){try{S.spc.posts=(await api('GET','/posts?space='+S.spc.space.id)).posts}catch(e){}render(true)}else await loadFeed()}
+async function sendMsg(){
+ var i=document.getElementById('chatIn'),t=i?i.value.trim():'';
+ if(!on()){
+  if(!t||!S.room)return;(S.chats[S.room.name]=S.chats[S.room.name]||[]).push({me:1,t:t});save('chats');S.chd='';render(true);view.scrollTop=view.scrollHeight;return;
+ }
+ var inSp=S.sub==='space'&&S.spc,r=inSp?{type:'space',id:S.spc.space.id}:S.room;
+ if(!r||(!t&&!S.pimg&&!S.pgame))return;
+ var body={text:t};if(S.pimg)body.image=S.pimg;if(S.pgame&&S.pgame[0]==='r')body.gameId=+S.pgame.slice(1);
+ try{
+  if(inSp){var a=await api('POST','/spaces/'+r.id+'/messages',body);(S.spc.msgs=S.spc.msgs||[]).push(a.message)}
+  else if(r.type==='direct'){body.to=r.id;var b=await api('POST','/messages',body);(S.rooms['direct:'+r.id]=S.rooms['direct:'+r.id]||[]).push(b.message)}
+  else{var c=await api('POST','/spaces/'+r.id+'/messages',body);(S.rooms[r.type+':'+r.id]=S.rooms[r.type+':'+r.id]||[]).push(c.message)}
+ }catch(e){toast(e.message);return}
+ S.pimg='';S.pgame='';S.gpick=false;S.chd='';render(true);var n=document.getElementById('chatIn');if(n)n.focus();view.scrollTop=view.scrollHeight;loadConvs();
+}
+var SOCA={sub:1,ctab:1,back:1,cfilter:1,follow:1,post:1,like:1,delpost:1,cmt:1,cmsend:1,delcm:1,spsearch:1,spopen:1,sptab:1,spjoin:1,spdecline:1,spleave:1,spdel:1,spdelno:1,spinv:1,spinvgo:1,spappr:1,spkick:1,evadd:1,evdel:1,cnew:1,cacc:1,csave:1,convopen:1,chatopen:1,invgame:1,pickgame:1,setgame:1,rmimg:1,rmgame:1,addfriend:1};
+function socHandles(a,v){
+ if(!SOCA[a])return false;
+ if(a==='sub')return v==='friends'||v==='community';
+ if(a==='back')return !S.detail&&(S.sub==='chat'||S.sub==='space'||S.sub==='cform');
+ if(a==='post'||a==='addfriend')return on();
+ if(a==='like'||a==='delpost')return on()&&String(v)[0]==='r';
+ return true;
+}
+async function socAct(a,v,t){
+ var g=function(i){var e=document.getElementById(i);return e?e.value.trim():''};
+ switch(a){
+  case 'sub':
+   if(v==='friends'||v==='community'){S.ctab=v==='friends'?'friends':'feed';S.sub='community';S.tab='home';S.detail=null;render();socLoad();return true}
+   return false;
+  case 'ctab':S.sub='community';S.tab='home';S.detail=null;S.ctab=v;S.sq='';render();socLoad();return true;
+  case 'back':
+   if(S.detail)return false;
+   if(S.sub==='chat'){hubTab('msgs');socLoad();return true}
+   if(S.sub==='space'||S.sub==='cform'){var k=S.sub==='cform'?S.cform.kind:(S.spc?S.spc.space.kind:'group');S.spInv=false;S.spdelc=false;hubTab(k==='group'?'groups':'comms');socLoad();return true}
+   return false;
+  case 'cfilter':S.cf=v;render(true);await loadFeed();return true;
+  case 'follow':if(!on())return true;var fr=await api('POST','/users/'+v+'/follow');spaceList().forEach(function(p){if(String(p.author_id)===v)p.following=fr.following});render(true);return true;
+  case 'post':
+   if(!on())return false;
+   if(!S.draft.post.trim()){toast('Escreva algo para publicar');return true}
+   var pb={text:S.draft.post.trim()};if(S.draft.pg&&S.draft.pg[0]==='r')pb.gameId=+S.draft.pg.slice(1);if(v)pb.spaceId=+v;
+   await api('POST','/posts',pb);S.draft.post='';S.draft.pg='';toast('Publicado');await reloadPosts();return true;
+  case 'like':
+   if(!on()||v[0]!=='r')return false;
+   var p=findPost(+v.slice(1)),lr=await api('POST','/posts/'+v.slice(1)+'/like');if(p){p.liked=lr.liked;p.likes+=lr.liked?1:-1}render(true);return true;
+  case 'delpost':
+   if(!on()||v[0]!=='r')return false;
+   await api('DELETE','/posts/'+v.slice(1));S.rposts=S.rposts.filter(function(x){return 'r'+x.id!==v});if(S.spc)S.spc.posts=S.spc.posts.filter(function(x){return 'r'+x.id!==v});render(true);return true;
+  case 'cmt':S.ocm=S.ocm===+v?null:+v;render(true);if(S.ocm)loadComments(+v);return true;
+  case 'cmsend':
+   var ct=g('cmIn');if(!ct){return true}
+   await api('POST','/posts/'+v+'/comments',{text:ct});var pc=findPost(+v);if(pc)pc.comments++;await loadComments(+v);return true;
+  case 'delcm':var q=v.split(':');await api('DELETE','/comments/'+q[0]);var pd=findPost(+q[1]);if(pd&&pd.comments>0)pd.comments--;await loadComments(+q[1]);return true;
+  case 'spsearch':S.sq=g('spq');await loadSpaces(S.ctab==='groups'?'group':'community');return true;
+  case 'spopen':
+   S.sub='space';S.tab='home';S.detail=null;S.spc=null;S.sptab='feed';S.spInv=false;S.spdelc=false;S.ocm=null;render();await loadSpace(+v);return true;
+  case 'sptab':S.sptab=v;S.ocm=null;render(true);if(v==='chat')view.scrollTop=view.scrollHeight;return true;
+  case 'spjoin':
+   var jr=await api('POST','/spaces/'+S.spc.space.id+'/join');toast(jr.status==='active'?'Você entrou':'Pedido enviado');await loadSpace(S.spc.space.id);return true;
+  case 'spdecline':await api('POST','/spaces/'+S.spc.space.id+'/decline');await loadSpace(S.spc.space.id).catch(function(){});return true;
+  case 'spleave':await api('POST','/spaces/'+S.spc.space.id+'/leave');toast('Você saiu');S.spc=null;hubTab(S.ctab==='comms'?'comms':'groups');socLoad();return true;
+  case 'spdel':
+   if(!S.spdelc){S.spdelc=true;render(true);return true}
+   var dk=S.spc.space.kind;await api('DELETE','/spaces/'+S.spc.space.id);toast('Excluído');S.spc=null;S.spdelc=false;hubTab(dk==='group'?'groups':'comms');socLoad();return true;
+  case 'spdelno':S.spdelc=false;render(true);return true;
+  case 'spinv':S.spInv=!S.spInv;render(true);return true;
+  case 'spinvgo':
+   var iv=g('invIn');if(!iv){toast('Digite o nome ou #ID');return true}
+   await api('POST','/spaces/'+S.spc.space.id+'/invite',{name:iv});toast('Convite enviado');S.spInv=false;await loadSpace(S.spc.space.id);return true;
+  case 'spappr':await api('POST','/spaces/'+S.spc.space.id+'/members/'+v+'/approve');toast('Aceito');await loadSpace(S.spc.space.id);return true;
+  case 'spkick':await api('DELETE','/spaces/'+S.spc.space.id+'/members/'+v);await loadSpace(S.spc.space.id);return true;
+  case 'evadd':
+   var et=g('evT'),ew=g('evW');if(!et||!ew){toast('Informe o título e a data');return true}
+   await api('POST','/spaces/'+S.spc.space.id+'/events',{title:et,description:g('evD'),startsAt:ew});toast('Evento criado');await loadSpace(S.spc.space.id);return true;
+  case 'evdel':await api('DELETE','/spaces/'+S.spc.space.id+'/events/'+v);await loadSpace(S.spc.space.id);return true;
+  case 'cnew':
+   if(!on()){S.sub='auth';S.tab='profile';render();return true}
+   S.cform={kind:v,name:'',desc:'',cat:'',access:v==='group'?'public':'open',rules:'',mem:'',cover:''};S.sub='cform';S.tab='home';render();return true;
+  case 'cacc':S.cform.access=v;render(true);return true;
+  case 'csave':
+   var f=S.cform;if(f.name.trim().length<3){toast('Dê um nome com pelo menos 3 letras');return true}
+   var body={kind:f.kind,name:f.name.trim(),description:f.desc,rules:f.rules,access:f.access,category:f.cat,members:f.mem.split(',').map(function(x){return x.trim()}).filter(Boolean)};
+   if(f.cover)body.cover=f.cover;
+   var cr=await api('POST','/spaces',body);toast(f.kind==='group'?'Grupo criado':'Comunidade criada');S.cform=null;S.ctab=f.kind==='group'?'groups':'comms';
+   S.sub='space';S.spc=null;S.sptab='feed';render();await loadSpace(cr.id);return true;
+  case 'convopen':
+   var cp=v.split(':'),cv=S.rconv.filter(function(c){return c.type===cp[0]&&String(c.id)===cp[1]})[0];
+   openRoom(cp[0],+cp[1],cv?cv.name:'Conversa');return true;
+  case 'chatopen':
+   if(on()&&t.dataset.id){openRoom('direct',+t.dataset.id,v);return true}
+   S.room={type:'direct',id:0,name:v};S.sub='chat';S.tab='home';S.detail=null;render();return true;
+  case 'invgame':
+   var nm=(S.rfriends.filter(function(x){return String(x.id)===v})[0]||{}).name||(S.room&&S.room.name)||'Amigo';
+   if(!all().length){toast('Ainda não há jogos publicados para convidar');return true}
+   if(!(S.sub==='chat'&&S.room&&String(S.room.id)===v))openRoom('direct',+v,nm);
+   S.gpick='invite';render(true);return true;
+  case 'pickgame':S.gpick=S.gpick?false:true;render(true);return true;
+  case 'setgame':
+   if(S.gpick==='invite'){await api('POST','/friends/'+S.room.id+'/invite-game',{gameId:+v.slice(1)});S.gpick=false;toast('Convite enviado');openRoom('direct',S.room.id,S.room.name);return true}
+   S.pgame=v;S.gpick=false;render(true);return true;
+  case 'rmimg':S.pimg='';render(true);return true;
+  case 'rmgame':S.pgame='';render(true);return true;
+  case 'addfriend':
+   if(!on())return false;
+   var fn=g('fName');if(!fn){toast('Digite o nome ou o #ID do jogador');return true}
+   await api('POST','/friends/request',{name:fn});S.rfriends=(await api('GET','/friends')).friends;toast('Pedido enviado');render(true);return true;
+ }
+ return false;
+}
+function socLoad(){
+ if(!on())return;
+ var t=S.ctab;
+ if(S.sub!=='community')return;
+ if(t==='feed')loadFeed();else if(t==='groups')loadSpaces('group');else if(t==='comms')loadSpaces('community');
+ else if(t==='msgs')loadConvs();else if(t==='friends')refreshFriends();
+ else if(t==='notif')api('GET','/notifications').then(function(r){S.rupd=r.notifications.map(mapNotif);var ch=false;socNotifs().forEach(function(x){if(S.seen.indexOf(x.id)<0){S.seen.push(x.id);ch=true}});if(ch)save('seen');render(true)}).catch(function(){});
+}
+document.addEventListener('change',function(e){
+ var t=e.target;
+ if(t.id==='cfIn'&&t.files[0]){setCformCover(t.files[0]);t.value=''}
+ if(t.id==='chImg'&&t.files[0]){var f=t.files[0];t.value='';socKeep();shrinkImg(f,900,900,[[1,.75],[.7,.65],[.5,.55]],250000,function(o){S.pimg=o;render(true)})}
+});
+document.addEventListener('keydown',function(e){
+ if(e.key!=='Enter')return;
+ if(e.target.id==='fName'){e.preventDefault();act('addfriend')}
+ if(e.target.id==='spq'){e.preventDefault();act('spsearch')}
+ if(e.target.id==='invIn'){e.preventDefault();act('spinvgo')}
+ if(e.target.id==='cmIn'){e.preventDefault();var b=document.querySelector('[data-a=cmsend]');if(b)act('cmsend',b.dataset.v,b)}
+});
+
 function keepForms(){
  var g=function(i){return document.getElementById(i)},s=S.studio;
  if(g('sTitle'))s.title=g('sTitle').value;if(g('sCode'))s.code=g('sCode').value;if(g('sDesc'))s.desc=g('sDesc').value;
  if(g('sVer'))s.ver=g('sVer').value;if(g('sTag'))s.tagIn=g('sTag').value;
  if(g('sCat'))s.cat=g('sCat').value;if(g('sAge'))s.age=g('sAge').value;
- if(g('rvText'))S.draft.rev=g('rvText').value;if(g('postText'))S.draft.post=g('postText').value;if(g('postGame'))S.draft.pg=g('postGame').value;
-}
-async function sendMsg(){
- var i=document.getElementById('chatIn'),t=i&&i.value.trim();if(!t)return;
- if(on()){
-  try{var r=await api('POST','/messages',{to:S.chatId,text:t});(S.rmsgs[S.chatId]=S.rmsgs[S.chatId]||[]).push(r.message)}catch(e){toast(e.message);return}
- }else{(S.chats[S.chat]=S.chats[S.chat]||[]).push({me:1,t:t});save('chats')}
- render(true);var n=document.getElementById('chatIn');if(n)n.focus();view.scrollTop=view.scrollHeight;
+ socKeep();if(g('rvText'))S.draft.rev=g('rvText').value;if(g('postText'))S.draft.post=g('postText').value;if(g('postGame'))S.draft.pg=g('postGame').value;
 }
 async function publish(){
  keepForms();var s=S.studio;var did=s.draftId;
@@ -1279,6 +1665,7 @@ async function authGo(){
 }
 async function act(a,v,t){
  var g;
+ if(socHandles(a,v)){await socAct(a,v,t);return}
  if(!on()&&!admLocal()&&({gfeat:1,gnotif:1,catadd:1,catrm:1,gdel:1,modok:1,modrm:1,usertg:1,admedit:1,admpub:1,admadd:1})[a]){toast('Desbloqueie o modo administrador em Configurações');return}
  switch(a){
   case 'go':S.tab=v;S.sub=null;S.detail=null;render();break;
@@ -1468,7 +1855,7 @@ async function act(a,v,t){
   case 'rmfriend':S.friends=S.friends.filter(function(f){return f.n!==v});save('friends');render(true);break;
   case 'chatopen':
    S.chat=v;S.chatId=t.dataset.id?+t.dataset.id:null;S.sub='chat';S.tab='profile';S.detail=null;render();
-   if(on()&&S.chatId)loadMsgs(S.chatId);break;
+   break;
   case 'send':await sendMsg();break;
   case 'modok':case 'modrm':var mm=S.mod.filter(function(m){return String(m.id)===v})[0];logLocal(a==='modok'?'Denúncia mantida':'Conteúdo removido',mm?mm.t:'');S.mod=S.mod.filter(function(m){return String(m.id)!==v});save('mod');toast(a==='modok'?'Denúncia arquivada':'Conteúdo removido');render(true);break;
   case 'usertg':var u=S.users[+v];u.st=u.st==='Suspenso'?'Ativo':'Suspenso';logLocal(u.st==='Suspenso'?'Usuário suspenso':'Usuário reativado',u.n);save('users');render(true);break;
@@ -1534,7 +1921,7 @@ document.addEventListener('dragleave',function(ev){var z=ev.target.closest&&ev.t
 document.addEventListener('drop',function(ev){
  var z=ev.target.closest&&ev.target.closest('.cvu,.dz');if(!z)return;
  ev.preventDefault();z.classList.remove('over');var f=ev.dataTransfer&&ev.dataTransfer.files[0];if(!f)return;
- if(z.classList.contains('cvu'))setCover(f);else importFile(f);
+ if(z.classList.contains('cvu'))(document.getElementById('cfIn')?setCformCover(f):setCover(f));else importFile(f);
 });
 /* editor: números de linha e Tab */
 document.addEventListener('input',function(ev){if(ev.target.id==='sCode')edSync();if(ev.target.id==='sDesc'){var c=document.getElementById('dcnt');if(c)c.textContent=ev.target.value.length+'/200'}});
