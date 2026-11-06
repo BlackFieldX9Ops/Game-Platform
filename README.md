@@ -17,6 +17,16 @@ Se a release ainda não existir, abra **Actions > Gerar APK > Run workflow** e e
 
 Este é um APK de teste (debug). Para publicar na Google Play, veja `app/LEIA-ME.md`.
 
+### Tela cheia e rotação
+
+No app Android, abra **Perfil > Configurações > Tela**:
+
+- **Tela cheia automática** (ligada por padrão) esconde a barra de status e a de navegação e usa também a área do recorte da câmera. Deslize a partir da borda para ver as barras por um instante.
+- **Orientação:** *Automática* gira junto com o aparelho (mesmo com o bloqueio de rotação do Android ligado), *Vertical* e *Horizontal* travam a tela.
+- Na posição horizontal, a barra de navegação passa para a lateral e as listas ganham mais colunas.
+
+O código nativo dessa parte está em `app/native/MainActivity.java` e entra no APK pelo fluxo **Gerar APK**.
+
 ## 2. Colocar o servidor no ar
 
 Sem servidor o app funciona offline. Com servidor, você tem contas, Loja compartilhada, amigos e chat.

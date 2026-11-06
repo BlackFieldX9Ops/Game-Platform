@@ -46,6 +46,9 @@ jobs:
       - name: Criar o projeto Android
         run: npx cap add android
 
+      - name: Aplicar o código nativo (tela cheia e rotação)
+        run: cp native/MainActivity.java android/app/src/main/java/com/gameplatform/app/MainActivity.java
+
       - name: Gerar ícones e tela de abertura
         run: npx capacitor-assets generate --android --iconBackgroundColor '#0a0d1c' --splashBackgroundColor '#0a0d1c'
 

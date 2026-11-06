@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
-<style>html{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);background:#0a0d1c}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>html{padding:max(env(safe-area-inset-top,0px),var(--sat,0px)) max(env(safe-area-inset-right,0px),var(--sar,0px)) max(env(safe-area-inset-bottom,0px),var(--sab,0px)) max(env(safe-area-inset-left,0px),var(--sal,0px));background:#0a0d1c}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Game Platform</title>
 <style>
 /* Layout: app de uma tela, cabeçalho fixo, conteúdo rolável, barra de navegação inferior. Tema escuro único, como nos protótipos. */
@@ -148,6 +148,64 @@ textarea.in{font-family:var(--mono);font-size:12px;min-height:220px;resize:verti
 .ib{position:relative}
 .dot{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:99px;background:var(--accent2);color:#fff;font-style:normal;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;border:1.5px solid var(--bg)}
 select.in{appearance:none;-webkit-appearance:none}
+
+/* ---- compacto + paisagem ---- */
+body{font-size:13px}
+#app{max-width:none}
+header.top{padding-top:8px;padding-bottom:6px;gap:8px}
+.logo{font-size:14px}.logo svg{width:24px;height:24px}
+.search{padding:6px 10px;border-radius:10px}
+.ib{width:34px;height:34px;border-radius:9px}
+main{padding-bottom:16px}
+h1{font-size:19px;margin:2px 0 0}
+.sub{margin:0 0 10px;font-size:12px}
+h2{font-size:14px}
+.sec{margin:14px 0 8px}
+.hero{min-height:118px;padding:14px;gap:8px;border-radius:14px}
+.hero h1{font-size:21px}
+.hero p{font-size:12px}
+.btn{padding:8px 14px;border-radius:10px;font-size:13px}
+.btn.sm{padding:6px 10px;font-size:12px}
+.btn svg{width:16px;height:16px}
+.chip{padding:5px 11px;font-size:12px}
+.grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.card{border-radius:12px}
+.cover{aspect-ratio:16/9}
+.card .meta{padding:7px 9px 9px;gap:3px}
+.li{padding:8px;gap:10px;border-radius:12px}
+.li .cover{width:56px;aspect-ratio:1;border-radius:8px}
+.list{gap:8px}
+.panel{padding:11px;border-radius:12px}
+.stats b,.kpis .panel b{font-size:17px}
+.cats{grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:6px}
+.cat{padding:8px 2px;font-size:10px;gap:4px;border-radius:12px}
+.cat svg{width:20px;height:20px}
+.qk{gap:6px;margin-top:10px}.qk button{padding:8px 2px;font-size:10px;border-radius:12px}.qk svg{width:19px;height:19px}
+.mrow{padding:10px;border-radius:12px;font-size:13px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+label.f{margin:10px 0 4px;font-size:12px}
+.in{padding:8px 10px;border-radius:10px}
+textarea.in{min-height:160px}
+nav.bar{padding:3px 4px}
+nav.bar button{padding:4px 2px;font-size:10px;gap:2px}
+nav.bar button svg{width:20px;height:20px}
+nav.bar button[aria-current=page] span{padding:0 8px}
+.avatar{width:44px;height:44px;font-size:17px}
+.seg button{padding:6px;font-size:12px}
+#player{max-width:none;margin:0}
+#player .pb{padding-top:calc(5px + max(env(safe-area-inset-top,0px),var(--sat,0px)));padding-bottom:5px;padding-left:max(10px,env(safe-area-inset-left,0px),var(--sal,0px));padding-right:max(10px,env(safe-area-inset-right,0px),var(--sar,0px))}
+#player .ib{width:32px;height:32px}
+#toast{bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+@media (orientation:landscape) and (max-height:520px){
+  #app{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  header.top{grid-column:2;grid-row:1}
+  main{grid-column:2;grid-row:2}
+  nav.bar{grid-column:1;grid-row:1/3;display:flex;flex-direction:column;justify-content:center;gap:2px;width:74px;border-top:0;border-right:1px solid var(--line);padding:4px}
+  nav.bar button{padding:6px 2px}
+  #toast{bottom:12px}
+  .hero{min-height:96px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
 
@@ -157,7 +215,7 @@ select.in{appearance:none;-webkit-appearance:none}
   <header class="top">
     <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-3.9 3.2l-1.3 6A3 3 0 0 0 4.4 18c1 0 1.6-.5 2.1-1.2L8 15h8l1.5 1.8c.5.7 1.1 1.2 2.1 1.2a3 3 0 0 0 2.9-3.8l-1.3-6A4 4 0 0 0 17.3 5z"/></svg>GAME<b>PLATFORM</b></div>
     <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="q" type="search" placeholder="Buscar jogos ou categorias" aria-label="Buscar"></label>
-    <button class="ib" id="bell" data-a="sub" data-v="upd" aria-label="Atualizações"></button>
+    <button class="ib" id="bell" data-a="sub" data-v="upd" aria-label="Notificações"></button>
   </header>
   <main id="view"></main>
   <nav class="bar" id="nav" aria-label="Navegação principal"></nav>
@@ -287,7 +345,7 @@ function init(){return{tab:'home',sub:null,stab:'pub',dtab:'rev',stars:5,detail:
  draft:{rev:'',post:'',pg:''},
  server:ld('gp_server',metaServer()),token:ld('gp_token',''),user:ld('gp_user',null),
  rgames:[],rposts:[],rfriends:[],rupd:[],rvc:{},rmsgs:{},rstats:null,radmin:null,
- lib:ld('gp_lib',{d1:1}),mine:ld('gp_mine',[]),xp:ld('gp_xp',0),plays:ld('gp_plays',0),pc:ld('gp_pc',{}),wish:ld('gp_wish',{}),rev:ld('gp_rev',{}),posts:ld('gp_posts',[]),likes:ld('gp_likes',{}),friends:ld('gp_friends',D(DEF_FRIENDS)),chats:ld('gp_chats',{}),cfg:ld('gp_cfg',{sound:1,notif:1,saver:0,admin:0}),mod:ld('gp_mod',D(DEF_MOD)),users:ld('gp_users',D(DEF_USERS)),mon:ld('gp_mon',{ads:0,iap:0,pass:0}),name:ld('gp_name','Jogador'),upd:ld('gp_upd',D(DEF_UPD)),seen:ld('gp_seen',[]),
+ lib:ld('gp_lib',{d1:1}),mine:ld('gp_mine',[]),xp:ld('gp_xp',0),plays:ld('gp_plays',0),pc:ld('gp_pc',{}),wish:ld('gp_wish',{}),rev:ld('gp_rev',{}),posts:ld('gp_posts',[]),likes:ld('gp_likes',{}),friends:ld('gp_friends',D(DEF_FRIENDS)),chats:ld('gp_chats',{}),cfg:Object.assign({sound:1,notif:1,saver:0,admin:0,fs:1,ori:'auto'},ld('gp_cfg',{})),mod:ld('gp_mod',D(DEF_MOD)),users:ld('gp_users',D(DEF_USERS)),mon:ld('gp_mon',{ads:0,iap:0,pass:0}),name:ld('gp_name','Jogador'),upd:ld('gp_upd',D(DEF_UPD)),seen:ld('gp_seen',[]),
  studio:{title:'',dim:'2D',mode:'code',code:'',libs:{},desc:'',cat:'Ação',age:'Livre',editId:null}}}
 var S=init();
 function save(k){sv('gp_'+k,S[k])}
@@ -295,6 +353,17 @@ var $=function(s){return document.querySelector(s)};
 var view=$('#view');
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function toast(m){var t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(function(){t.hidden=true},2600)}
+
+/* ---------- tela cheia e orientação ---------- */
+function native(){return typeof window.GPNative!=='undefined'}
+function applyNative(){
+ if(native()){try{window.GPNative.setFullscreen(!!S.cfg.fs);window.GPNative.setOrientation(S.cfg.ori||'auto')}catch(e){}return}
+ try{
+  if(!S.cfg.fs&&document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen();
+  if(S.cfg.ori==='auto'&&screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();
+  else if(screen.orientation&&screen.orientation.lock&&document.fullscreenElement)screen.orientation.lock(S.cfg.ori).catch(function(){});
+ }catch(e){}
+}
 
 /* ---------- conta e servidor ---------- */
 function on(){return !!(S.token&&S.user)}
@@ -404,14 +473,11 @@ function updRow(u){return '<div class="li"><div class="avatar" style="width:38px
 
 /* ---------- telas ---------- */
 function home(){
- var l=level(),fr=friendsVM(false).filter(function(f){return f.st==='online'}).slice(0,3);
+ var l=level();
  return '<div class="hero"><canvas id="hc"></canvas><h1>Jogue. Crie. Compartilhe.</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="go" data-v="store">'+ic('play')+'Jogar agora</button><button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button></div></div>'
  +'<div class="qk">'+[['users','Comunidade','community'],['chat','Amigos','friends'],['trophy','Conquistas','ach'],['heart','Desejos','wish']].map(function(q){return '<button data-a="sub" data-v="'+q[2]+'">'+ic(q[0])+q[1]+'</button>'}).join('')+'</div>'
  +'<div class="sec"><h2>Categorias</h2></div><div class="cats">'+CATS.map(function(c){return '<button class="cat" data-a="cat" data-v="'+c[0]+'">'+ic(c[1])+c[0]+'</button>'}).join('')+'</div>'
  +'<div class="sec"><h2>Jogos em destaque</h2><button data-a="go" data-v="store">Ver todos</button></div><div class="grid">'+all().slice(0,4).map(card).join('')+'</div>'
- +'<div class="sec"><h2>Amigos online</h2><button data-a="sub" data-v="friends">Ver todos</button></div>'
- +(fr.length?'<div class="list">'+fr.map(friendRow).join('')+'</div>':'<div class="empty">Nenhum amigo online agora.</div>')
- +'<div class="sec"><h2>Atualizações</h2><button data-a="sub" data-v="upd">Ver todas</button></div><div class="list">'+(updList().slice(0,2).map(updRow).join('')||'<div class="empty">Sem novidades.</div>')+'</div>'
  +'<div class="sec"><h2>Seu progresso</h2></div><div class="panel"><div class="row"><b>Nível '+l.n+'</b><span class="note" style="margin:0">'+l.cur+' / '+l.max+' XP</span></div><div class="bar-xp" style="margin-top:8px"><i style="width:'+(l.cur/l.max*100)+'%"></i></div><p class="note">Cada partida rende 25 XP.</p></div>'
 }
 function store(){
@@ -502,7 +568,7 @@ function profile(){
  +'<div class="panel" style="margin-top:10px"><div class="row" style="justify-content:flex-start;gap:14px"><div class="avatar">'+esc((nm[0]||'J').toUpperCase())+'</div><div style="min-width:0"><b style="font-size:17px">'+esc(nm)+'</b><div><span class="badge">Nível '+l.n+'</span> '+(on()?'<span class="badge ok">Conta online</span>':'<span class="badge">Offline</span>')+'</div></div></div>'
  +'<div class="bar-xp" style="margin-top:14px"><i style="width:'+(l.cur/l.max*100)+'%"></i></div><div class="row" style="margin-top:6px"><span class="note" style="margin:0">'+l.cur+' / '+l.max+' XP</span><span class="note" style="margin:0">Próximo nível: '+(l.max-l.cur)+' XP</span></div>'
  +'<div class="stats"><div><b>'+libCount()+'</b><span>Na biblioteca</span></div><div><b>'+(on()?friendCount():S.plays)+'</b><span>'+(on()?'Amigos':'Partidas')+'</span></div><div><b>'+myGames().length+'</b><span>Publicados</span></div></div></div>'
- +'<div class="list" style="margin-top:14px">'+mrow('trophy','Conquistas','sub','ach',done+'/'+achList().length)+mrow('users','Amigos e mensagens','sub','friends',friendCount())+mrow('users','Comunidade','sub','community','')+mrow('heart','Lista de desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mrow('bell','Atualizações','sub','upd',unseen()||'')+(isAdm?mrow('shield','Administração','sub','admin',on()?'':S.mod.length):'')+mrow('cog','Configurações','sub','settings','')+'</div>'
+ +'<div class="list" style="margin-top:14px">'+mrow('trophy','Conquistas','sub','ach',done+'/'+achList().length)+mrow('users','Amigos e mensagens','sub','friends',friendCount())+mrow('users','Comunidade','sub','community','')+mrow('heart','Lista de desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mrow('bell','Notificações','sub','upd',unseen()||'')+(isAdm?mrow('shield','Administração','sub','admin',on()?'':S.mod.length):'')+mrow('cog','Configurações','sub','settings','')+'</div>'
 }
 function ach(){
  return subhead('Conquistas')+'<div class="list">'+achList().map(function(a){var p=Math.min(a[1],a[2]),ok=a[1]>=a[2];return '<div class="li"><div class="avatar" style="width:40px;height:40px;font-size:16px;'+(ok?'':'filter:grayscale(1);opacity:.5')+'">'+(ok?ic('check'):ic('trophy'))+'</div><div class="body"><div class="row"><b>'+a[0]+'</b><span class="badge'+(ok?' ok':'')+'">'+(ok?'Concluída':p+'/'+a[2])+'</span></div><div class="bar-xp" style="margin-top:6px"><i style="width:'+(p/a[2]*100)+'%"></i></div></div></div>'}).join('')+'</div>'
@@ -518,16 +584,21 @@ function community(){
  +'<div class="list" style="margin-top:12px">'+(posts.length?posts.map(function(p){var g=p.g&&find(p.g),lk=!!p.liked;return '<div class="li" style="align-items:flex-start"><div class="avatar" style="width:40px;height:40px;font-size:15px">'+esc(p.n[0].toUpperCase())+'</div><div class="body"><div class="row"><b>'+esc(p.n)+'</b>'+(p.ex?'<span class="note" style="margin:0">exemplo</span>':'')+'</div><div style="margin:4px 0">'+esc(p.t)+'</div>'+(g?'<button class="badge" data-a="open" data-v="'+g.id+'">'+esc(g.title)+'</button> ':'')+'<button class="badge" data-a="like" data-v="'+p.id+'" style="'+(lk?'color:#f472b6;border-color:#f472b6':'')+'" aria-pressed="'+lk+'">'+(lk?'Curtido':'Curtir')+(p.remote?' ('+p.likes+')':'')+'</button>'+(p.mine?' <button class="del" data-a="delpost" data-v="'+p.id+'">Excluir</button>':(p.remote?' <button class="del" data-a="report" data-v="post:'+p.rid+'">Denunciar</button>':''))+'</div></div>'}).join(''):'<div class="empty">Ninguém publicou ainda. Seja o primeiro.</div>')+'</div>'
 }
 function friends(){
- var list=friendsVM(true);
+ var list=friendsVM(true),req=list.filter(function(f){return f.pending}),ok=list.filter(function(f){return !f.pending}),
+  onl=ok.filter(function(f){return f.st==='online'}),off=ok.filter(function(f){return f.st!=='online'});
+ function grp(t,a){return a.length?'<div class="sec"><h2>'+t+' ('+a.length+')</h2></div><div class="list">'+a.map(friendRow).join('')+'</div>':''}
  return subhead('Amigos')+'<div class="row" style="gap:8px"><input class="in" id="fName" placeholder="Nome do jogador" maxlength="24" autocapitalize="off"><button class="btn sm" data-a="addfriend" style="flex:none">'+ic('plus')+'Adicionar</button></div>'
  +(on()?'<p class="note">Os pedidos chegam para o jogador aceitar. Só amigos conversam.</p>':'<p class="note">Modo offline: a lista fica neste aparelho. Entre na conta para adicionar jogadores de verdade e conversar com eles.</p>')
- +'<div class="list" style="margin-top:12px">'+(list.length?list.map(friendRow).join(''):'<div class="empty">Você ainda não tem amigos adicionados.</div>')+'</div>'
+ +grp('Pedidos',req)
+ +'<div class="sec"><h2>Online agora ('+onl.length+')</h2></div>'+(onl.length?'<div class="list">'+onl.map(friendRow).join('')+'</div>':'<div class="empty">Nenhum amigo online agora.</div>')
+ +grp('Offline',off)
+ +(list.length?'':'<div class="empty" style="margin-top:10px">Você ainda não tem amigos adicionados.</div>')
 }
 function chat(){
  var n=S.chat,m=on()?(S.rmsgs[S.chatId]||[]).map(function(x){return{me:x.from_id===S.user.id,t:x.text}}):(S.chats[n]||[]);
  return subhead(esc(n))+'<div class="chat">'+(m.length?m.map(function(x){return '<div class="bub'+(x.me?' me':'')+'">'+esc(x.t)+'</div>'}).join(''):'<div class="empty">Nenhuma mensagem ainda. Diga olá.</div>')+'</div><div class="row" style="gap:8px"><input class="in" id="chatIn" placeholder="Escreva uma mensagem" maxlength="300" autocomplete="off"><button class="btn sm" data-a="send" style="flex:none" aria-label="Enviar">'+ic('send')+'</button></div>'
 }
-function upd(){return subhead('Atualizações')+'<div class="list">'+(updList().map(updRow).join('')||'<div class="empty">Sem novidades.</div>')+'</div>'}
+function upd(){return subhead('Notificações')+'<div class="list">'+(updList().map(updRow).join('')||'<div class="empty">Nenhuma notificação.</div>')+'</div>'}
 function authView(){
  var reg=S.authTab==='reg';
  return subhead(reg?'Criar conta':'Entrar')
@@ -546,6 +617,7 @@ function settings(){
  +'<div class="row" style="margin-top:10px"><span class="note" style="margin:0"><span class="sd '+(S.srvOk?'on':'')+'"></span> '+(S.srvOk?'Servidor conectado':'Sem conexão')+'</span><button class="btn ghost sm" data-a="srvsave">Salvar e testar</button></div>'
  +(on()?'<div class="row" style="margin-top:14px"><span>Conectado como <b>'+esc(S.user.name)+'</b></span><button class="btn ghost sm" data-a="logout">Sair</button></div>':'<button class="btn sm" style="margin-top:14px" data-a="sub" data-v="auth">Entrar ou criar conta</button>')+'</div>'
  +(on()?'':'<label class="f" for="sName">Seu nome (modo offline)</label><input class="in" id="sName" value="'+esc(S.name)+'" maxlength="20">')
+ +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação</div><div class="seg">'+[['auto','Automática'],['portrait','Vertical'],['landscape','Horizontal']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">'+(native()?'Automática gira com o aparelho. Vertical e Horizontal travam a tela.':'Estas opções funcionam no aplicativo Android. No navegador dependem do suporte do aparelho.')+'</p></div>'
  +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (demonstração)','admin'))+'</div>'
  +'<dl class="panel kv" style="margin-top:12px"><dt>Tema</dt><dd>Escuro</dd><dt>Idioma</dt><dd>Português (Brasil)</dd><dt>Versão</dt><dd>1.1</dd></dl>'
  +'<div class="sec"><h2>Dados deste aparelho</h2></div>'
@@ -757,12 +829,13 @@ async function act(a,v,t){
    var okc=await probe();toast(okc?'Servidor conectado':'Não foi possível conectar. Confira o endereço.');render(true);
    if(okc&&on()){connectWs();refreshAll()}
    break;
+  case 'ori':S.cfg.ori=v;save('cfg');applyNative();render(true);break;
   case 'reset':S.confirmReset=true;render(true);break;
   case 'resetno':S.confirmReset=false;render(true);break;
   case 'resetyes':
    closeWs();
    try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('gp_')===0)localStorage.removeItem(k)})}catch(er){}
-   S=init();toast('Dados apagados');render();probe();break;
+   S=init();toast('Dados apagados');render();applyNative();probe();break;
  }
 }
 document.addEventListener('click',function(e){
@@ -774,7 +847,7 @@ document.addEventListener('change',function(e){
  if(t.id==='sFile'&&t.files[0]){var f=t.files[0];if(f.size>4e6){toast('Arquivo maior que 4 MB');return}var r=new FileReader();r.onload=function(){keepForms();S.studio.code=String(r.result);if(!S.studio.title)S.studio.title=f.name.replace(/\.[^.]+$/,'');render(true);toast('Arquivo carregado')};r.readAsText(f)}
  if(t.dataset.lib){S.studio.libs[t.dataset.lib]=t.checked}
  if(t.dataset.mon){S.mon[t.dataset.mon]=t.checked?1:0;save('mon');render(true)}
- if(t.dataset.cfg){S.cfg[t.dataset.cfg]=t.checked?1:0;save('cfg');if(t.dataset.cfg==='admin')render(true)}
+ if(t.dataset.cfg){S.cfg[t.dataset.cfg]=t.checked?1:0;save('cfg');if(t.dataset.cfg==='admin')render(true);if(t.dataset.cfg==='fs')applyNative()}
  if(t.id==='sName'){S.name=t.value.trim()||'Jogador';save('name')}
 });
 document.addEventListener('keydown',function(e){
@@ -784,6 +857,13 @@ document.addEventListener('keydown',function(e){
 });
 $('#q').addEventListener('input',function(e){S.q=e.target.value;S.tab='store';S.sub=null;S.detail=null;render(true)});
 render();
+applyNative();
+var fsTry=0;
+document.addEventListener('pointerdown',function(){
+ if(native()||!S.cfg.fs||fsTry>2||document.fullscreenElement||!document.documentElement.requestFullscreen||!matchMedia('(pointer:coarse)').matches)return;
+ fsTry++;
+ document.documentElement.requestFullscreen({navigationUI:'hide'}).then(function(){applyNative()}).catch(function(){});
+},{passive:true});
 setInterval(function(){if(on()&&!document.hidden)refreshFriends()},20000);
 (async function start(){
  await probe();
