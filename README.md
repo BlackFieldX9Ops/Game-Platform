@@ -37,6 +37,12 @@ O código nativo dessa parte está em `app/native/MainActivity.java` e entra no 
 
 No **Studio > Enviar arquivo** você pode mandar um único `.html` ou um `.zip` com o jogo inteiro (HTML, JavaScript, CSS, imagens, sons, fontes, modelos 3D, JSON). O app junta tudo em uma só página: scripts e CSS entram direto, e os demais arquivos ficam embutidos e são achados pelo caminho original (`assets/hero.png`, `data/level.json`) por `fetch`, `XMLHttpRequest`, `Image`, `Audio` e `<script>`. Limites: ZIP de até 15 MB, jogo final de uns 18 MB. Offline o limite é 2,5 MB. Scripts `type="module"` que importam arquivos locais (`import './x.js'`) não são suportados; gere um pacote único (Vite, esbuild, Rollup) antes.
 
+### Studio e administração
+
+- **Capa do jogo:** no Studio, arraste uma imagem (ou toque) para a área de capa. O app recorta em 16:9 e reduz para uns 100 KB; ela aparece na Loja, na Início e na Biblioteca.
+- **Rascunhos:** o botão *Rascunho* guarda o jogo no aparelho (até 10, 2,5 MB cada) para continuar depois.
+- **Administração** (Perfil > Administração, só para contas admin): resumo com números, fila de moderação, usuários (suspender e reativar), notificação global, **destaques da loja** (até 8 jogos aparecem primeiro), **categorias** (adicionar e remover) e **logs de atividade** (últimas 60 ações). Em modo offline o painel funciona com dados de demonstração.
+
 ## 2. Colocar o servidor no ar
 
 Sem servidor o app funciona offline. Com servidor, você tem contas, Loja compartilhada, amigos e chat.

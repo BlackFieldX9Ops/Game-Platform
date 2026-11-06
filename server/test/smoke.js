@@ -107,6 +107,7 @@ async function main() {
   ok('admin: visão geral', ov.j.users === 3 && ov.j.openReports === 1);
   const reps = await call('GET', '/admin/reports', null, ADM);
   ok('admin: lista denúncias', reps.j.reports.length === 1);
+  ok('admin: denúncia traz o nome do conteúdo', typeof reps.j.reports[0].target_title === 'string' && reps.j.reports[0].target_title.length > 0);
   ok('admin: remove o conteúdo denunciado', (await call('POST', `/admin/reports/${reps.j.reports[0].id}/resolve`, { action: 'remove' }, ADM)).s === 200);
   ok('jogo removido some da Loja', (await call('GET', '/games')).j.games.length === 0 && (await call('GET', `/games/${gid}`)).s === 404);
 
@@ -114,6 +115,33 @@ async function main() {
   ok('usuário suspenso perde o acesso', (await call('GET', '/me', null, B)).s === 401 && (await call('POST', '/auth/login', { email: 'beto@teste.com', password: 'senha12345' })).s === 403);
   await call('POST', '/admin/notify', { title: 'Manutenção', body: 'Hoje às 3h' }, ADM);
   ok('notificação global chega a todos', (await call('GET', '/notifications', null, A)).j.notifications.some(n => n.title === 'Manutenção'));
+  // --- capa, destaques, categorias e logs
+  const PIX = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==';
+  const base = { title: 'Com Capa', description: 'x', category: 'Ação', age: 'Livre', dim: '2D', libs: [], code: '<canvas></canvas>' };
+  const bad1 = await call('POST', '/games', { ...base, cover: 'http://x/y.png' }, A);
+  ok('capa inválida é recusada', bad1.s === 400);
+  const g1 = await call('POST', '/games', { ...base, cover: PIX }, A);
+  ok('jogo com capa é publicado', g1.s === 201);
+  const lst = await call('GET', '/games?q=Com%20Capa');
+  ok('lista devolve a capa', lst.j.games[0] && lst.j.games[0].cover === PIX && lst.j.games[0].featured === false);
+  await call('PUT', '/games/' + g1.j.id, { ...base, title: 'Com Capa 2' }, A);
+  ok('editar sem enviar capa mantém a capa', (await call('GET', '/games/' + g1.j.id)).j.game.cover === PIX);
+  await call('PUT', '/games/' + g1.j.id, { ...base, title: 'Com Capa 2', cover: null }, A);
+  ok('enviar capa nula remove a capa', (await call('GET', '/games/' + g1.j.id)).j.game.cover === null);
+  ok('destaque: usuário comum é bloqueado', (await call('POST', `/admin/games/${g1.j.id}/feature`, { featured: true }, A)).s === 403);
+  ok('destaque: admin destaca', (await call('POST', `/admin/games/${g1.j.id}/feature`, { featured: true }, ADM)).s === 200);
+  const top = await call('GET', '/games');
+  ok('destacado vem primeiro na Loja', top.j.games[0].id === g1.j.id && top.j.games[0].featured === true);
+  ok('admin lista jogos com o destaque', (await call('GET', '/admin/games', null, ADM)).j.games.some(g => g.id === g1.j.id && g.featured));
+  ok('categorias públicas têm o padrão', (await call('GET', '/categories')).j.categories.includes('Terror'));
+  ok('categorias: usuário comum é bloqueado', (await call('PUT', '/admin/categories', { categories: ['A1', 'B2'] }, A)).s === 403);
+  ok('categorias: repetidas recusadas', (await call('PUT', '/admin/categories', { categories: ['Ação', 'ação'] }, ADM)).s === 400);
+  ok('categorias: admin altera a lista', (await call('PUT', '/admin/categories', { categories: ['Ação', 'Corrida', 'Esportes'] }, ADM)).s === 200);
+  ok('categoria nova vale na publicação', (await call('POST', '/games', { ...base, title: 'Futebol', category: 'Esportes' }, A)).s === 201);
+  ok('categoria removida não vale mais', (await call('POST', '/games', { ...base, title: 'Susto', category: 'Terror' }, A)).s === 400);
+  const logs = await call('GET', '/admin/logs', null, ADM);
+  ok('logs registram as ações do admin', logs.s === 200 && ['Jogo destacado', 'Categorias alteradas', 'Usuário suspenso', 'Notificação global'].every(a => logs.j.logs.some(l => l.action === a)));
+  ok('logs: usuário comum é bloqueado', (await call('GET', '/admin/logs', null, A)).s === 403);
   ok('JSON inválido devolve 400', (await fetch(BASE + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{x' })).status === 400);
 }
 

@@ -52,7 +52,7 @@ async function main() {
 
   // Ana publica um jogo
   A.click('[data-a="go"][data-v="studio"]'); A.click('[data-a="stab"][data-v="pub"]');
-  A.set('sTitle', 'Meu Jogo'); A.set('sDesc', 'Um jogo de teste'); A.click('[data-a="tpl"]'); A.set('sTitle', 'Meu Jogo');
+  A.set('sTitle', 'Meu Jogo'); A.set('sDesc', 'Um jogo de teste'); A.click('[data-a="smode"][data-v="code"]'); A.click('[data-a="tpl"]'); A.set('sTitle', 'Meu Jogo');
   A.click('[data-a="spub"]');
   ok('jogo publicado na Loja do servidor', await until(() => /Meu Jogo/.test(A.text()) && /Publicado na Loja|Meu Jogo/.test(A.text())), A.toast());
   const direct = await (await fetch(URL_ + 'api/games')).json();
@@ -107,6 +107,20 @@ async function main() {
   await until(() => /Conta online/.test(AD.text()));
   ok('menu de administração aparece para admin', !!AD.$('[data-a="sub"][data-v="admin"]'));
   AD.click('[data-a="sub"][data-v="admin"]');
+  ok('painel de administração mostra os números', await until(() => /Usuários/.test(AD.text()) && /Denúncias pendentes/.test(AD.text())));
+  // destaques, categorias e logs
+  AD.click('[data-a="atab"][data-v="loja"]');
+  ok('aba Loja lista o jogo para destacar', await until(() => /Meu Jogo/.test(AD.text()) && AD.$('[data-a="gfeat"]')));
+  AD.click('[data-a="gfeat"]');
+  ok('admin destaca o jogo pelo app', await until(() => /1\/8/.test(AD.text())));
+  const feat = await (await fetch(URL_ + 'api/games')).json();
+  ok('o servidor marca o jogo como destaque', feat.games[0].featured === true);
+  AD.set('newCat', 'Esportes'); AD.click('[data-a="catadd"]');
+  await wait(600);
+  ok('admin adiciona categoria pelo app', (await (await fetch(URL_ + 'api/categories')).json()).categories.includes('Esportes'));
+  AD.click('[data-a="atab"][data-v="logs"]');
+  ok('logs mostram as ações feitas', await until(() => /Jogo destacado/.test(AD.text()) && /Categorias alteradas/.test(AD.text())));
+  AD.click('[data-a="atab"][data-v="mod"]');
   ok('fila de moderação mostra a denúncia', await until(() => /Motivo: Conteúdo impróprio/.test(AD.text())));
   [...AD.d.querySelectorAll('[data-a="repres"]')].find(e => /remove/.test(e.dataset.v)).click();
   await wait(700);
@@ -117,6 +131,29 @@ async function main() {
   // Sair e voltar ao modo offline
   A.click('[data-a="go"][data-v="profile"]'); A.click('[data-a="sub"][data-v="settings"]'); A.click('[data-a="logout"]');
   ok('sair volta ao modo offline', await until(() => /Entrar ou criar conta/.test(A.text())));
+  // Studio offline: rascunho, chips de bibliotecas, publicar; administração de demonstração
+  A.click('[data-a="go"][data-v="studio"]');
+  ok('Studio mostra o aviso de modo offline', await until(() => /Modo offline/.test(A.text())));
+  A.set('sTitle', 'Rascunho Um');
+  A.click('[data-a="smode"][data-v="code"]'); A.click('[data-a="tpl"]');
+  A.click('[data-a="lib"][data-v="phaser"]');
+  ok('chip de biblioteca fica marcado', await until(() => A.$('[data-a="lib"][data-v="phaser"]').getAttribute('aria-pressed') === 'true'));
+  ok('editor mostra números de linha', /^1\n2\n3/.test(A.d.getElementById('gut').textContent));
+  A.click('[data-a="draftsave"]');
+  ok('rascunho é guardado e listado', await until(() => /Rascunhos/.test(A.text()) && /Rascunho Um/.test(A.text())));
+  A.click('[data-a="spub"]');
+  ok('publicar offline adiciona o jogo e remove o rascunho', await until(() => /Meus jogos publicados/.test(A.text()) && /Rascunho Um/.test(A.text()) && !/Continuar/.test(A.text())), A.toast());
+  A.click('[data-a="go"][data-v="profile"]'); A.click('[data-a="sub"][data-v="settings"]');
+  await until(() => A.$('input[data-cfg="admin"]'));
+  const sw = A.$('input[data-cfg="admin"]'); sw.checked = true; sw.dispatchEvent(new A.w.Event('change', { bubbles: true }));
+  A.click('[data-a="back"]'); A.click('[data-a="sub"][data-v="admin"]');
+  ok('administração de demonstração abre com as abas', await until(() => /Dados de demonstração/.test(A.text()) && A.$('[data-a="atab"][data-v="logs"]')));
+  A.click('[data-a="atab"][data-v="loja"]'); await until(() => A.$('[data-a="gfeat"]'));
+  A.click('[data-a="gfeat"]');
+  A.click('[data-a="atab"][data-v="logs"]');
+  ok('demo: destacar gera log local', await until(() => /Jogo destacado/.test(A.text())));
+  A.click('[data-a="go"][data-v="home"]');
+  ok('demo: jogo destacado aparece com a marca na Início', await until(() => /Destaque/.test(A.text())));
   ok('nenhum erro de script', [A, B, AD].every(x => x.errs.length === 0), JSON.stringify([A.errs, B.errs, AD.errs]));
 }
 try { await main(); } catch (e) { fail++; console.error('ERRO', e); }
