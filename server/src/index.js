@@ -63,7 +63,7 @@ function softAuth(req, _res, next) {
   req.user = h.startsWith('Bearer ') ? userFromToken(h.slice(7)) || undefined : undefined; next();
 }
 const adminOnly = (req, _res, next) => req.user.role === 'admin' ? next() : next(new HttpError(403, 'Acesso restrito a administradores'));
-const notify = (userId, title, body = '') => run('INSERT INTO notifications (user_id, title, body) VALUES (?,?,?)', userId, title, body);
+const notify = (userId, title, body = '', ref = '') => run('INSERT INTO notifications (user_id, title, body, kind, ref) VALUES (?,?,?,?,?)', userId, title, body, ref ? 'game' : 'sys', ref);
 
 const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.description, g.category, g.age, g.dim, g.libs, g.plays, g.created_at, g.updated_at, g.owner_id, g.status, g.ai, g.tags, g.version, g.visibility, g.settings,
   u.name AS developer,
@@ -201,7 +201,7 @@ app.post('/api/games', auth, wrap((req, res) => {
   const r = run('INSERT INTO games (owner_id, title, description, category, age, dim, libs, code, cover, orientation, tags, version, visibility, settings, ai) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', req.user.id, d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.cover ?? null, d.orientation, d.tags, d.version, d.visibility, d.settings, d.ai);
   logAct(req, 'Jogo publicado', d.title);
   run('INSERT OR IGNORE INTO library (user_id, game_id) VALUES (?,?)', req.user.id, r.lastInsertRowid);
-  notify(req.user.id, 'Jogo publicado', `${d.title} já está na Loja.`);
+  notify(req.user.id, 'Jogo publicado', `${d.title} já está na Loja.`, 'game:' + r.lastInsertRowid);
   res.status(201).json({ id: Number(r.lastInsertRowid) });
 }));
 app.put('/api/games/:id', auth, wrap((req, res) => {
@@ -209,7 +209,7 @@ app.put('/api/games/:id', auth, wrap((req, res) => {
   if (!canEdit(g, req.user)) bad('Você só pode editar seus jogos', 403);
   const d = gameInput(req.body);
   run("UPDATE games SET title=?, description=?, category=?, age=?, dim=?, libs=?, code=?, orientation=?, tags=?, version=?, visibility=?, settings=?, ai=?, cover=CASE WHEN ? THEN ? ELSE cover END, updated_at=datetime('now') WHERE id=?", d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.orientation, d.tags, d.version, d.visibility, d.settings, d.ai, d.cover === undefined ? 0 : 1, d.cover ?? null, g.id);
-  if (g.owner_id !== req.user.id) { logAct(req, 'Jogo editado pelo admin', g.title); notify(g.owner_id, 'Seu jogo foi atualizado', `${d.title} foi editado pela administração.`); }
+  if (g.owner_id !== req.user.id) { logAct(req, 'Jogo editado pelo admin', g.title); notify(g.owner_id, 'Seu jogo foi atualizado', `${d.title} foi editado pela administração.`, 'game:' + g.id); }
   res.json({ ok: true });
 }));
 app.post('/api/games/:id/status', auth, wrap((req, res) => {
@@ -219,7 +219,7 @@ app.post('/api/games/:id/status', auth, wrap((req, res) => {
   if (!['published', 'unpublished'].includes(status)) bad('Estado inválido');
   run("UPDATE games SET status = ?, updated_at = datetime('now') WHERE id = ?", status, g.id);
   if (status === 'unpublished') run('UPDATE games SET featured = 0 WHERE id = ?', g.id);
-  if (g.owner_id !== req.user.id) { logAct(req, status === 'published' ? 'Jogo republicado pelo admin' : 'Jogo despublicado pelo admin', g.title); notify(g.owner_id, status === 'published' ? 'Jogo republicado' : 'Jogo despublicado', g.title); }
+  if (g.owner_id !== req.user.id) { logAct(req, status === 'published' ? 'Jogo republicado pelo admin' : 'Jogo despublicado pelo admin', g.title); notify(g.owner_id, status === 'published' ? 'Jogo republicado' : 'Jogo despublicado', g.title, 'game:' + g.id); }
   res.json({ ok: true });
 }));
 // Todos os jogos do próprio usuário, em qualquer estado.
@@ -251,7 +251,7 @@ app.post('/api/games/:id/reviews', auth, wrap((req, res) => {
   const stars = Number(req.body.stars); if (!Number.isInteger(stars) || stars < 1 || stars > 5) bad('A nota deve ir de 1 a 5');
   const text = typeof req.body.text === 'string' ? req.body.text.trim().slice(0, 300) : '';
   run('INSERT INTO reviews (game_id, user_id, stars, text) VALUES (?,?,?,?) ON CONFLICT(game_id, user_id) DO UPDATE SET stars=excluded.stars, text=excluded.text', g.id, req.user.id, stars, text);
-  if (g.owner_id !== req.user.id) notify(g.owner_id, 'Nova avaliação', `${req.user.name} avaliou ${g.title} com ${stars} estrelas.`);
+  if (g.owner_id !== req.user.id) notify(g.owner_id, 'Nova avaliação', `${req.user.name} avaliou ${g.title} com ${stars} estrelas.`, 'game:' + g.id);
   res.status(201).json({ ok: true });
 }));
 

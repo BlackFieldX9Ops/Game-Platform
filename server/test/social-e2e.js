@@ -140,6 +140,17 @@ async function main() {
   ok('conversa direta com não lida na lista', await until(() => /Oi Beto/.test(B.text()) && B.d.querySelector('.dot2')), B.text().slice(0, 200));
   B.click('[data-a="convopen"][data-v^="direct"]');
   ok('abrir a DM mostra a mensagem', await until(() => /Oi Beto/.test(B.text())));
+  // notificação de jogo publicado leva ao jogo
+  const gg = await api('POST', '/games', { title: 'Meu Labirinto', category: 'Ação', dim: '2D', code: '<h1>x</h1>' }, ra.token);
+  A.click('[data-a="go"][data-v="home"]'); A.w.document.dispatchEvent(new A.w.Event('visibilitychange'));
+  A.click('[data-a="go"][data-v="store"]'); A.click('[data-a="go"][data-v="home"]');
+  await wait(300); A.click('#bell');
+  await until(() => A.$('[data-a="sub"][data-v="upd"]'), 500);
+  A.click('[data-a="sub"][data-v="upd"]');
+  await until(() => /Meu Labirinto/.test(A.text()), 3000) || (A.w.document.getElementById('bell').click(), await wait(1200));
+  ok('notificação de jogo publicado é clicável', await until(() => A.d.querySelector('button.li[data-a="open"]'), 4000), A.text().slice(0, 200));
+  A.click('button.li[data-a="open"]');
+  ok('toque na notificação abre o jogo', await until(() => /Meu Labirinto/.test(A.text()) && A.$('[data-a="back"]')));
   ok('nenhum erro de script', [A, B].every(x => x.errs.length === 0), JSON.stringify([A.errs, B.errs]));
 }
 try { await main(); } catch (e) { fail++; console.error('ERRO', e); }

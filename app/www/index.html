@@ -648,7 +648,7 @@ async function checkUpdate(manual){
   if(!a||!nb)throw new Error('release sem versão');
   S.upv={st:nb>cb?'new':'ok',build:nb,url:a.browser_download_url};
   try{localStorage.setItem('gp_updchk',String(Date.now()))}catch(e){}
-  if(nb>cb&&!manual&&ld('gp_updnote',0)<nb){sv('gp_updnote',nb);pushUpd('Atualização disponível','Há uma versão nova do app (build '+nb+'). Abra Configurações para atualizar.')}
+  if(nb>cb&&!manual&&ld('gp_updnote',0)<nb){sv('gp_updnote',nb);pushUpd('Atualização disponível','Há uma versão nova do app (build '+nb+'). Abra Configurações para atualizar.','settings')}
   if(manual)toast(nb>cb?'Há uma versão nova':'Você já está na última versão');
  }catch(e){S.upv={st:'err'};if(manual)toast('Não consegui verificar agora. Confira a internet.')}
  render(true);
@@ -790,7 +790,7 @@ function find(id){return allRaw().filter(function(g){return g.id===id})[0]}
 function updList(){return on()?S.rupd:S.upd}
 function reviewsOf(id){var g=find(id);if(g&&g.remote)return S.rvc[id]||[];return (SEED_REV[id]||[]).concat(S.rev[id]||[])}
 function avg(id){var g=find(id);if(g&&g.remote)return g.rating?Number(g.rating).toFixed(1):null;var r=reviewsOf(id);if(!r.length)return null;return (r.reduce(function(a,b){return a+b.s},0)/r.length).toFixed(1)}
-function pushUpd(t,d){S.upd.unshift({id:'n'+Date.now(),t:t,d:d,a:'agora'});save('upd')}
+function pushUpd(t,d,ref){S.upd.unshift({id:'n'+Date.now(),t:t,d:d,a:'agora',k:ref?'game':'sys',ref:ref||''});save('upd')}
 function libCount(){return Object.keys(S.lib).filter(function(i){return S.lib[i]&&find(i)}).length}
 function myReviews(){return Object.keys(S.rev).reduce(function(a,k){return a+S.rev[k].length},0)}
 function friendCount(){return on()?S.rfriends.filter(function(f){return f.status==='accepted'}).length:S.friends.length}
@@ -817,7 +817,17 @@ function subhead(t){return '<div class="row" style="margin:4px 0 12px;justify-co
 function mrow(i,l,a,v,b){return '<button class="mrow" data-a="'+a+'"'+(v?' data-v="'+v+'"':'')+'>'+ic(i)+'<span>'+l+'</span>'+(b!==undefined&&b!==''?'<em>'+b+'</em>':'')+ic('chev','chv')+'</button>'}
 function starRow(n){var s='';for(var i=1;i<=5;i++)s+='<svg viewBox="0 0 24 24" width="13" height="13" fill="'+(i<=n?'#fbbf24':'none')+'" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px">'+P.star+'</svg>';return s}
 function sw(label,key){return '<label class="tg"><span>'+label+'</span><input type="checkbox" data-cfg="'+key+'"'+(S.cfg[key]?' checked':'')+'></label>'}
-function updRow(u){return '<div class="li"><div class="avatar" style="width:38px;height:38px;font-size:14px">'+ic('bell')+'</div><div class="body"><b>'+esc(u.t)+'</b><div class="note" style="margin:2px 0 0">'+esc(u.d)+'</div></div><span class="note" style="margin:0">'+u.a+'</span></div>'}
+function notifTarget(n){
+ var r=n.ref||'',id;
+ if(/^game:/.test(r)){id=on()?'r'+r.slice(5):r.slice(5);return find(id)?{a:'open',v:id}:null}
+ if(r==='settings'||/Atualização disponível/.test(n.t||''))return {a:'sub',v:'settings'};
+ var g=allRaw().filter(function(x){return n.d&&n.d.indexOf(x.title)===0&&/^(Jogo|Seu jogo|Nova avaliação)/.test(n.t||'')})[0];
+ return g?{a:'open',v:g.id}:null;
+}
+function updRow(u){
+ var t=notifTarget(u),inner='<div class="avatar" style="width:38px;height:38px;font-size:14px">'+ic('bell')+'</div><div class="body"><b>'+esc(u.t)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(u.d)+'</div></div><span class="note" style="margin:0">'+u.a+'</span>'+(t?ic('chev','chv'):'');
+ return t?'<button class="li" style="width:100%;text-align:left;color:var(--fg)" data-a="'+t.a+'" data-v="'+esc(t.v)+'">'+inner+'</button>':'<div class="li">'+inner+'</div>';
+}
 
 /* ---------- telas ---------- */
 function home(){
@@ -1018,7 +1028,7 @@ function wish(){
  var ids=Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)});
  return subhead('Lista de desejos')+(ids.length?'<div class="grid">'+ids.map(function(i){return card(find(i))}).join('')+'</div>':'<div class="empty">Toque no coração de um jogo para guardá-lo aqui.</div>')
 }
-function upd(){return subhead('Notificações')+'<div class="list">'+(updList().map(function(u){return u.k&&u.k!=='sys'?notifRow(u):updRow(u)}).join('')||'<div class="empty">Nenhuma notificação.</div>')+'</div>'}
+function upd(){return subhead('Notificações')+'<div class="list">'+(updList().map(function(u){return u.k&&u.k!=='sys'&&u.k!=='game'?notifRow(u):updRow(u)}).join('')||'<div class="empty">Nenhuma notificação.</div>')+'</div>'}
 function authView(){
  var reg=S.authTab==='reg';
  return subhead(reg?'Criar conta':'Entrar')
@@ -1153,7 +1163,7 @@ P.cal='<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3
 function SOC0(){return{ctab:'feed',cf:'foryou',rsp:{group:[],community:[]},rconv:[],cun:0,spc:null,sptab:'feed',rcm:{},ocm:null,cform:null,room:null,rooms:{},pimg:'',pgame:'',fres:null,sq:'',fol:{}}}
 var SOCTABS=[['feed','Comunidade','users'],['groups','Grupos','users'],['comms','Comunidades','star'],['msgs','Mensagens','chat'],['friends','Amigos','user'],['notif','Avisos','bell']];
 function needAcc(t){return '<div class="empty">Para usar '+t+', é preciso ter uma conta.<br>Entre ou crie a sua para conversar com jogadores de verdade.<div style="margin-top:12px"><button class="btn sm" data-a="sub" data-v="auth">Entrar ou criar conta</button></div></div>'}
-function socNotifs(){return S.rupd.filter(function(n){return n.k&&n.k!=='sys'})}
+function socNotifs(){return S.rupd.filter(function(n){return n.k&&n.k!=='sys'&&n.k!=='game'})}
 function socUnseen(){return socNotifs().filter(function(n){return S.seen.indexOf(n.id)<0}).length}
 function who(n,url,cls){return avatarEl(url,n,cls)}
 function tabsBar(){
@@ -1588,7 +1598,7 @@ async function publish(){
  }else{
   var g=Object.assign({id:'u'+Date.now(),dl:'0',color:PAL[S.mine.length%4],dev:S.name,desc:s.desc||'Jogo publicado no Game Studio.',status:'published',created:nowSql()},fields);
   S.mine.unshift(g);S.lib[g.id]=1;save('mine');save('lib');
-  pushUpd('Jogo publicado',g.title+' foi publicado.');toast('Publicado e adicionado à sua biblioteca');
+  pushUpd('Jogo publicado',g.title+' foi publicado.','game:'+g.id);toast('Publicado e adicionado à sua biblioteca');
  }
  if(did){S.drafts=S.drafts.filter(function(d){return d.id!==did});save('drafts')}
  S.studio=newStudio();
@@ -1673,7 +1683,7 @@ async function act(a,v,t){
    if(v==='admin'&&on()&&S.user.role==='admin')loadAdmin();
    if(v==='friends'&&on())refreshFriends();
    if(v==='community'&&on())api('GET','/posts').then(function(r){S.rposts=r.posts;if(S.sub==='community')render(true)}).catch(function(){});
-   if(v==='upd'&&on())api('GET','/notifications').then(function(r){S.rupd=r.notifications.map(mapNotif);if(S.sub==='upd')render(true)}).catch(function(){});
+   if(v==='upd'&&on())refreshAll();
    if(v==='auth')probe().then(function(){if(S.sub==='auth')render(true)});
    break;
   case 'open':S.detail=v;S.dtab='rev';S.draft.rev='';render();loadReviews(v);break;
