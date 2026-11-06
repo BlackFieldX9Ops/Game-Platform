@@ -206,6 +206,34 @@ nav.bar button[aria-current=page] span{padding:0 8px}
   .hero{min-height:96px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 }
+
+/* ---- ainda mais compacto + jogo em tela cheia ---- */
+header.top{padding-top:5px;padding-bottom:4px}
+.logo{font-size:13px}.logo svg{width:22px;height:22px}
+.search{padding:5px 9px}
+.ib{width:30px;height:30px}.ib svg{width:16px;height:16px}
+.sec{margin:10px 0 6px}
+.grid{gap:8px}
+.grid.sm{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+.grid.sm .card .meta{padding:5px 7px 7px}
+.grid.sm .t{font-size:12px}.grid.sm .g{font-size:10px}
+.grid.sm .cover{aspect-ratio:3/2}.grid.sm .cover svg{width:34%;height:34%}
+.cats{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:5px}
+.cat{padding:6px 2px;font-size:9.5px}.cat svg{width:18px;height:18px}
+.li{padding:6px 8px}
+.li .cover{width:46px;border-radius:7px}.li .cover svg{width:55%;height:55%}.li .tag{display:none}
+.list{gap:6px}
+.hero{min-height:104px;padding:12px}
+.tag{font-size:10px;padding:0 6px;top:6px;right:6px}
+.prog{display:flex;align-items:center;gap:10px;padding:8px 11px;margin-top:10px}
+.prog .bar-xp{flex:1}.prog .note{margin:0;white-space:nowrap}
+#player{position:fixed;inset:0;background:#000}
+#player iframe{position:absolute;inset:0;width:100%;height:100%}
+#player .pb{position:absolute;top:0;left:0;right:0;z-index:3;transform:translateY(-110%);transition:transform .18s}
+#player.bar .pb{transform:none}
+#pHandle{position:absolute;z-index:4;top:calc(6px + max(env(safe-area-inset-top,0px),var(--sat,0px)));left:calc(6px + max(env(safe-area-inset-left,0px),var(--sal,0px)));width:32px;height:32px;border-radius:50%;background:#0a0d1c99;border:1px solid #ffffff33;display:grid;place-items:center;opacity:.4}
+#pHandle svg{width:16px;height:16px;fill:currentColor}
+#player.bar #pHandle{opacity:0;pointer-events:none}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
 
@@ -222,6 +250,7 @@ nav.bar button[aria-current=page] span{padding:0 8px}
 </div>
 <div id="player" hidden>
   <div class="pb"><button class="ib" id="pClose" aria-label="Fechar jogo"></button><strong id="pTitle"></strong><button class="ib" id="pReload" aria-label="Reiniciar jogo"></button></div>
+  <button class="ib" id="pHandle" aria-label="Menu do jogo"></button>
   <iframe id="frame" title="Jogo" sandbox="allow-scripts allow-pointer-lock" allow=""></iframe>
 </div>
 <div id="toast" hidden></div>
@@ -325,7 +354,8 @@ Object.assign(P,{
  send:'<path d="m22 2-11 11M22 2l-7 20-4-9-9-4z"/>',
  edit:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
  coin:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5C9.5 8 14.5 8 14.5 10s-5 2-5 4 5 2 5 .5"/>',
- chev:'<path d="m9 6 6 6-6 6"/>'
+ chev:'<path d="m9 6 6 6-6 6"/>',
+ more:'<circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>'
 });
 var DEF_FRIENDS=[{n:'LunaPixel',st:'online',g:'Jogando Túnel Neon'},{n:'DarkNinja_7',st:'online',g:'Na comunidade'},{n:'Mito_Gamer',st:'offline',g:'Visto há 2 h'}];
 var DEF_MOD=[{id:1,t:'Relato em "Chuva de Blocos"',m:'Abuso verbal',a:'15 min'},{id:2,t:'Postagem em fórum',m:'Conteúdo inadequado',a:'32 min'},{id:3,t:'Perfil de jogador',m:'Nome ofensivo',a:'2 h'}];
@@ -475,10 +505,9 @@ function updRow(u){return '<div class="li"><div class="avatar" style="width:38px
 function home(){
  var l=level();
  return '<div class="hero"><canvas id="hc"></canvas><h1>Jogue. Crie. Compartilhe.</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="go" data-v="store">'+ic('play')+'Jogar agora</button><button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button></div></div>'
- +'<div class="qk">'+[['users','Comunidade','community'],['chat','Amigos','friends'],['trophy','Conquistas','ach'],['heart','Desejos','wish']].map(function(q){return '<button data-a="sub" data-v="'+q[2]+'">'+ic(q[0])+q[1]+'</button>'}).join('')+'</div>'
  +'<div class="sec"><h2>Categorias</h2></div><div class="cats">'+CATS.map(function(c){return '<button class="cat" data-a="cat" data-v="'+c[0]+'">'+ic(c[1])+c[0]+'</button>'}).join('')+'</div>'
- +'<div class="sec"><h2>Jogos em destaque</h2><button data-a="go" data-v="store">Ver todos</button></div><div class="grid">'+all().slice(0,4).map(card).join('')+'</div>'
- +'<div class="sec"><h2>Seu progresso</h2></div><div class="panel"><div class="row"><b>Nível '+l.n+'</b><span class="note" style="margin:0">'+l.cur+' / '+l.max+' XP</span></div><div class="bar-xp" style="margin-top:8px"><i style="width:'+(l.cur/l.max*100)+'%"></i></div><p class="note">Cada partida rende 25 XP.</p></div>'
+ +'<div class="sec"><h2>Jogos em destaque</h2><button data-a="go" data-v="store">Ver todos</button></div><div class="grid sm">'+all().slice(0,6).map(card).join('')+'</div>'
+ +'<div class="panel prog"><b>Nível '+l.n+'</b><div class="bar-xp"><i style="width:'+(l.cur/l.max*100)+'%"></i></div><span class="note">'+l.cur+' / '+l.max+' XP</span></div>'
 }
 function store(){
  var cats=['Todos'].concat(CATS.map(function(c){return c[0]}));
@@ -671,14 +700,22 @@ function wrap(code,libs){
  return /<head[^>]*>/i.test(code)?code.replace(/<head[^>]*>/i,function(m){return m+tags}):tags+code;
 }
 function openGame(g){
- cur=g;$('#pTitle').textContent=g.title;$('#player').hidden=false;
+ cur=g;$('#pTitle').textContent=g.title;$('#player').hidden=false;gameFs();showBar(true);
  $('#frame').srcdoc=wrap(g.code,g.libs);
  if(g.id){S.pc[g.id]=(S.pc[g.id]||0)+1;sv('gp_pc',S.pc);S.plays++;S.xp+=25;sv('gp_plays',S.plays);sv('gp_xp',S.xp)}
 }
-function closeGame(){$('#player').hidden=true;$('#frame').srcdoc='';cur=null;render(true)}
+function closeGame(){$('#player').hidden=true;$('#player').classList.remove('bar');$('#frame').srcdoc='';cur=null;applyNative();render(true)}
+var barT=0;
+function showBar(on){var p=$('#player');p.classList.toggle('bar',on);clearTimeout(barT);if(on)barT=setTimeout(function(){p.classList.remove('bar')},3000)}
+function gameFs(){
+ if(native()){try{window.GPNative.setFullscreen(true)}catch(e){}return}
+ try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(function(){})}catch(e){}
+}
+$('#pHandle').innerHTML=ic('more');
+$('#pHandle').onclick=function(){showBar(!$('#player').classList.contains('bar'))};
 $('#pClose').innerHTML=ic('back');$('#pReload').innerHTML=ic('reload');
 $('#pClose').onclick=closeGame;
-$('#pReload').onclick=function(){if(cur)$('#frame').srcdoc=wrap(cur.code,cur.libs)};
+$('#pReload').onclick=function(){if(cur){$('#frame').srcdoc=wrap(cur.code,cur.libs);showBar(false)}};
 
 /* ---------- eventos ---------- */
 function keepForms(){

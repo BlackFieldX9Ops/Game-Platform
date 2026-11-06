@@ -5,7 +5,7 @@
   "description": "Game Platform: plataforma mobile para jogos 2D e 3D em HTML",
   "scripts": {
     "android:add": "cap add android",
-    "android:assets": "capacitor-assets generate --android --iconBackgroundColor \u0027#0a0d1c\u0027 --splashBackgroundColor \u0027#0a0d1c\u0027",
+    "android:assets": "capacitor-assets generate --android --iconBackgroundColor \u0027#0a1133\u0027 --splashBackgroundColor \u0027#0a1133\u0027",
     "android:sync": "cap sync android",
     "android:open": "cap open android"
   },

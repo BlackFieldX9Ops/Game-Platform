@@ -50,7 +50,7 @@ jobs:
         run: cp native/MainActivity.java android/app/src/main/java/com/gameplatform/app/MainActivity.java
 
       - name: Gerar ícones e tela de abertura
-        run: npx capacitor-assets generate --android --iconBackgroundColor '#0a0d1c' --splashBackgroundColor '#0a0d1c'
+        run: npx capacitor-assets generate --android --iconBackgroundColor '#0a1133' --splashBackgroundColor '#0a1133'
 
       - name: Copiar o app para o Android
         run: npx cap sync android
