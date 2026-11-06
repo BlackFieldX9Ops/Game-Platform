@@ -73,7 +73,6 @@ jobs:
               }
           }
           GRADLE
-          GRADLE
           sed -i -E "s/versionCode [0-9]+/versionCode $BUILD/; s/versionName \"[^\"]*\"/versionName \"1.2.$BUILD\"/" android/app/build.gradle
           grep -n "versionCode\|versionName" android/app/build.gradle
 
