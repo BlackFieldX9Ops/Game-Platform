@@ -529,7 +529,7 @@ function init(){return{tab:'home',sub:null,stab:'pub',dtab:'rev',stars:5,detail:
  draft:{rev:'',post:'',pg:''},
  server:ld('gp_server',metaServer()),token:ld('gp_token',''),user:ld('gp_user',null),
  rgames:[],rposts:[],rfriends:[],rupd:[],rvc:{},rmsgs:{},rstats:null,radmin:null,
- lib:ld('gp_lib',{d1:1}),mine:ld('gp_mine',[]),xp:ld('gp_xp',0),plays:ld('gp_plays',0),pc:ld('gp_pc',{}),wish:ld('gp_wish',{}),rev:ld('gp_rev',{}),posts:ld('gp_posts',[]),likes:ld('gp_likes',{}),friends:ld('gp_friends',D(DEF_FRIENDS)),chats:ld('gp_chats',{}),cfg:Object.assign({sound:1,notif:1,saver:0,admin:0,fs:1,ori:'auto',autoupd:1},ld('gp_cfg',{})),mod:ld('gp_mod',D(DEF_MOD)),users:ld('gp_users',D(DEF_USERS)),mon:ld('gp_mon',{ads:0,iap:0,pass:0}),name:ld('gp_name','Jogador'),avatar:ld('gp_avatar',''),bio:ld('gp_bio',''),pf:null,gdel:null,ud:null,upd:ld('gp_upd',D(DEF_UPD)),seen:ld('gp_seen',[]),
+ lib:ld('gp_lib',{d1:1}),mine:ld('gp_mine',[]),xp:ld('gp_xp',0),plays:ld('gp_plays',0),pc:ld('gp_pc',{}),wish:ld('gp_wish',{}),rev:ld('gp_rev',{}),posts:ld('gp_posts',[]),likes:ld('gp_likes',{}),friends:ld('gp_friends',D(DEF_FRIENDS)),chats:ld('gp_chats',{}),cfg:Object.assign({sound:1,notif:1,saver:0,admin:0,fs:1,ori:'auto',autoupd:1},ld('gp_cfg',{}),{admin:0}),admOk:false,admForm:null,mod:ld('gp_mod',D(DEF_MOD)),users:ld('gp_users',D(DEF_USERS)),mon:ld('gp_mon',{ads:0,iap:0,pass:0}),name:ld('gp_name','Jogador'),avatar:ld('gp_avatar',''),bio:ld('gp_bio',''),pf:null,gdel:null,ud:null,upd:ld('gp_upd',D(DEF_UPD)),seen:ld('gp_seen',[]),
  studio:null,feat:ld('gp_feat',{}),cats:ld('gp_cats',null),logs:ld('gp_logs',[]),drafts:ld('gp_drafts',[]),srvCats:null,atab:'resumo'}}
 var S=init();
 function save(k){sv('gp_'+k,S[k])}
@@ -540,6 +540,45 @@ function toast(m){var t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(
 
 /* ---------- tela cheia e orientação ---------- */
 function native(){return typeof window.GPNative!=='undefined'}
+/* ---------- administrador local (temporário, até existir servidor) ---------- */
+function sha256(ascii){
+ var mp=Math.pow,mw=mp(2,32),i,j,res='',words=[],al=ascii.length*8,r=function(n,x){return(x>>>n)|(x<<(32-n))};
+ var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,isC={};
+ for(var c=2;pc<64;c++){if(!isC[c]){for(i=0;i<313;i+=c)isC[i]=c;hash[pc]=(mp(c,.5)*mw)|0;k[pc++]=(mp(c,1/3)*mw)|0}}
+ ascii+='\x80';while(ascii.length%64-56)ascii+='\x00';
+ for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);words[i>>2]|=j<<((3-i)%4)*8}
+ words[words.length]=((al/mw)|0);words[words.length]=al;
+ for(j=0;j<words.length;){var w=words.slice(j,j+=16),old=hash;hash=hash.slice(0,8);
+  for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];
+   var t1=hash[7]+(r(6,e)^r(11,e)^r(25,e))+((e&hash[5])^(~e&hash[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(r(7,w15)^r(18,w15)^(w15>>>3))+w[i-7]+(r(17,w2)^r(19,w2)^(w2>>>10))|0));
+   var t2=(r(2,a)^r(13,a)^r(22,a))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+   hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0}
+  for(i=0;i<8;i++)hash[i]=(hash[i]+old[i])|0}
+ for(i=0;i<8;i++)for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;res+=((b<16)?0:'')+b.toString(16)}
+ return res}
+function admHash(salt,code){return sha256(unescape(encodeURIComponent(salt+'|'+code)))}
+function admRec(){return ld('gp_admcode',null)}
+function admCheck(code){var r=admRec();return !!r&&admHash(r.s,code)===r.h}
+function admSet(code){var s=String(Date.now())+Math.random().toString(36).slice(2);sv('gp_admcode',{s:s,h:admHash(s,code)})}
+function admLocal(){return !on()&&!!S.cfg.admin&&!!S.admOk}
+function admLockLeft(){var l=ld('gp_admlock',null);return l&&l.until>Date.now()?Math.ceil((l.until-Date.now())/1000):0}
+function admFail(){var l=ld('gp_admlock',{n:0,until:0});l.n=(l.n||0)+1;if(l.n>=5){l.until=Date.now()+60000;l.n=0}sv('gp_admlock',l);return l.until>Date.now()}
+function admBox(){
+ if(on())return '';
+ var f=S.admForm,has=!!admRec(),h='<div class="panel adm" style="margin-top:14px"><div class="row" style="margin-bottom:2px"><div class="f" style="margin:0;font-weight:700">Administrador local</div>'+(admLocal()?'<span class="badge ok">Ativo</span>':'<span class="badge">Bloqueado</span>')+'</div>';
+ if(f==='create'||f==='enter'||f==='change'){
+  h+='<p class="note" style="margin:6px 0 10px">'+(f==='create'?'Crie um código para proteger o modo administrador neste aparelho. Guarde com cuidado.':f==='change'?'Digite o código atual e escolha um novo.':'Digite o código para virar administrador.')+'</p>'
+   +(f==='change'?'<input class="in" id="admOld" type="password" placeholder="Código atual" autocomplete="off" style="margin-bottom:8px">':'')
+   +'<input class="in" id="admCode" type="password" placeholder="'+(f==='enter'?'Código do administrador':'Novo código (mínimo 6 caracteres)')+'" autocomplete="off">'
+   +(f==='create'?'<input class="in" id="admCode2" type="password" placeholder="Repita o código" autocomplete="off" style="margin-top:8px">':'')
+   +'<div class="dev" style="margin-top:10px"><button class="btn sm" data-a="admgo">'+(f==='enter'?'Ativar':'Salvar e ativar')+'</button><button class="btn ghost sm" data-a="admx">Cancelar</button></div>';
+ }else if(admLocal()){
+  h+='<p class="note" style="margin:6px 0 10px">Você está como administrador deste aparelho. Ao fechar o app, ele bloqueia de novo.</p><div class="dev"><button class="btn ghost sm" data-a="admchg">Trocar código</button><button class="btn danger sm" data-a="admlock">Bloquear agora</button></div>';
+ }else{
+  h+='<p class="note" style="margin:6px 0 0">'+(has?'Ligue a chave acima e digite o código para ativar.':'Ligue a chave acima para criar o seu código de administrador.')+'</p>';
+ }
+ return h+'<p class="note" style="margin:10px 0 0">Temporário: vale só neste aparelho, até configurarmos o servidor. Com o servidor, o administrador passa a vir da conta e esta opção deixa de valer.</p></div>';
+}
 /* ---------- atualização do app ---------- */
 function metaC(n){var m=document.querySelector('meta[name='+n+']');return m&&m.content?m.content.trim():''}
 function repo(){return metaC('gp-repo')||'BlackFieldX9Ops/Game-Platform'}
@@ -842,7 +881,7 @@ function creator(){
 }
 function achList(){return [['Primeira partida',S.plays,1],['Dez partidas',S.plays,10],['Cinquenta partidas',S.plays,50],['Colecionador (5 jogos)',libCount(),5],['Criador',myGames().length,1],['Estúdio ativo (3 jogos)',myGames().length,3],['Crítico',myReviews(),1],['Comunicativo',postCount(),1],['Sociável (5 amigos)',friendCount(),5],['Nível 5',level().n,5]]}
 function profile(){
- var l=level(),nm=myName(),isAdm=on()?S.user.role==='admin':!!S.cfg.admin,al=achList(),done=al.filter(function(a){return a[1]>=a[2]}).length,bio=myBio();
+ var l=level(),nm=myName(),isAdm=on()?S.user.role==='admin':admLocal(),al=achList(),done=al.filter(function(a){return a[1]>=a[2]}).length,bio=myBio();
  var icons=['play','play','play','lib','studio','studio','chat','chat','users','star'];
  var leg=al.map(function(a,i){return{ok:a[1]>=a[2],n:a[0].replace(/ \(.*\)/,''),i:icons[i]||'star'}}).sort(function(x,y){return (y.ok?1:0)-(x.ok?1:0)}).slice(0,6);
  return '<h1>Perfil</h1>'
@@ -911,7 +950,7 @@ function settings(){
  +'<div class="row" style="margin-top:10px"><span class="note" style="margin:0"><span class="sd '+(S.srvOk?'on':'')+'"></span> '+(S.srvOk?'Servidor conectado':'Sem conexão')+'</span><button class="btn ghost sm" data-a="srvsave">Salvar e testar</button></div>'
  +(on()?'<div class="row" style="margin-top:14px"><span>Conectado como <b>'+esc(S.user.name)+'</b></span><button class="btn ghost sm" data-a="logout">Sair</button></div>':'<button class="btn sm" style="margin-top:14px" data-a="sub" data-v="auth">Entrar ou criar conta</button>')+'</div>'
  +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação nos jogos</div><div class="seg">'+[['auto','O jogo decide'],['portrait','Sempre em pé'],['landscape','Sempre deitado']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">Fora dos jogos o app fica sempre em pé. Ao abrir um jogo, ele gira sozinho para a posição que o jogo pede (retrato ou paisagem). '+(native()?'Recursos do Android ativos.':'Neste navegador a rotação depende do aparelho.')+'</p></div>'
- +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (demonstração)','admin'))+'</div>'
+ +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (local)','admin'))+'</div>'+admBox()
  +updBanner()+updPanel()
  +'<dl class="panel kv" style="margin-top:12px"><dt>Tema</dt><dd>Escuro</dd><dt>Idioma</dt><dd>Português (Brasil)</dd><dt>Versão</dt><dd>1.2'+(curBuild()?' (build '+curBuild()+')':'')+'</dd></dl>'
  +'<div class="sec"><h2>Dados deste aparelho</h2></div>'
@@ -938,10 +977,10 @@ function admin(){
  if(on()){
   if(S.user.role!=='admin')return head+'<div class="empty">Esta área é restrita a administradores.</div>';
   if(!S.radmin)return head+'<div class="empty">Carregando…</div>';
- }else if(!S.cfg.admin)return head+'<div class="empty">Ative o modo administrador em Configurações para abrir este painel.</div>';
+ }else if(!admLocal())return head+'<div class="empty">Ative e desbloqueie o modo administrador em Configurações para abrir este painel.</div>';
  var v=admVM(),tab=S.atab||'resumo',n=v.reports.length;
  var tabs=[['resumo','Resumo','grid'],['mod','Moderação','shield'],['users','Usuários','users'],['loja','Loja','store'],['logs','Logs','clock']];
- var h=head+(v.demo?'<div class="warnbar">'+ic('alert')+'<div><b>Dados de demonstração</b>Salvos neste aparelho. Entre com uma conta de administrador para moderar de verdade.</div></div>':'')
+ var h=head+(v.demo?'<div class="warnbar">'+ic('alert')+'<div><b>Administrador local (temporário)</b>Os dados ficam só neste aparelho. Quando o servidor estiver configurado, o administrador vem da conta.</div></div>':'')
   +'<div class="tabs">'+tabs.map(function(t){return '<button data-a="atab" data-v="'+t[0]+'" aria-pressed="'+(tab===t[0])+'">'+ic(t[2])+t[1]+(t[0]==='mod'&&n?'<em>'+n+'</em>':'')+'</button>'}).join('')+'</div>';
  if(tab==='resumo'){
   h+='<div class="kpis">'
@@ -1010,7 +1049,7 @@ function oriDetect(code){
  var m=/orientation["']?\s*[:=]\s*["']?(landscape|portrait)|\block\(\s*["']?(landscape|portrait)|screen-orientation["']?\s+content=["'](landscape|portrait)|data-orientation=["'](landscape|portrait)/i.exec(String(code||'').slice(0,400000));
  return m?(m[1]||m[2]||m[3]||m[4]).toLowerCase():'';
 }
-window.GPT={oriDetect:oriDetect};
+window.GPT={oriDetect:oriDetect,sha256:sha256};
 function oriFor(g){
  var o=S.cfg.ori;if(o==='portrait'||o==='landscape')return o;
  if(g.ori==='portrait'||g.ori==='landscape')return g.ori;
@@ -1157,6 +1196,7 @@ async function authGo(){
 }
 async function act(a,v,t){
  var g;
+ if(!on()&&!admLocal()&&({gfeat:1,gnotif:1,catadd:1,catrm:1,gdel:1,modok:1,modrm:1,usertg:1})[a]){toast('Desbloqueie o modo administrador em Configurações');return}
  switch(a){
   case 'go':S.tab=v;S.sub=null;S.detail=null;render();break;
   case 'sub':if(v==='editprof')S.pf=pfInit();S.sub=v;S.tab=SUBTAB[v]||S.tab;S.detail=null;if(v==='settings')S.confirmReset=false;render();
@@ -1210,6 +1250,25 @@ async function act(a,v,t){
    if(on()){try{await api('DELETE','/games/'+v)}catch(er){toast(er.message);return}toast('Jogo excluído');await refreshAll();await loadAdmin();break}
    g=find(v);S.mine=S.mine.filter(function(x){return x.id!==v});delete S.lib[v];save('mine');save('lib');logLocal('Jogo excluído',g?g.title:v);toast('Jogo excluído');render(true);break;
   case 'gdelx':S.gdel=null;render(true);break;
+  case 'admx':S.admForm=null;render(true);break;
+  case 'admchg':S.admForm='change';render(true);break;
+  case 'admlock':S.admOk=false;S.cfg.admin=0;S.admForm=null;save('cfg');if(S.sub==='admin')S.sub=null;toast('Modo administrador bloqueado');render();break;
+  case 'admgo':
+   var q=function(i){var x=document.getElementById(i);return x?x.value:''},mode=S.admForm,c1=q('admCode');
+   if(!mode)break;
+   if(mode!=='create'){var lk=admLockLeft();if(lk){toast('Muitas tentativas. Espere '+lk+' s.');return}}
+   if(mode==='enter'){
+    if(!admCheck(c1)){toast(admFail()?'Muitas tentativas. Espere 1 minuto.':'Código incorreto');return}
+   }else{
+    if(mode==='change'&&!admCheck(q('admOld'))){toast(admFail()?'Muitas tentativas. Espere 1 minuto.':'Código atual incorreto');return}
+    if(c1.length<6){toast('Use pelo menos 6 caracteres');return}
+    if(mode==='create'&&c1!==q('admCode2')){toast('Os dois códigos não são iguais');return}
+    admSet(c1);
+   }
+   try{sv('gp_admlock',{n:0,until:0})}catch(er){}
+   S.admOk=true;S.cfg.admin=1;S.admForm=null;save('cfg');
+   logLocal(mode==='enter'?'Administrador local ativado':mode==='create'?'Código de administrador criado':'Código de administrador trocado','');
+   toast(mode==='enter'?'Você é administrador neste aparelho':'Código salvo. Administrador ativo');render(true);break;
   case 'chkupd':checkUpdate(true);break;
   case 'doupd':if(S.ud&&S.ud.st==='err')S.ud=null;startInstall(false);break;
   case 'allowinst':if(canAuto()&&window.GPNative.openInstallSettings)window.GPNative.openInstallSettings();break;
@@ -1326,7 +1385,11 @@ document.addEventListener('change',function(e){
  if(t.id==='pfIn'&&t.files[0]){setAvatar(t.files[0]);t.value=''}
  if(t.dataset.lib){S.studio.libs[t.dataset.lib]=t.checked}
  if(t.dataset.mon){S.mon[t.dataset.mon]=t.checked?1:0;save('mon');render(true)}
- if(t.dataset.cfg){S.cfg[t.dataset.cfg]=t.checked?1:0;save('cfg');if(t.dataset.cfg==='admin')render(true);if(t.dataset.cfg==='fs')applyNative()}
+ if(t.dataset.cfg==='admin'){
+  if(t.checked&&!S.admOk){S.cfg.admin=0;S.admForm=admRec()?'enter':'create'}
+  else{S.cfg.admin=t.checked?1:0;if(!t.checked){S.admOk=false;S.admForm=null}}
+  save('cfg');render(true);return}
+ if(t.dataset.cfg){S.cfg[t.dataset.cfg]=t.checked?1:0;save('cfg');if(t.dataset.cfg==='fs')applyNative()}
  if(t.id==='sName'){S.name=t.value.trim()||'Jogador';save('name')}
 });
 document.addEventListener('keydown',function(e){

@@ -111,3 +111,13 @@ Senhas com bcrypt, limite de tentativas no login, contas suspensas perdem o aces
 - **Depois disso:** no Android 12 ou mais novo a atualização costuma entrar sem nenhuma pergunta. Em versões mais antigas, o Android mostra uma tela de confirmação.
 - Não atualiza no meio de uma partida. Ao terminar a instalação o Android fecha o app; é só abrir de novo. Seus dados e jogos ficam.
 - A abertura mostra o logotipo, o nome e uma barra de carregamento por pelo menos 3 segundos.
+
+## Administrador local (temporário)
+
+Enquanto não há servidor, **Perfil > Configurações > Modo administrador (local)** exige um código:
+
+- Na primeira vez você cria o código (mínimo 6 caracteres). Ele fica guardado só como hash SHA-256 com sal, nunca em texto puro.
+- Depois, ligar a chave pede o código. Certo, o menu *Administração* aparece e as ações (moderar, suspender, destacar, categorias, excluir jogos) funcionam. Errado 5 vezes, espera 1 minuto.
+- Ao fechar o app ele bloqueia de novo. Dá para bloquear na hora ou trocar o código.
+- Esqueceu o código? *Apagar dados deste aparelho* remove o código e os dados locais.
+- **Limite honesto:** como tudo roda no aparelho, quem controla o próprio celular pode contornar essa trava. Serve para uso temporário e demonstração. Quando o servidor entrar, o papel de administrador vem da conta (já funciona assim com conta online) e esta opção deixa de valer.
