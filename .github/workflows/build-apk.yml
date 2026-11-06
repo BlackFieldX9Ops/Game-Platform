@@ -60,6 +60,19 @@ jobs:
         run: |
           mkdir -p ~/.android
           cp keystore/debug.keystore ~/.android/debug.keystore
+          cat >> android/app/build.gradle <<'GRADLE'
+
+android {
+    signingConfigs {
+        debug {
+            storeFile file('../../keystore/debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+}
+GRADLE
           sed -i -E "s/versionCode [0-9]+/versionCode $BUILD/; s/versionName \"[^\"]*\"/versionName \"1.2.$BUILD\"/" android/app/build.gradle
           grep -n "versionCode\|versionName" android/app/build.gradle
 
@@ -74,6 +87,14 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
+
+      - name: Conferir que a assinatura é a chave fixa
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          WANT=$(keytool -list -v -keystore keystore/debug.keystore -storepass android 2>/dev/null | grep -m1 'SHA256:' | sed 's/.*SHA256: *//')
+          GOT=$(keytool -printcert -jarfile "$APK" 2>/dev/null | grep -m1 'SHA256:' | sed 's/.*SHA256: *//')
+          echo "esperada: $WANT"; echo "do APK:   $GOT"
+          [ -n "$WANT" ] && [ "$WANT" = "$GOT" ] || { echo "A assinatura do APK não é a da chave fixa"; exit 1; }
 
       - name: Guardar o APK na execução
         uses: actions/upload-artifact@v4
