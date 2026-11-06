@@ -461,11 +461,45 @@ button.card:active{transform:scale(.985);border-color:var(--accent)}
 .chat{max-height:none}
 
 /* ---------- deslizar para apagar aviso ---------- */
-.swp{position:relative;border-radius:16px;overflow:hidden;background:#7f1d1d;min-width:0}
+.swp{position:relative;border-radius:16px;overflow:hidden;min-width:0}
+.swp.pull{background:#7f1d1d}
+.li .body>b.wr{white-space:normal}
 .swp::after{content:"Apagar";position:absolute;right:18px;top:50%;transform:translateY(-50%);font-weight:800;font-size:13px;color:#fecaca;opacity:0}
 .swp.pull::after{opacity:1}
 .swc{touch-action:pan-y;will-change:transform;background:var(--bg)}
 .swc .li{margin:0}
+
+/* ---------- jogo: menu compacto e cadeado ---------- */
+#player .pexit{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px 0 8px;border-radius:12px;background:#0a0d1ccc;border:1px solid #ffffff33;font-weight:800;font-size:13px;color:#fff}
+#player .pexit svg{width:16px;height:16px}
+#pLock{background:#0a0d1ccc;border:1px solid #ffffff33;border-radius:12px;color:#fff}
+#pLock svg{width:17px;height:17px}
+#pLock.on{background:var(--accent2);border-color:var(--accent);box-shadow:0 0 14px #8b5cf688}
+
+/* ---------- avisos compactos (corrige a seta gigante) ---------- */
+.li .chv{width:15px;height:15px;flex:none;color:var(--muted)}
+.swc .li{width:100%;box-sizing:border-box}
+.swc button.li{font:inherit}
+.li>.note{flex:none;white-space:nowrap}
+
+/* ---------- progresso e missões ---------- */
+.xpc .big{font-size:30px;line-height:1.1;display:block}
+.panel.mini{margin-top:14px}
+.panel.mini .row{gap:10px}
+.mlist{display:flex;flex-direction:column;gap:10px}
+.mis{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.mis.ok{border-color:#34d39944}
+.mtop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mgame{display:flex;align-items:center;gap:8px;min-width:0;font-size:11.5px;font-weight:700;color:var(--muted)}
+.mgame .cover{width:24px;height:24px;border-radius:7px;flex:none;aspect-ratio:1}
+.mgame .cover svg{width:60%;height:60%}
+.mgame .cover .tag{display:none}
+.mgame span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mprog{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)}
+.mprog .bar-xp{flex:1}
+.mprog span{flex:none;white-space:nowrap}
+.mfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+.mfoot .badge svg{width:12px;height:12px;margin-right:4px}
 </style>
 
 </head>
@@ -488,7 +522,7 @@ tick()})()</script>
   <nav class="bar" id="nav" aria-label="Navegação principal"></nav>
 </div>
 <div id="player" hidden>
-  <div class="pb"><button class="ib" id="pClose" aria-label="Fechar jogo"></button><strong id="pTitle"></strong><button class="ib" id="pReload" aria-label="Reiniciar jogo"></button></div>
+  <div class="pb"><button class="pexit" id="pClose" aria-label="Sair do jogo"></button><strong id="pTitle"></strong><button class="ib" id="pReload" aria-label="Reiniciar jogo"></button><button class="ib" id="pLock" aria-pressed="false" aria-label="Travar a tela"></button></div>
   <button class="ib" id="pHandle" aria-label="Menu do jogo"></button>
   <iframe id="frame" title="Jogo" sandbox="allow-scripts allow-pointer-lock" allow=""></iframe>
 </div>
@@ -499,6 +533,7 @@ tick()})()</script>
 'use strict';
 /* ---------- ícones ---------- */
 var P={
+ unlock:'<rect x="4" y="11" width="16" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/>',
  lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
  home:'<path d="M3 11 12 3l9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
@@ -576,7 +611,7 @@ var DEF_UPD=[];
 var SEED_POSTS=[];
 var SEED_REV={};
 var AGES=['Livre','10+','12+','14+','16+','18+'];
-var SUBTAB={editprof:'profile',community:'home',space:'home',cform:'home',upd:'home',chat:'home',ach:'profile',wish:'profile',settings:'profile',admin:'profile',auth:'profile'};
+var SUBTAB={missions:'profile',editprof:'profile',community:'home',space:'home',cform:'home',upd:'home',chat:'home',ach:'profile',wish:'profile',settings:'profile',admin:'profile',auth:'profile'};
 var PAL=[['#7c3aed','#06b6d4'],['#db2777','#f59e0b'],['#059669','#3b82f6'],['#dc2626','#7c3aed'],['#0ea5e9','#6d28d9'],['#1e3a8a','#7c3aed']];
 var LIBS=[['three','Three.js','https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'],['phaser','Phaser','https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js'],['p5','p5.js','https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js'],['pixi','PixiJS','https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.2/pixi.min.js']];
 var TEMPLATE='<!doctype html>\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<style>html,body{margin:0;height:100%;background:#0b0e1f;overflow:hidden}canvas{width:100%;height:100%;display:block}</style>\n<canvas id="c"></canvas>\n<script>\nconst c=document.getElementById("c"),x=c.getContext("2d");\nfunction rs(){c.width=innerWidth;c.height=innerHeight}rs();addEventListener("resize",rs);\nlet t=0;\nfunction loop(){\n  t++;\n  x.fillStyle="#0b0e1f";x.fillRect(0,0,c.width,c.height);\n  x.fillStyle="#a78bfa";\n  x.beginPath();x.arc(c.width/2+Math.cos(t/30)*80,c.height/2+Math.sin(t/20)*80,24,0,7);x.fill();\n  requestAnimationFrame(loop);\n}\nloop();\n<\/script>';
@@ -589,7 +624,7 @@ function init0(){return{tab:'home',sub:null,stab:'pub',dtab:'rev',stars:5,detail
  rgames:[],rposts:[],rfriends:[],rupd:[],rvc:{},rmsgs:{},rstats:null,radmin:null,
  lib:ld('gp_lib',{}),mine:ld('gp_mine',[]),xp:ld('gp_xp',0),plays:ld('gp_plays',0),pc:ld('gp_pc',{}),wish:ld('gp_wish',{}),rev:ld('gp_rev',{}),posts:ld('gp_posts',[]),likes:ld('gp_likes',{}),friends:ld('gp_friends',D(DEF_FRIENDS)),chats:ld('gp_chats',{}),cfg:Object.assign({sound:1,notif:1,saver:0,admin:0,fs:1,ori:'auto',autoupd:1},ld('gp_cfg',{}),{admin:0}),admOk:false,admForm:null,mod:ld('gp_mod',D(DEF_MOD)),users:ld('gp_users',D(DEF_USERS)),mon:ld('gp_mon',{ads:0,iap:0,pass:0}),name:ld('gp_name','Jogador'),avatar:ld('gp_avatar',''),bio:ld('gp_bio',''),pf:null,gdel:null,ud:null,mdel:null,gst:null,saves:ld('gp_saves',{}),agf:{creator:'all',status:'all',q:'',owner:0,ownerName:''},upd:ld('gp_upd',D(DEF_UPD)),seen:ld('gp_seen',[]),
  studio:null,feat:ld('gp_feat',{}),cats:ld('gp_cats',null),logs:ld('gp_logs',[]),drafts:ld('gp_drafts',[]),srvCats:null,atab:'resumo'}}
-function init(){var o=init0(),x=SOC0();for(var k in x)o[k]=x[k];return o}
+function init(){var o=init0(),x=SOC0(),y=MIS0();for(var k in x)o[k]=x[k];for(var k2 in y)o[k2]=y[k2];return o}
 var S=init();
 function save(k){sv('gp_'+k,S[k])}
 var $=function(s){return document.querySelector(s)};
@@ -715,7 +750,7 @@ function myAvatar(){return on()?(S.user.avatar||''):S.avatar}
 function myBio(){return on()?(S.user.bio||''):S.bio}
 function avatarEl(url,nm,cls){return '<div class="avatar'+(cls?' '+cls:'')+'">'+(url?'<img src="'+url+'" alt="">':esc(((nm||'J')[0]||'J').toUpperCase()))+'</div>'}
 function released(){var r=(on()?S.rgames.slice().sort(function(a,b){return b.rid-a.rid}):S.mine.slice().reverse()).filter(listed);return r.concat(CATALOG)}
-function xpNow(){return on()?S.user.xp:S.xp}
+function xpNow(){return (on()?S.user.xp:S.xp)+mxp()}
 function level(){var x=xpNow();return{n:Math.floor(x/500)+1,cur:x%500,max:500}}
 function base(){return (S.server||'').replace(/\/+$/,'')}
 async function api(method,url,body){
@@ -846,7 +881,7 @@ function notifTarget(n){
 function swipeWrap(id,html){return '<div class="swp" data-nid="'+esc(id)+'"><div class="swc">'+html+'</div></div>'}
 function impBadge(u){return isImp(u)?' <span class="badge warn">Importante</span>':''}
 function updRow(u){
- var t=notifTarget(u),inner='<div class="avatar" style="width:38px;height:38px;font-size:14px">'+ic('bell')+'</div><div class="body"><b>'+esc(u.t)+impBadge(u)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(u.d)+'</div></div><span class="note" style="margin:0">'+(u.ts?relTs(u.ts):u.a)+'</span>'+(t?ic('chev','chv'):'');
+ var t=notifTarget(u),inner='<div class="avatar" style="width:38px;height:38px;font-size:14px">'+ic('bell')+'</div><div class="body"><b class="wr">'+esc(u.t)+impBadge(u)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(u.d)+'</div></div><span class="note" style="margin:0">'+(u.ts?relTs(u.ts):u.a)+'</span>'+(t?ic('chev','chv'):'');
  return swipeWrap(u.id,t?'<button class="li" style="width:100%;text-align:left;color:var(--fg)" data-a="'+t.a+'" data-v="'+esc(t.v)+'">'+inner+'</button>':'<div class="li">'+inner+'</div>');
 }
 
@@ -1028,10 +1063,11 @@ function profile(){
  +'<div class="pf-info"><h1>'+esc(nm)+'</h1><div class="st">'+(bio?esc(bio):'Jogador')+' • '+(on()?'Conta online':'Offline')+'</div>'
  +'<div class="pf-xp"><span><b>'+l.cur+'</b> / '+l.max+' XP</span><div class="bar-xp"><i style="width:'+(l.cur/l.max*100)+'%"></i></div></div></div></div>'
  +'<div class="pstats"><div class="pstat">'+ic('lib')+'<b>'+libCount()+'</b><span>Na biblioteca</span></div><div class="pstat">'+ic('pad')+'<b>'+S.plays+'</b><span>Partidas</span></div><div class="pstat">'+ic('studio')+'<b>'+myGames().length+'</b><span>Publicados</span></div></div>'
+ +misSummary()
  +(on()?'':'<div class="panel" style="margin-top:14px"><b>Jogue com amigos</b><div class="note">Entre ou crie uma conta para publicar jogos na Loja, fazer amigos e conversar.</div><button class="btn sm" style="margin-top:10px" data-a="sub" data-v="auth">Entrar ou criar conta</button></div>')
  +'<div class="sec"><h2>Meu legado</h2><button data-a="sub" data-v="ach">Ver todos</button></div><div class="legacy">'+leg.map(function(x){return '<div class="lg'+(x.ok?' ok':'')+'"><i>'+(x.ok?ic(x.i):ic('lock'))+'</i>'+esc(x.n)+'</div>'}).join('')+'</div>'
  +'<div class="pbanner"><h3>Legado não se herda. Se constrói.</h3><button class="btn ghost" data-a="sub" data-v="editprof">'+ic('edit')+'Personalizar</button></div>'
- +'<div class="list" style="margin-top:14px">'+mrow('edit','Editar perfil','sub','editprof','')+mrow('trophy','Conquistas','sub','ach',done+'/'+al.length)+mrow('users','Amigos','sub','friends',friendCount())+mrow('chat','Mensagens','ctab','msgs',S.cun||'')+mrow('users','Comunidade','sub','community','')+mrow('heart','Lista de desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mrow('bell','Notificações','sub','upd',unseen()||'')+(isAdm?mrow('shield','Administração','sub','admin',on()?'':S.mod.length):'')+mrow('cog','Configurações','sub','settings','')+'</div>'
+ +'<div class="list" style="margin-top:14px">'+mrow('edit','Editar perfil','sub','editprof','')+mrow('star','Progresso e missões','sub','missions',mAll().done.length)+mrow('trophy','Conquistas','sub','ach',done+'/'+al.length)+mrow('users','Amigos','sub','friends',friendCount())+mrow('chat','Mensagens','ctab','msgs',S.cun||'')+mrow('users','Comunidade','sub','community','')+mrow('heart','Lista de desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mrow('bell','Notificações','sub','upd',unseen()||'')+(isAdm?mrow('shield','Administração','sub','admin',on()?'':S.mod.length):'')+mrow('cog','Configurações','sub','settings','')+'</div>'
 }
 function pfInit(){return{name:myName(),bio:myBio(),avatar:myAvatar()}}
 function editprof(){
@@ -1161,7 +1197,7 @@ function render(keep){
  var u=unseen();$('#bell').innerHTML=ic('bell')+(u?'<i class="dot">'+u+'</i>':'');
  var y=view.scrollTop,html;
  if(S.detail){var g=find(S.detail);html=g?detail(g):home()}
- else if(S.sub){html={community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,editprof:editprof}[S.sub]()}
+ else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,editprof:editprof}[S.sub]()}
  else html={home:home,store:store,lib:library,studio:studio,profile:profile}[S.tab]();
  view.innerHTML=html;
  if(S.sub==='upd'){var ch=false;updList().forEach(function(x){if(S.seen.indexOf(x.id)<0){S.seen.push(x.id);ch=true}});if(ch){save('seen')}}
@@ -1333,7 +1369,7 @@ function notifRow(n){
  else if(n.k==='gameinvite'&&find('r'+(n.ref||'').slice(5)))go='<button class="btn sm" data-a="open" data-v="r'+n.ref.slice(5)+'">Jogar</button>';
  else if(/^post:/.test(n.ref||''))go='<button class="btn sm" data-a="ctab" data-v="feed">Ver</button>';
  var ic2={invite:'users',joinreq:'users',follow:'user',mention:'chat',reply:'chat',friend:'user',gameinvite:'play',event:'cal'}[n.k]||'bell';
- return swipeWrap(n.id,'<div class="li"><div class="avatar" style="width:38px;height:38px">'+ic(ic2)+'</div><div class="body"><b>'+esc(n.t)+impBadge(n)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(n.d)+'</div></div><div class="cmeta"><span class="note">'+n.a+'</span>'+go+'</div></div>');
+ return swipeWrap(n.id,'<div class="li"><div class="avatar" style="width:38px;height:38px">'+ic(ic2)+'</div><div class="body"><b class="wr">'+esc(n.t)+impBadge(n)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(n.d)+'</div></div><div class="cmeta"><span class="note">'+n.a+'</span>'+go+'</div></div>');
 }
 function notifView(){
  if(!on())return needAcc('os avisos sociais');
@@ -1388,6 +1424,99 @@ function shrinkImg(f,W,H,steps,limit,cb){
  im.src=u;
 }
 
+/* ---------- progresso e missões (uma lista própria para cada jogo) ---------- */
+P.unlock=P.unlock||P.lock;
+function MIS0(){return{mis:ld('gp_mis',{}),tm:ld('gp_tm',{})}}
+var MNOUN={Corrida:['corrida','corridas'],Aventura:['aventura','aventuras'],'Quebra-cabeça':['fase','fases'],Plataforma:['fase','fases'],RPG:['batalha','batalhas'],Ação:['partida','partidas'],Estratégia:['partida','partidas'],Terror:['noite','noites']};
+function mOwner(){return on()&&S.user?'u'+S.user.id:'local'}
+function mState(){var k=mOwner();if(!S.mis[k])S.mis[k]={acc:{},done:{}};return S.mis[k]}
+function mxp(){var d=mState().done,t=0;Object.keys(d).forEach(function(k){t+=d[k].xp});return t}
+function mPlays(g){return S.pc[g.id]||0}
+function mSecs(g){return S.tm[g.id]||0}
+function fmtDur(s){var m=Math.round(s/60);return m<60?m+' min':Math.floor(m/60)+' h '+('0'+(m%60)).slice(-2)+' min'}
+// Missões geradas para o jogo: cada uma só existe para ele.
+function missionsFor(g){
+ var nn=MNOUN[g.cat||g.genre]||['partida','partidas'],id=g.id,t=g.title;
+ return [
+  {id:id+'|p1',g:id,k:'plays',goal:1,xp:20,t:'Primeira '+nn[0],d:'Jogue '+t+' pela primeira vez.'},
+  {id:id+'|p5',g:id,k:'plays',goal:5,xp:60,t:'5 '+nn[1]+' em '+t,d:'Complete 5 '+nn[1]+' de '+t+'.'},
+  {id:id+'|t30',g:id,k:'secs',goal:1800,xp:80,t:'Meia hora de '+t,d:'Passe 30 minutos jogando '+t+'.'},
+  {id:id+'|fav',g:id,k:'fav',goal:1,xp:15,t:'Jogo favorito',d:'Adicione '+t+' à lista de desejos.'},
+  {id:id+'|h15',g:id,k:'plays',goal:15,xp:150,hid:1,req:function(g){return mPlays(g)>=10},t:'Veterano de '+t,d:'Você já jogou bastante: chegue a 15 '+nn[1]+'.'},
+  {id:id+'|h2h',g:id,k:'secs',goal:7200,xp:200,hid:1,req:function(g){return mSecs(g)>=3600},t:'Sem pressa',d:'Já passou 1 hora em '+t+'. Agora, 2 horas de jogo.'}
+ ];
+}
+function mGames(){
+ var seen={},out=[];
+ allRaw().forEach(function(g){if(!g.id||seen[g.id])return;if(S.lib[g.id]||S.pc[g.id]||S.wish[g.id]){seen[g.id]=1;out.push(g)}});
+ return out.slice(0,12);
+}
+function mProg(m,g){
+ var st=mState(),a=st.acc[m.id];
+ if(m.k==='fav')return S.wish[g.id]?1:0;
+ if(!a)return 0;
+ var cur=m.k==='plays'?mPlays(g):mSecs(g),b=m.k==='plays'?a.p:a.s;
+ return Math.max(0,Math.min(m.goal,cur-b));
+}
+function mAll(){
+ var st=mState(),r={avail:[],active:[],done:[],games:[]};
+ mGames().forEach(function(g){
+  var list=missionsFor(g),dn=0;
+  list.forEach(function(m){
+   var d=st.done[m.id];
+   if(d){dn++;r.done.push({m:m,g:g,d:d});return}
+   if(m.hid&&!m.req(g)&&!st.acc[m.id])return; // secreta: só aparece depois de cumprir o requisito
+   var p=mProg(m,g),row={m:m,g:g,p:p,secret:!!m.hid};
+   (st.acc[m.id]?r.active:r.avail).push(row);
+  });
+  var vis=list.filter(function(m){return !m.hid||st.done[m.id]||st.acc[m.id]||m.req(g)}).length;
+  r.games.push({g:g,done:dn,total:vis,plays:mPlays(g),secs:mSecs(g)});
+ });
+ r.done.sort(function(a,b){return b.d.ts-a.d.ts});
+ return r;
+}
+// Conclui sozinha as missões aceitas que chegaram na meta e soma o XP.
+function misClaim(){
+ var st=mState(),got=0,xp=0;
+ mGames().forEach(function(g){missionsFor(g).forEach(function(m){
+  if(st.done[m.id]||!st.acc[m.id])return;
+  if(m.k==='fav'?!S.wish[g.id]:mProg(m,g)<m.goal)return;
+  st.done[m.id]={xp:m.xp,ts:Date.now(),title:m.t,game:g.title};delete st.acc[m.id];got++;xp+=m.xp;
+ })});
+ if(got){sv('gp_mis',S.mis);toast('Missão concluída: +'+xp+' XP')}
+}
+function mCard(row,mode){
+ var m=row.m,g=row.g,pc=Math.round((row.p||0)/m.goal*100),isT=m.k==='secs';
+ var prog=mode==='active'?'<div class="mprog"><div class="bar-xp"><i style="width:'+pc+'%"></i></div><span>'+(isT?fmtDur(row.p)+' / '+fmtDur(m.goal):row.p+' / '+m.goal)+'</span></div>':'';
+ var act=mode==='avail'?'<button class="btn sm" data-a="macc" data-v="'+esc(m.id)+'">Aceitar</button>':mode==='active'?'<button class="btn ghost sm" data-a="mdrop" data-v="'+esc(m.id)+'">Abandonar</button>':'';
+ return '<div class="mis'+(mode==='done'?' ok':'')+'"><div class="mtop"><div class="mgame">'+cover(g)+'<span>'+esc(g.title)+'</span></div>'+(row.secret?'<span class="badge">Secreta</span>':'')+'</div>'
+  +'<b>'+esc(m.t)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(m.d)+'</div>'+prog
+  +'<div class="mfoot"><span class="badge '+(mode==='done'?'ok':'warn')+'">'+(mode==='done'?ic('check')+'+'+row.d.xp+' XP ganhos':'+'+m.xp+' XP')+'</span>'+act+'</div></div>';
+}
+function missions(){
+ var l=level(),r=mAll(),x=xpNow(),left=l.max-l.cur;
+ var h=subhead('Progresso e missões')
+  +'<div class="panel xpc"><div class="row"><div><div class="note" style="margin:0">Nível</div><b class="big">'+l.n+'</b></div><div style="text-align:right"><div class="note" style="margin:0">XP total</div><b class="big">'+x+'</b></div></div>'
+  +'<div class="bar-xp" style="margin-top:10px"><i style="width:'+(l.cur/l.max*100)+'%"></i></div><div class="note" style="margin:6px 0 0">'+l.cur+' / '+l.max+' XP · faltam '+left+' XP para o nível '+(l.n+1)+'</div></div>'
+  +'<div class="sec"><h2>Histórico do jogo</h2></div>';
+ var hist=r.games.filter(function(x){return x.plays||x.secs});
+ h+=hist.length?'<div class="list">'+hist.map(function(x){return '<div class="li">'+cover(x.g)+'<div class="body"><b>'+esc(x.g.title)+'</b><div class="note" style="margin:2px 0 4px">'+x.plays+' partida'+(x.plays===1?'':'s')+' · '+fmtDur(x.secs)+'</div><div class="mprog"><div class="bar-xp"><i style="width:'+(x.total?x.done/x.total*100:0)+'%"></i></div><span>'+x.done+'/'+x.total+' missões</span></div></div></div>'}).join('')+'</div>':'<div class="empty">Seu histórico aparece aqui depois da primeira partida.</div>';
+ if(!r.games.length)return h+'<div class="sec"><h2>Missões</h2></div><div class="empty">As missões são geradas para cada jogo. Jogue ou adicione um jogo à biblioteca para receber as suas.</div>';
+ h+='<div class="sec"><h2>Em andamento</h2><span class="note" style="margin:0">'+r.active.length+'</span></div>'+(r.active.length?'<div class="mlist">'+r.active.map(function(x){return mCard(x,'active')}).join('')+'</div>':'<div class="empty">Aceite uma missão abaixo para acompanhar o progresso.</div>');
+ h+='<div class="sec"><h2>Disponíveis</h2><span class="note" style="margin:0">'+r.avail.length+'</span></div>'+(r.avail.length?'<div class="mlist">'+r.avail.map(function(x){return mCard(x,'avail')}).join('')+'</div>':'<div class="empty">Nenhuma missão nova por enquanto.</div>');
+ h+='<div class="sec"><h2>Concluídas</h2><span class="note" style="margin:0">'+r.done.length+'</span></div>'+(r.done.length?'<div class="mlist">'+r.done.map(function(x){return mCard({m:{t:x.d.title||'Missão',d:'Jogo: '+x.g.title,xp:x.d.xp,goal:1},g:x.g,d:x.d},'done')}).join('')+'</div>':'<div class="empty">Nenhuma missão concluída ainda.</div>');
+ return h+'<p class="note" style="text-align:center">Você escolhe quais missões aceitar. Missões secretas aparecem aqui quando você cumpre o requisito.</p>';
+}
+function misSummary(){
+ var r=mAll();
+ return '<div class="panel mini"><div class="row"><div><b>Progresso e missões</b><div class="note" style="margin:2px 0 0">'+r.done.length+' concluída'+(r.done.length===1?'':'s')+' · '+r.active.length+' em andamento · '+r.avail.length+' disponível'+(r.avail.length===1?'':'is')+'</div></div><button class="btn sm" data-a="sub" data-v="missions" style="flex:none">Ver</button></div></div>';
+}
+function misAct(a,v){
+ if(a==='macc'){var g0=mGames().filter(function(g){return String(v).split('|')[0]===g.id})[0];if(!g0)return true;var st=mState();st.acc[v]={ts:Date.now(),p:mPlays(g0),s:mSecs(g0)};sv('gp_mis',S.mis);misClaim();toast('Missão aceita');render(true);return true}
+ if(a==='mdrop'){delete mState().acc[v];sv('gp_mis',S.mis);toast('Missão abandonada');render(true);return true}
+ return false;
+}
+
 /* ---------- player ---------- */
 var cur=null;
 var ORI_SHIM='<script>(function(){try{var o=screen.orientation;if(o){o.lock=function(m){parent.postMessage({gp:"orient",m:String(m)},"*");return Promise.resolve()};o.unlock=function(){parent.postMessage({gp:"orient",m:"any"},"*")}}}catch(e){}})()<\/script>';
@@ -1417,11 +1546,25 @@ function setOri(m){
  try{var so=screen.orientation;if(!so)return;if(m==='auto'){if(so.unlock)so.unlock()}else if(so.lock)so.lock(m).catch(function(){})}catch(e){}
 }
 function openGame(g){
- cur=g;$('#pTitle').textContent=g.title;$('#player').hidden=false;if(!g.cfg||g.cfg.fullscreen!==0)gameFs();setOri(oriFor(g));showBar(true);
+ cur=g;gLock=false;gT0=Date.now();updLock();try{history.pushState({gp:1},'')}catch(e){}gHist=true;$('#pTitle').textContent=g.title;$('#player').hidden=false;if(!g.cfg||g.cfg.fullscreen!==0)gameFs();setOri(oriFor(g));showBar(true);
  $('#frame').srcdoc=gameDoc(g);
  if(g.id){S.pc[g.id]=(S.pc[g.id]||0)+1;sv('gp_pc',S.pc);S.plays++;S.xp+=25;sv('gp_plays',S.plays);sv('gp_xp',S.xp)}
 }
-function closeGame(){$('#player').hidden=true;$('#player').classList.remove('bar');$('#frame').srcdoc='';cur=null;applyNative();render(true)}
+var gLock=false,gT0=0,gHist=false,gSkip=false;
+function lockNative(){try{window.GPNative&&window.GPNative.setBackLock&&window.GPNative.setBackLock(gLock)}catch(e){}}
+function updLock(){var b=$('#pLock');b.innerHTML=ic(gLock?'lock':'unlock');b.setAttribute('aria-pressed',gLock);b.setAttribute('aria-label',gLock?'Destravar a tela':'Travar a tela');b.classList.toggle('on',gLock);lockNative()}
+function exitGame(){
+ if(gLock){toast('Tela travada. Toque no cadeado para destravar e sair.');showBar(true);return}
+ if(gHist){gHist=false;gSkip=true;try{history.back()}catch(e){gSkip=false}}
+ closeGame();
+}
+window.addEventListener('popstate',function(){
+ if(gSkip){gSkip=false;return}
+ if(!cur)return;
+ if(gLock){try{history.pushState({gp:1},'')}catch(e){}toast('Tela travada. Toque no cadeado para destravar e sair.');showBar(true);return}
+ gHist=false;closeGame();
+});
+function closeGame(){if(cur&&cur.id&&gT0){S.tm[cur.id]=(S.tm[cur.id]||0)+Math.max(0,Math.round((Date.now()-gT0)/1000));sv('gp_tm',S.tm)}gT0=0;gLock=false;lockNative();$('#player').hidden=true;$('#player').classList.remove('bar');$('#frame').srcdoc='';cur=null;applyNative();if(typeof misClaim==='function')misClaim();render(true)}
 window.addEventListener('message',function(e){
  var d=e.data;if(d&&d.gp==='save'&&cur&&cur.cfg&&cur.cfg.saveProgress){var f0=$('#frame');if(f0.contentWindow&&e.source!==f0.contentWindow)return;if(JSON.stringify(d.data||{}).length>1e6)return;S.saves[cur.key||cur.id||'t']=d.data;sv('gp_saves',S.saves);return}
  if(!d||d.gp!=='orient'||!cur)return;
@@ -1437,8 +1580,9 @@ function gameFs(){
 }
 $('#pHandle').innerHTML=ic('more');
 $('#pHandle').onclick=function(){showBar(!$('#player').classList.contains('bar'))};
-$('#pClose').innerHTML=ic('back');$('#pReload').innerHTML=ic('reload');
-$('#pClose').onclick=closeGame;
+$('#pClose').innerHTML=ic('back')+'<span>Sair</span>';$('#pReload').innerHTML=ic('reload');
+$('#pClose').onclick=exitGame;
+$('#pLock').onclick=function(){gLock=!gLock;updLock();showBar(true);toast(gLock?'Tela travada: o botão voltar não sai do jogo':'Tela destravada')};
 $('#pReload').onclick=function(){if(cur){$('#frame').srcdoc=gameDoc(cur);showBar(false)}};
 
 /* ---------- eventos ---------- */
@@ -1722,6 +1866,7 @@ async function authGo(){
 }
 async function act(a,v,t){
  var g;
+ if(misAct(a,v,t))return;
  if(socHandles(a,v)){await socAct(a,v,t);return}
  if(!on()&&!admLocal()&&({gfeat:1,gnotif:1,catadd:1,catrm:1,gdel:1,modok:1,modrm:1,usertg:1,admedit:1,admpub:1,admadd:1})[a]){toast('Desbloqueie o modo administrador em Configurações');return}
  switch(a){

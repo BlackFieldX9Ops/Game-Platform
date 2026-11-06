@@ -33,6 +33,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import androidx.activity.OnBackPressedCallback;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -44,6 +45,7 @@ import java.net.URL;
  *
  * O app web chama window.GPNative:
  *   setFullscreen(boolean)  esconde ou mostra as barras do sistema
+ *   setBackLock(boolean)    trava o botão voltar do celular durante o jogo
  *   setOrientation("portrait" | "landscape" | "auto")  trava a tela em pé, deitada, ou deixa girar
  *   canInstall() / openInstallSettings() / installApk(url)  atualização automática do app
  *   getBuild() / openUrl(url)  usados pela atualização do app
@@ -52,6 +54,7 @@ import java.net.URL;
  * Este arquivo substitui o MainActivity gerado pelo Capacitor (veja .github/workflows/build-apk.yml).
  */
 public class MainActivity extends BridgeActivity {
+  private OnBackPressedCallback backLock;
   private static final int BG = 0xFF0A0D1C;
   private static final String ACT_INSTALL = "com.gameplatform.app.INSTALL_DONE";
   private boolean fullscreen = true;
@@ -110,6 +113,12 @@ public class MainActivity extends BridgeActivity {
       web.setBackgroundColor(BG);
       web.addJavascriptInterface(new Native(), "GPNative");
     }
+
+    // Cadeado do jogo: com ele fechado, o botão voltar do celular não faz nada.
+    backLock = new OnBackPressedCallback(false) {
+      @Override public void handleOnBackPressed() { /* travado */ }
+    };
+    getOnBackPressedDispatcher().addCallback(this, backLock);
 
     setOrientation("portrait");
     applyFullscreen();
@@ -283,6 +292,11 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception ignored) {
         }
       });
+    }
+
+    @JavascriptInterface
+    public void setBackLock(final boolean on) {
+      runOnUiThread(() -> backLock.setEnabled(on));
     }
 
     @JavascriptInterface

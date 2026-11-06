@@ -10,7 +10,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "test": "node test/smoke.js && node test/social.js",
-    "test:app": "node test/app-e2e.js && node test/social-e2e.js",
+    "test:app": "node test/app-e2e.js && node test/social-e2e.js && node test/missions-e2e.js",
     "test:zip": "node test/bundle.js && node test/update-check.js"
   },
   "dependencies": {

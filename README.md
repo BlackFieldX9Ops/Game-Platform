@@ -160,3 +160,9 @@ Sem conta, essas telas pedem login e não mostram nada inventado. No servidor: r
 
 - **Apagar um jogo** (administrador ou dono) o remove da plataforma inteira: Loja, busca, biblioteca, favoritos, histórico e progresso salvo de todos. **Quem comprou continua com o jogo**: ele fica guardado como "Removido da Loja", só nas bibliotecas dos compradores, e continua jogável. Sem compradores, o jogo é apagado de vez. Quem está com o app aberto vê o jogo sumir na hora. A tabela `purchases` já existe no servidor; o fluxo de pagamento ainda será criado.
 - **Android 16:** o APK agora é compilado com Capacitor 8, Java 21 e `targetSdk`/`compileSdk` 36.
+
+## Jogo com cadeado e missões por jogo
+
+- **Durante o jogo:** menu compacto com **Sair** e um **cadeado**. Com o cadeado fechado (roxo) a tela fica travada: nem o Sair nem o botão voltar do celular tiram você do jogo. Com ele aberto, os dois saem normalmente. No Android o botão voltar é travado de verdade pelo app (`GPNative.setBackLock`); no navegador, pelo histórico.
+- **Progresso e missões** (Perfil): XP total com barra do nível, histórico por jogo (partidas, tempo e missões feitas) e as missões, que o app gera **para cada jogo** (ex.: "5 corridas em Corrida Neon", "Meia hora de ...", "Jogo favorito"). Você decide quais **aceitar**; as aceitas mostram o progresso e se concluem sozinhas, com o XP ganho. **Missões secretas** (Veterano, Sem pressa) só aparecem depois de cumprir o requisito.
+- O XP das missões é guardado no aparelho; quando o servidor passar a validar partidas, ele poderá ser conferido lá.
