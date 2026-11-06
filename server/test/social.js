@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 const PORT = 3998, BASE = `http://localhost:${PORT}/api`;
 const dir = mkdtempSync(path.join(tmpdir(), 'gps-'));
@@ -129,6 +130,19 @@ async function main() {
   ok('ler a DM zera as não lidas', (await call('GET', '/conversations', null, B)).j.conversations.find(x => x.type === 'direct').unread === 0);
   ok('convidar amigo para jogo', (await call('POST', `/friends/${bid}/invite-game`, { gameId: gm.j.id }, A)).s === 201 && (await call('GET', '/notifications', null, B)).j.notifications.some(n => n.kind === 'gameinvite'));
   ok('não convida não-amigo', (await call('POST', `/friends/${cid}/invite-game`, { gameId: gm.j.id }, A)).s === 403);
+  // validade e exclusão de notificações
+  const dbx = new DatabaseSync(path.join(dir, 't.db'));
+  const nid = k => Number(dbx.prepare("INSERT INTO notifications (user_id, title, body, kind, created_at) VALUES (?,?,?,?,datetime('now','-30 hours'))").run(aid, 'Velho ' + k, 'x', k).lastInsertRowid);
+  const nOld = nid('sys'), nUpd = nid('update'), nPay = nid('purchase'), nCode = nid('code');
+  const bro = Number(dbx.prepare("INSERT INTO notifications (user_id, title, body, kind) VALUES (NULL,'Aviso geral','x','sys')").run().lastInsertRowid);
+  const lst = (await call('GET', '/notifications', null, A)).j.notifications;
+  ok('aviso comum com mais de 24 h é apagado sozinho', !lst.some(n => n.id === nOld));
+  ok('avisos importantes (atualização, compra, código) não expiram', [nUpd, nPay, nCode].every(i => lst.some(n => n.id === i && n.important === true)));
+  ok('aviso novo não é marcado como importante', lst.filter(n => ![nUpd, nPay, nCode].includes(n.id)).every(n => n.important === false));
+  ok('apagar aviso importante', (await call('DELETE', `/notifications/${nUpd}`, null, A)).s === 200 && !(await call('GET', '/notifications', null, A)).j.notifications.some(n => n.id === nUpd));
+  ok('não apaga aviso de outro jogador', (await call('DELETE', `/notifications/${nPay}`, null, B)).s === 404);
+  ok('aviso geral apagado só some para quem apagou', (await call('DELETE', `/notifications/${bro}`, null, A)).s === 200 && !(await call('GET', '/notifications', null, A)).j.notifications.some(n => n.id === bro) && (await call('GET', '/notifications', null, B)).j.notifications.some(n => n.id === bro));
+  dbx.close();
   ok('apagar post leva os comentários', (await call('DELETE', `/posts/${p1.j.id}`, null, B)).s === 200);
 }
 try { await main(); } catch (e) { fail++; console.error('ERRO NO TESTE', e); }

@@ -147,3 +147,11 @@ Tudo fica na tela **Comunidade** (atalhos no Início e no Perfil), com seis abas
 - **Avisos:** convites de grupo e comunidade, pedidos de entrada, novos seguidores, menções, respostas, amizades, convites para jogo e eventos.
 
 Sem conta, essas telas pedem login e não mostram nada inventado. No servidor: rotas `/api/posts` (filtros e comentários), `/api/users/search`, `/api/users/:id/follow`, `/api/spaces/...`, `/api/conversations`, `/api/messages` e `/api/friends/:id/invite-game`; as tabelas novas são criadas sozinhas ao iniciar. Mensagens de grupo chegam em tempo real pelo WebSocket.
+
+## Notificações: validade, importantes e deslizar para apagar
+
+- **Deslize para a esquerda** em qualquer aviso para apagá-lo (o toque curto continua abrindo o jogo ou as Configurações).
+- **Avisos comuns somem sozinhos depois de 24 horas** (no servidor e no aparelho), para não encher a memória.
+- **Avisos importantes não expiram** e ficam marcados como *Importante*: atualização do app, permissões, códigos enviados e compras (passe, pacote, skin, Premium para enviar jogos ao Studio). Só saem quando o jogador apaga. No servidor, use `notify(userId, título, texto)` com um destes tipos: `update`, `perm`, `code`, `purchase`, `premium`.
+- Avisos gerais da administração apagados por um jogador somem só para ele.
+- **Atualização silenciosa:** o APK agora declara a permissão `UPDATE_PACKAGES_WITHOUT_USER_ACTION`. A primeira atualização feita pelo próprio app ainda mostra a tela de confirmação do Android; as seguintes, no Android 12 ou mais novo, entram sem perguntar.

@@ -368,8 +368,23 @@ export function mountSocial(c) {
     res.status(201).json({ message: msg });
   }));
 
-  /* ---------- notificações sociais ---------- */
+  /* ---------- notificações: validade de 24 h, avisos importantes e apagar ---------- */
+  // Importantes (atualização, permissão, código, compra de passe/pacote/skin/premium) não expiram: só somem quando o jogador apaga.
+  const IMPORTANT = ['update', 'perm', 'code', 'purchase', 'premium'];
+  const impQ = IMPORTANT.map(() => '?').join(',');
+  const purge = () => run(`DELETE FROM notifications WHERE kind NOT IN (${impQ}) AND created_at < datetime('now','-24 hours')`, ...IMPORTANT);
+  purge(); setInterval(purge, 3600e3).unref();
   app.get('/api/notifications', auth, (req, res) => {
-    res.json({ notifications: all('SELECT id, title, body, kind, ref, created_at FROM notifications WHERE user_id = ? OR user_id IS NULL ORDER BY id DESC LIMIT 50', req.user.id) });
+    purge();
+    const rows = all(`SELECT id, title, body, kind, ref, created_at FROM notifications
+      WHERE (user_id = ? OR user_id IS NULL) AND id NOT IN (SELECT notif_id FROM notif_dismissed WHERE user_id = ?) ORDER BY id DESC LIMIT 50`, req.user.id, req.user.id);
+    res.json({ notifications: rows.map(n => ({ ...n, important: IMPORTANT.includes(n.kind) })) });
   });
+  app.delete('/api/notifications/:id', auth, wrap((req, res) => {
+    const n = get('SELECT id, user_id FROM notifications WHERE id = ?', int(req.params.id, 'id'));
+    if (!n || (n.user_id !== null && n.user_id !== req.user.id)) bad('Notificação não encontrada', 404);
+    if (n.user_id === null) run('INSERT OR IGNORE INTO notif_dismissed (user_id, notif_id) VALUES (?,?)', req.user.id, n.id);
+    else run('DELETE FROM notifications WHERE id = ?', n.id);
+    res.json({ ok: true });
+  }));
 }

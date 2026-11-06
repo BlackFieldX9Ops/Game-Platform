@@ -42,6 +42,7 @@ async function api(method, url, body, token) {
   const r = await fetch(URL_ + 'api' + url, { method, headers: { 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
   return r.json();
 }
+const document_up = (C, x, el) => (el || C.d.body).dispatchEvent(new C.w.MouseEvent('pointerup', { bubbles: true, clientX: x, clientY: 20 }));
 async function main() {
   for (let i = 0; i < 40; i++) { try { if ((await fetch(URL_ + 'api/health')).ok) break; } catch {} await wait(150); }
   const ra = await api('POST', '/auth/register', { name: 'Ana', email: 'ana@x.com', password: 'senha12345' });
@@ -151,6 +152,18 @@ async function main() {
   ok('notificação de jogo publicado é clicável', await until(() => A.d.querySelector('button.li[data-a="open"]'), 4000), A.text().slice(0, 200));
   A.click('button.li[data-a="open"]');
   ok('toque na notificação abre o jogo', await until(() => /Meu Labirinto/.test(A.text()) && A.$('[data-a="back"]')));
+  // deslizar para a esquerda apaga
+  A.click('[data-a="back"]');
+  await until(() => A.d.querySelectorAll('.swp').length > 0);
+  const n0 = A.d.querySelectorAll('.swp').length, row = A.d.querySelector('.swp');
+  const ev = (t, x) => row.firstChild.dispatchEvent(new A.w.MouseEvent(t, { bubbles: true, clientX: x, clientY: 20 }));
+  ev('pointerdown', 300); ev('pointermove', 280); ev('pointermove', 60); document_up(A, 60);
+  ok('deslizar para a esquerda apaga o aviso', await until(() => A.d.querySelectorAll('.swp').length === n0 - 1, 3000), n0 + ' -> ' + A.d.querySelectorAll('.swp').length);
+  const row2 = A.d.querySelector('.swp'), n1 = A.d.querySelectorAll('.swp').length;
+  row2.firstChild.dispatchEvent(new A.w.MouseEvent('pointerdown', { bubbles: true, clientX: 300, clientY: 20 }));
+  row2.firstChild.dispatchEvent(new A.w.MouseEvent('pointermove', { bubbles: true, clientX: 270, clientY: 20 }));
+  document_up(A, 270, row2.firstChild); await wait(400);
+  ok('deslize curto não apaga', A.d.querySelectorAll('.swp').length === n1);
   ok('nenhum erro de script', [A, B].every(x => x.errs.length === 0), JSON.stringify([A.errs, B.errs]));
 }
 try { await main(); } catch (e) { fail++; console.error('ERRO', e); }

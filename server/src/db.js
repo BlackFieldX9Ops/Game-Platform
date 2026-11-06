@@ -193,3 +193,11 @@ addCol('messages', 'game_id', 'INTEGER REFERENCES games(id) ON DELETE SET NULL')
 addCol('messages', 'read_at', 'TEXT');
 addCol('notifications', 'kind', "TEXT NOT NULL DEFAULT 'sys'");
 addCol('notifications', 'ref', "TEXT NOT NULL DEFAULT ''");
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS notif_dismissed (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  notif_id INTEGER NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, notif_id)
+);
+`);

@@ -459,6 +459,13 @@ button.card:active{transform:scale(.985);border-color:var(--accent)}
 .att button svg{width:12px;height:12px}
 .gpick .chips{flex-wrap:wrap;margin:8px 0 0;padding:0}
 .chat{max-height:none}
+
+/* ---------- deslizar para apagar aviso ---------- */
+.swp{position:relative;border-radius:16px;overflow:hidden;background:#7f1d1d;min-width:0}
+.swp::after{content:"Apagar";position:absolute;right:18px;top:50%;transform:translateY(-50%);font-weight:800;font-size:13px;color:#fecaca;opacity:0}
+.swp.pull::after{opacity:1}
+.swc{touch-action:pan-y;will-change:transform;background:var(--bg)}
+.swc .li{margin:0}
 </style>
 
 </head>
@@ -648,7 +655,7 @@ async function checkUpdate(manual){
   if(!a||!nb)throw new Error('release sem versão');
   S.upv={st:nb>cb?'new':'ok',build:nb,url:a.browser_download_url};
   try{localStorage.setItem('gp_updchk',String(Date.now()))}catch(e){}
-  if(nb>cb&&!manual&&ld('gp_updnote',0)<nb){sv('gp_updnote',nb);pushUpd('Atualização disponível','Há uma versão nova do app (build '+nb+'). Abra Configurações para atualizar.','settings')}
+  if(nb>cb&&!manual&&ld('gp_updnote',0)<nb){sv('gp_updnote',nb);pushUpd('Atualização disponível','Há uma versão nova do app (build '+nb+'). Abra Configurações para atualizar.','settings','update')}
   if(manual)toast(nb>cb?'Há uma versão nova':'Você já está na última versão');
  }catch(e){S.upv={st:'err'};if(manual)toast('Não consegui verificar agora. Confira a internet.')}
  render(true);
@@ -724,7 +731,7 @@ async function probe(){
  return S.srvOk;
 }
 function mapGame(g){var st=g.settings||{};return{ai:!!g.ai,tags:g.tags||[],ver:g.version||'1.0.0',vis:g.visibility||'public',status:g.status||'published',cfg:st,created:g.created_at||'',rc:g.review_count||0,ori:g.orientation||'auto',cover:g.cover||'',featured:!!g.featured,id:'r'+g.id,rid:g.id,remote:1,title:g.title,genre:g.category,cat:g.category,dim:g.dim,age:g.age,desc:g.description,rating:g.rating,dl:String(g.plays),color:PAL[g.id%PAL.length],icon:g.dim==='3D'?'cube':'pad',dev:g.developer,owner:g.owner_id}}
-function mapNotif(n){return{id:'n'+n.id,t:n.title,d:n.body,a:rel(n.created_at),k:n.kind||'sys',ref:n.ref||''}}
+function mapNotif(n){return{id:'n'+n.id,t:n.title,d:n.body,a:rel(n.created_at),k:n.kind||'sys',ref:n.ref||'',imp:!!n.important}}
 function libsMap(a){var o={};(a||[]).forEach(function(k){o[k]=true});return o}
 async function refreshAll(){
  if(!on())return;
@@ -787,10 +794,17 @@ function allRaw(){return CATALOG.concat(on()?S.rgames:S.mine)}
 function all(){return allRaw().filter(listed)}
 function myGames(){return on()?S.rgames.filter(function(g){return g.owner===S.user.id}):S.mine}
 function find(id){return allRaw().filter(function(g){return g.id===id})[0]}
-function updList(){return on()?S.rupd:S.upd}
+function updList(){pruneUpd();return on()?S.upd.filter(function(u){return u.k==='update'}).concat(S.rupd):S.upd}
 function reviewsOf(id){var g=find(id);if(g&&g.remote)return S.rvc[id]||[];return (SEED_REV[id]||[]).concat(S.rev[id]||[])}
 function avg(id){var g=find(id);if(g&&g.remote)return g.rating?Number(g.rating).toFixed(1):null;var r=reviewsOf(id);if(!r.length)return null;return (r.reduce(function(a,b){return a+b.s},0)/r.length).toFixed(1)}
-function pushUpd(t,d,ref){S.upd.unshift({id:'n'+Date.now(),t:t,d:d,a:'agora',k:ref?'game':'sys',ref:ref||''});save('upd')}
+var SOCK={invite:1,joinreq:1,follow:1,mention:1,reply:1,friend:1,gameinvite:1,event:1};
+function isSoc(n){return !!SOCK[n.k]}
+var IMPK={update:1,perm:1,code:1,purchase:1,premium:1};
+function isImp(n){return !!(n.imp||IMPK[n.k])}
+function relTs(t){var m=Math.max(0,Math.round((Date.now()-t)/60000));return m<1?'agora':m<60?m+' min':m<1440?Math.round(m/60)+' h':Math.round(m/1440)+' d'}
+// Avisos comuns somem sozinhos depois de 24 h; os importantes ficam até o jogador apagar.
+function pruneUpd(){var n=Date.now(),ch=false;S.upd=S.upd.filter(function(u){if(!u.ts){u.ts=n;ch=true}return isImp(u)||n-u.ts<864e5});if(ch)save('upd')}
+function pushUpd(t,d,ref,kind){S.upd.unshift({id:'n'+Date.now(),t:t,d:d,a:'agora',ts:Date.now(),k:kind||(ref?'game':'sys'),ref:ref||''});save('upd')}
 function libCount(){return Object.keys(S.lib).filter(function(i){return S.lib[i]&&find(i)}).length}
 function myReviews(){return Object.keys(S.rev).reduce(function(a,k){return a+S.rev[k].length},0)}
 function friendCount(){return on()?S.rfriends.filter(function(f){return f.status==='accepted'}).length:S.friends.length}
@@ -824,9 +838,11 @@ function notifTarget(n){
  var g=allRaw().filter(function(x){return n.d&&n.d.indexOf(x.title)===0&&/^(Jogo|Seu jogo|Nova avaliação)/.test(n.t||'')})[0];
  return g?{a:'open',v:g.id}:null;
 }
+function swipeWrap(id,html){return '<div class="swp" data-nid="'+esc(id)+'"><div class="swc">'+html+'</div></div>'}
+function impBadge(u){return isImp(u)?' <span class="badge warn">Importante</span>':''}
 function updRow(u){
- var t=notifTarget(u),inner='<div class="avatar" style="width:38px;height:38px;font-size:14px">'+ic('bell')+'</div><div class="body"><b>'+esc(u.t)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(u.d)+'</div></div><span class="note" style="margin:0">'+u.a+'</span>'+(t?ic('chev','chv'):'');
- return t?'<button class="li" style="width:100%;text-align:left;color:var(--fg)" data-a="'+t.a+'" data-v="'+esc(t.v)+'">'+inner+'</button>':'<div class="li">'+inner+'</div>';
+ var t=notifTarget(u),inner='<div class="avatar" style="width:38px;height:38px;font-size:14px">'+ic('bell')+'</div><div class="body"><b>'+esc(u.t)+impBadge(u)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(u.d)+'</div></div><span class="note" style="margin:0">'+(u.ts?relTs(u.ts):u.a)+'</span>'+(t?ic('chev','chv'):'');
+ return swipeWrap(u.id,t?'<button class="li" style="width:100%;text-align:left;color:var(--fg)" data-a="'+t.a+'" data-v="'+esc(t.v)+'">'+inner+'</button>':'<div class="li">'+inner+'</div>');
 }
 
 /* ---------- telas ---------- */
@@ -1028,7 +1044,8 @@ function wish(){
  var ids=Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)});
  return subhead('Lista de desejos')+(ids.length?'<div class="grid">'+ids.map(function(i){return card(find(i))}).join('')+'</div>':'<div class="empty">Toque no coração de um jogo para guardá-lo aqui.</div>')
 }
-function upd(){return subhead('Notificações')+'<div class="list">'+(updList().map(function(u){return u.k&&u.k!=='sys'&&u.k!=='game'?notifRow(u):updRow(u)}).join('')||'<div class="empty">Nenhuma notificação.</div>')+'</div>'}
+var NHINT='<p class="note" style="text-align:center">Deslize para a esquerda para apagar. Avisos comuns somem sozinhos depois de 24 h; os importantes ficam até você apagar.</p>';
+function upd(){return subhead('Notificações')+'<div class="list">'+(updList().map(function(u){return isSoc(u)?notifRow(u):updRow(u)}).join('')||'<div class="empty">Nenhuma notificação.</div>')+'</div>'+(updList().length?NHINT:'')}
 function authView(){
  var reg=S.authTab==='reg';
  return subhead(reg?'Criar conta':'Entrar')
@@ -1163,7 +1180,7 @@ P.cal='<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3
 function SOC0(){return{ctab:'feed',cf:'foryou',rsp:{group:[],community:[]},rconv:[],cun:0,spc:null,sptab:'feed',rcm:{},ocm:null,cform:null,room:null,rooms:{},pimg:'',pgame:'',fres:null,sq:'',fol:{}}}
 var SOCTABS=[['feed','Comunidade','users'],['groups','Grupos','users'],['comms','Comunidades','star'],['msgs','Mensagens','chat'],['friends','Amigos','user'],['notif','Avisos','bell']];
 function needAcc(t){return '<div class="empty">Para usar '+t+', é preciso ter uma conta.<br>Entre ou crie a sua para conversar com jogadores de verdade.<div style="margin-top:12px"><button class="btn sm" data-a="sub" data-v="auth">Entrar ou criar conta</button></div></div>'}
-function socNotifs(){return S.rupd.filter(function(n){return n.k&&n.k!=='sys'&&n.k!=='game'})}
+function socNotifs(){return S.rupd.filter(isSoc)}
 function socUnseen(){return socNotifs().filter(function(n){return S.seen.indexOf(n.id)<0}).length}
 function who(n,url,cls){return avatarEl(url,n,cls)}
 function tabsBar(){
@@ -1311,12 +1328,12 @@ function notifRow(n){
  else if(n.k==='gameinvite'&&find('r'+(n.ref||'').slice(5)))go='<button class="btn sm" data-a="open" data-v="r'+n.ref.slice(5)+'">Jogar</button>';
  else if(/^post:/.test(n.ref||''))go='<button class="btn sm" data-a="ctab" data-v="feed">Ver</button>';
  var ic2={invite:'users',joinreq:'users',follow:'user',mention:'chat',reply:'chat',friend:'user',gameinvite:'play',event:'cal'}[n.k]||'bell';
- return '<div class="li"><div class="avatar" style="width:38px;height:38px">'+ic(ic2)+'</div><div class="body"><b>'+esc(n.t)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(n.d)+'</div></div><div class="cmeta"><span class="note">'+n.a+'</span>'+go+'</div></div>';
+ return swipeWrap(n.id,'<div class="li"><div class="avatar" style="width:38px;height:38px">'+ic(ic2)+'</div><div class="body"><b>'+esc(n.t)+impBadge(n)+'</b><div class="note" style="margin:2px 0 0;white-space:normal">'+esc(n.d)+'</div></div><div class="cmeta"><span class="note">'+n.a+'</span>'+go+'</div></div>');
 }
 function notifView(){
  if(!on())return needAcc('os avisos sociais');
  var l=socNotifs();
- return l.length?'<div class="list">'+l.map(notifRow).join('')+'</div>':'<div class="empty">Nenhum aviso social.<br>Convites, novos seguidores, menções e respostas aparecem aqui.</div>';
+ return l.length?'<div class="list">'+l.map(notifRow).join('')+'</div>'+NHINT:'<div class="empty">Nenhum aviso social.<br>Convites, novos seguidores, menções e respostas aparecem aqui.</div>';
 }
 /* ----- tela principal ----- */
 function community(){
@@ -1446,7 +1463,7 @@ async function sendMsg(){
  }catch(e){toast(e.message);return}
  S.pimg='';S.pgame='';S.gpick=false;S.chd='';render(true);var n=document.getElementById('chatIn');if(n)n.focus();view.scrollTop=view.scrollHeight;loadConvs();
 }
-var SOCA={sub:1,ctab:1,back:1,cfilter:1,follow:1,post:1,like:1,delpost:1,cmt:1,cmsend:1,delcm:1,spsearch:1,spopen:1,sptab:1,spjoin:1,spdecline:1,spleave:1,spdel:1,spdelno:1,spinv:1,spinvgo:1,spappr:1,spkick:1,evadd:1,evdel:1,cnew:1,cacc:1,csave:1,convopen:1,chatopen:1,invgame:1,pickgame:1,setgame:1,rmimg:1,rmgame:1,addfriend:1};
+var SOCA={nrm:1,sub:1,ctab:1,back:1,cfilter:1,follow:1,post:1,like:1,delpost:1,cmt:1,cmsend:1,delcm:1,spsearch:1,spopen:1,sptab:1,spjoin:1,spdecline:1,spleave:1,spdel:1,spdelno:1,spinv:1,spinvgo:1,spappr:1,spkick:1,evadd:1,evdel:1,cnew:1,cacc:1,csave:1,convopen:1,chatopen:1,invgame:1,pickgame:1,setgame:1,rmimg:1,rmgame:1,addfriend:1};
 function socHandles(a,v){
  if(!SOCA[a])return false;
  if(a==='sub')return v==='friends'||v==='community';
@@ -1461,6 +1478,11 @@ async function socAct(a,v,t){
   case 'sub':
    if(v==='friends'||v==='community'){S.ctab=v==='friends'?'friends':'feed';S.sub='community';S.tab='home';S.detail=null;render();socLoad();return true}
    return false;
+  case 'nrm':
+   var lo=S.upd.filter(function(x){return x.id===v})[0];
+   if(lo){S.upd=S.upd.filter(function(x){return x.id!==v});save('upd')}
+   else if(on()){await api('DELETE','/notifications/'+v.slice(1));S.rupd=S.rupd.filter(function(x){return x.id!==v})}
+   render(true);return true;
   case 'ctab':S.sub='community';S.tab='home';S.detail=null;S.ctab=v;S.sq='';render();socLoad();return true;
   case 'back':
    if(S.detail)return false;
@@ -1561,6 +1583,26 @@ document.addEventListener('keydown',function(e){
  if(e.target.id==='invIn'){e.preventDefault();act('spinvgo')}
  if(e.target.id==='cmIn'){e.preventDefault();var b=document.querySelector('[data-a=cmsend]');if(b)act('cmsend',b.dataset.v,b)}
 });
+
+/* deslizar para a esquerda apaga o aviso */
+(function(){
+ var st=null;
+ document.addEventListener('pointerdown',function(e){var r=e.target.closest&&e.target.closest('.swp');if(!r||(e.button&&e.button>0))return;st={r:r,c:r.firstChild,x:e.clientX,y:e.clientY,dx:0,on:false,id:e.pointerId}},{passive:true});
+ document.addEventListener('pointermove',function(e){
+  if(!st||e.pointerId!==st.id)return;var dx=e.clientX-st.x,dy=e.clientY-st.y;
+  if(!st.on){if(dx<-10&&Math.abs(dx)>Math.abs(dy)*1.5){st.on=true;st.c.style.transition='none'}else return}
+  st.dx=Math.min(0,dx);st.c.style.transform='translateX('+st.dx+'px)';st.r.classList.add('pull');
+ },{passive:true});
+ function end(e){
+  if(!st||e.pointerId!==st.id)return;var s=st;st=null;
+  if(!s.on)return;window.__swiped=Date.now();
+  s.c.style.transition='transform .18s ease,opacity .18s';
+  if(s.dx<-Math.min(110,(s.r.clientWidth||360)*.3)){s.c.style.transform='translateX(-110%)';s.c.style.opacity='0';setTimeout(function(){act('nrm',s.r.dataset.nid).catch(function(er){toast(er&&er.message?er.message:'Não consegui apagar');render(true)})},170)}
+  else{s.c.style.transform='';s.r.classList.remove('pull')}
+ }
+ document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
+ document.addEventListener('click',function(e){if(window.__swiped&&Date.now()-window.__swiped<400){e.stopImmediatePropagation();e.preventDefault()}},true);
+})();
 
 function keepForms(){
  var g=function(i){return document.getElementById(i)},s=S.studio;

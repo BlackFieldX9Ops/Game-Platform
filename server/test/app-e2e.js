@@ -308,6 +308,12 @@ async function main() {
   A.click('[data-a="back"]');
   const det = A.w.eval("[GPT.oriDetect(\"screen.orientation.lock('landscape')\"),GPT.oriDetect('{orientation:\"portrait\"}'),GPT.oriDetect('var x=1'),GPT.oriDetect('<meta name=\"screen-orientation\" content=\"landscape\">')].join()");
   ok('detecta a orientação pelo código do jogo', det === 'landscape,portrait,,landscape');
+  const oldTs = Date.now() - 30 * 36e5;
+  const N = open({ gp_clean: 2, gp_upd: [{ id: 'n1', t: 'Aviso comum velho', d: 'x', a: '1 d', ts: oldTs, k: 'sys' }, { id: 'n2', t: 'Atualização disponível', d: 'Há uma versão nova', a: '1 d', ts: oldTs, k: 'update', ref: 'settings' }, { id: 'n3', t: 'Aviso recente', d: 'y', a: 'agora', ts: Date.now(), k: 'sys' }] });
+  await wait(600); N.click('#bell');
+  ok('aviso comum com mais de 24 h some sozinho', await until(() => /Aviso recente/.test(N.text())) && !/Aviso comum velho/.test(N.text()));
+  ok('aviso importante antigo continua, marcado como Importante', /Atualização disponível/.test(N.text()) && /Importante/.test(N.text()));
+  ok('toque na atualização abre as Configurações', (N.click('button.li[data-a="sub"][data-v="settings"]'), await until(() => /Atualização automática|Configurações/.test(N.text()))));
   ok('nenhum erro de script', [A, B, AD].every(x => x.errs.length === 0), JSON.stringify([A.errs, B.errs, AD.errs]));
 }
 try { await main(); } catch (e) { fail++; console.error('ERRO', e); }
