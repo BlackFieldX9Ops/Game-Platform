@@ -17,6 +17,12 @@ Se a release ainda não existir, abra **Actions > Gerar APK > Run workflow** e e
 
 Este é um APK de teste (debug). Para publicar na Google Play, veja `app/LEIA-ME.md`.
 
+### Atualizar o app
+
+O app confere sozinho se existe versão nova (a cada 6 horas) e mostra um aviso na tela inicial. Também dá para tocar em **Perfil > Configurações > Atualização do app > Verificar agora**. Ao tocar em **Atualizar**, o Android baixa o `game-platform.apk`; abra o arquivo e instale por cima. Seus dados e jogos ficam.
+
+Isso só funciona porque todo APK é assinado com a mesma chave (`app/keystore/debug.keystore`) e tem número de versão crescente (o número da execução do **Gerar APK**). Essa chave é só para testes e fica pública no repositório; para a Google Play use uma chave sua. **Atenção:** o APK instalado antes desta mudança tinha outra assinatura, então desinstale-o uma vez antes de instalar o novo. Depois disso, as atualizações entram por cima.
+
 ### Tela cheia e rotação
 
 No app Android, abra **Perfil > Configurações > Tela**:
@@ -26,6 +32,10 @@ No app Android, abra **Perfil > Configurações > Tela**:
 - Na posição horizontal, a barra de navegação passa para a lateral e as listas ganham mais colunas.
 
 O código nativo dessa parte está em `app/native/MainActivity.java` e entra no APK pelo fluxo **Gerar APK**.
+
+### Publicar jogos com vários arquivos
+
+No **Studio > Enviar arquivo** você pode mandar um único `.html` ou um `.zip` com o jogo inteiro (HTML, JavaScript, CSS, imagens, sons, fontes, modelos 3D, JSON). O app junta tudo em uma só página: scripts e CSS entram direto, e os demais arquivos ficam embutidos e são achados pelo caminho original (`assets/hero.png`, `data/level.json`) por `fetch`, `XMLHttpRequest`, `Image`, `Audio` e `<script>`. Limites: ZIP de até 15 MB, jogo final de uns 18 MB. Offline o limite é 2,5 MB. Scripts `type="module"` que importam arquivos locais (`import './x.js'`) não são suportados; gere um pacote único (Vite, esbuild, Rollup) antes.
 
 ## 2. Colocar o servidor no ar
 

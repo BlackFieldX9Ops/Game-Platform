@@ -24,4 +24,6 @@ jobs:
         run: npm test
 
       - name: Teste do app com o servidor (dois jogadores)
-        run: npm run test:app
+        run: |
+          npm run test:app
+          npm run test:zip

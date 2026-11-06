@@ -40,6 +40,11 @@ jobs:
             echo "SERVER_URL não definida: o app pedirá o endereço do servidor nas configurações."
           fi
 
+      - name: Registrar o número desta versão no app
+        env:
+          BUILD: ${{ github.run_number }}
+        run: sed -i "s|<meta name=\"gp-build\" content=\"\">|<meta name=\"gp-build\" content=\"$BUILD\">|; s|<meta name=\"gp-repo\" content=\"[^\"]*\">|<meta name=\"gp-repo\" content=\"${{ github.repository }}\">|" www/index.html
+
       - name: Instalar dependências
         run: npm install
 
@@ -48,6 +53,15 @@ jobs:
 
       - name: Aplicar o código nativo (tela cheia e rotação)
         run: cp native/MainActivity.java android/app/src/main/java/com/gameplatform/app/MainActivity.java
+
+      - name: Usar a chave fixa e numerar a versão (permite atualizar por cima)
+        env:
+          BUILD: ${{ github.run_number }}
+        run: |
+          mkdir -p ~/.android
+          cp keystore/debug.keystore ~/.android/debug.keystore
+          sed -i -E "s/versionCode [0-9]+/versionCode $BUILD/; s/versionName \"[^\"]*\"/versionName \"1.2.$BUILD\"/" android/app/build.gradle
+          grep -n "versionCode\|versionName" android/app/build.gradle
 
       - name: Gerar ícones e tela de abertura
         run: npx capacitor-assets generate --android --iconBackgroundColor '#0a1133' --splashBackgroundColor '#0a1133'
@@ -79,4 +93,4 @@ jobs:
             --target "${{ github.sha }}" \
             --prerelease \
             --title "APK mais recente" \
-            --notes "APK de teste do Game Platform. Baixe o arquivo game-platform.apk no celular Android e abra para instalar. O Android pede para permitir a instalação de apps desconhecidos."
+            --notes "Build ${{ github.run_number }}. APK de teste do Game Platform. Baixe o arquivo game-platform.apk no celular Android e abra para instalar. O Android pede para permitir a instalação de apps desconhecidos."

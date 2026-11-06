@@ -1,6 +1,8 @@
 package com.gameplatform.app;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
@@ -105,8 +107,33 @@ public class MainActivity extends BridgeActivity {
     web.evaluateJavascript(js, null);
   }
 
+  private long versionCode() {
+    try {
+      android.content.pm.PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+      return Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
+    } catch (Exception e) {
+      return 0;
+    }
+  }
+
   /** Ponte chamada pelo app web (window.GPNative). */
   private class Native {
+    @JavascriptInterface
+    public String getBuild() {
+      return String.valueOf(versionCode());
+    }
+
+    @JavascriptInterface
+    public void openUrl(final String url) {
+      if (url == null || !url.startsWith("https://")) return;
+      runOnUiThread(() -> {
+        try {
+          startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception ignored) {
+        }
+      });
+    }
+
     @JavascriptInterface
     public void setFullscreen(final boolean on) {
       runOnUiThread(() -> {

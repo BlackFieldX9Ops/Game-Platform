@@ -6,3 +6,4 @@ server/data/
 *.db-wal
 .env
 *.keystore
+!app/keystore/debug.keystore

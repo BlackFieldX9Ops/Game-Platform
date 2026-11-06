@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
+<meta name="gp-build" content="">
+<meta name="gp-repo" content="BlackFieldX9Ops/Game-Platform">
+<script src="vendor/jszip.min.js" defer></script>
+<script src="vendor/bundle.js" defer></script>
 <style>html{padding:max(env(safe-area-inset-top,0px),var(--sat,0px)) max(env(safe-area-inset-right,0px),var(--sar,0px)) max(env(safe-area-inset-bottom,0px),var(--sab,0px)) max(env(safe-area-inset-left,0px),var(--sal,0px));background:#0a0d1c}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Game Platform</title>
 <style>
@@ -208,6 +212,7 @@ nav.bar button[aria-current=page] span{padding:0 8px}
 }
 
 /* ---- ainda mais compacto + jogo em tela cheia ---- */
+.upd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;border-color:var(--accent)}
 header.top{padding-top:5px;padding-bottom:4px}
 .logo{font-size:13px}.logo svg{width:22px;height:22px}
 .search{padding:5px 9px}
@@ -386,6 +391,37 @@ function toast(m){var t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(
 
 /* ---------- tela cheia e orientação ---------- */
 function native(){return typeof window.GPNative!=='undefined'}
+/* ---------- atualização do app ---------- */
+function metaC(n){var m=document.querySelector('meta[name='+n+']');return m&&m.content?m.content.trim():''}
+function repo(){return metaC('gp-repo')||'BlackFieldX9Ops/Game-Platform'}
+function curBuild(){if(native()&&window.GPNative.getBuild){try{return+window.GPNative.getBuild()||0}catch(e){}}return+metaC('gp-build')||0}
+function openUrl(u){if(native()&&window.GPNative.openUrl){try{window.GPNative.openUrl(u);return}catch(e){}}window.open(u,'_blank')}
+async function checkUpdate(manual){
+ var cb=curBuild();
+ if(!cb){S.upv={st:'web'};if(manual)toast('Este é o app de navegador; ele já abre sempre na última versão');render(true);return}
+ S.upv={st:'checking'};if(manual)render(true);
+ try{
+  var r=await fetch('https://api.github.com/repos/'+repo()+'/releases/tags/apk-latest',{headers:{Accept:'application/vnd.github+json'}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  var j=await r.json(),m=/build\s*[:=]?\s*(\d+)/i.exec(j.body||'')||/(\d+)/.exec(j.name||''),nb=m?+m[1]:0;
+  var a=(j.assets||[]).filter(function(x){return/\.apk$/i.test(x.name)})[0];
+  if(!a||!nb)throw new Error('release sem versão');
+  S.upv={st:nb>cb?'new':'ok',build:nb,url:a.browser_download_url};
+  try{localStorage.setItem('gp_updchk',String(Date.now()))}catch(e){}
+  if(nb>cb&&!manual&&ld('gp_updnote',0)<nb){sv('gp_updnote',nb);pushUpd('Atualização disponível','Há uma versão nova do app (build '+nb+'). Abra Configurações para atualizar.')}
+  if(manual)toast(nb>cb?'Há uma versão nova':'Você já está na última versão');
+ }catch(e){S.upv={st:'err'};if(manual)toast('Não consegui verificar agora. Confira a internet.')}
+ render(true);
+}
+function updBanner(){
+ var u=S.upv||{};if(u.st!=='new')return '';
+ return '<div class="panel upd"><div><b>Nova versão disponível</b><div class="note" style="margin:2px 0 0">Build '+u.build+'. Seus dados e jogos continuam no aparelho.</div></div><button class="btn sm" data-a="doupd">Atualizar</button></div>';
+}
+function updPanel(){
+ var u=S.upv||{},cb=curBuild(),msg=!cb?'Você está usando a versão de navegador, que sempre abre atualizada.':u.st==='checking'?'Verificando…':u.st==='new'?'Nova versão disponível (build '+u.build+').':u.st==='ok'?'Você está na última versão.':u.st==='err'?'Não consegui verificar agora.':'Instalado: build '+cb+'.';
+ return '<div class="panel" style="margin-top:14px"><div class="f" style="margin-top:0;font-weight:700">Atualização do app</div><p class="note" style="margin:6px 0 8px">'+(cb?'Versão instalada: build '+cb+'. ':'')+msg+'</p>'
+  +(cb?'<div class="dev">'+(u.st==='new'?'<button class="btn sm" data-a="doupd">Baixar e atualizar</button>':'')+'<button class="btn ghost sm" data-a="chkupd">Verificar agora</button></div><p class="note">Ao tocar em atualizar, o Android baixa o arquivo novo; abra-o para instalar por cima. Seus dados ficam.</p>':'')+'</div>'
+}
 function applyNative(){
  if(native()){try{window.GPNative.setFullscreen(!!S.cfg.fs);window.GPNative.setOrientation(S.cfg.ori||'auto')}catch(e){}return}
  try{
@@ -504,7 +540,7 @@ function updRow(u){return '<div class="li"><div class="avatar" style="width:38px
 /* ---------- telas ---------- */
 function home(){
  var l=level();
- return '<div class="hero"><canvas id="hc"></canvas><h1>Jogue. Crie. Compartilhe.</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="go" data-v="store">'+ic('play')+'Jogar agora</button><button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button></div></div>'
+ return updBanner()+'<div class="hero"><canvas id="hc"></canvas><h1>Jogue. Crie. Compartilhe.</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="go" data-v="store">'+ic('play')+'Jogar agora</button><button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button></div></div>'
  +'<div class="sec"><h2>Categorias</h2></div><div class="cats">'+CATS.map(function(c){return '<button class="cat" data-a="cat" data-v="'+c[0]+'">'+ic(c[1])+c[0]+'</button>'}).join('')+'</div>'
  +'<div class="sec"><h2>Jogos em destaque</h2><button data-a="go" data-v="store">Ver todos</button></div><div class="grid sm">'+all().slice(0,6).map(card).join('')+'</div>'
  +'<div class="panel prog"><b>Nível '+l.n+'</b><div class="bar-xp"><i style="width:'+(l.cur/l.max*100)+'%"></i></div><span class="note">'+l.cur+' / '+l.max+' XP</span></div>'
@@ -560,8 +596,8 @@ function publish_form(){
  +'<label class="f">Tipo</label><div class="seg">'+['2D','3D'].map(function(d){return '<button data-a="sdim" data-v="'+d+'" aria-pressed="'+(s.dim===d)+'">'+d+'</button>'}).join('')+'</div>'
  +'<label class="f">Origem do código</label><div class="seg"><button data-a="smode" data-v="code" aria-pressed="'+(s.mode==='code')+'">Colar código</button><button data-a="smode" data-v="file" aria-pressed="'+(s.mode==='file')+'">Enviar arquivo</button></div>'
  +(s.mode==='code'
-   ?'<label class="f" for="sCode">Código (HTML completo ou apenas JavaScript)</label><textarea class="in" id="sCode" spellcheck="false" placeholder="Cole aqui o código do seu jogo">'+esc(s.code)+'</textarea><div class="dev" style="margin-top:8px"><button class="btn ghost sm" data-a="tpl">Usar modelo inicial</button></div>'
-   :'<label class="drop" style="margin-top:12px" for="sFile">'+ic('upload')+'<b>Toque para enviar</b><span>Arquivos .html, .htm, .js ou .txt</span><span style="color:var(--fg)">'+(s.code?'Arquivo carregado ('+s.code.length+' caracteres)':'')+'</span></label><input id="sFile" type="file" accept=".html,.htm,.js,.txt" hidden>')
+   ?(s.code.length>3e5?'<div class="panel" style="margin-top:10px"><b>Código grande carregado de arquivo</b><div class="note">'+(s.code.length/1e6).toFixed(1)+' MB'+(s.zip?' · '+s.zip:'')+'. Não dá para editar aqui; toque em Testar ou Publicar.</div><button class="btn ghost sm" style="margin-top:8px" data-a="sclear">Remover</button></div>':'<label class="f" for="sCode">Código (HTML completo ou apenas JavaScript)</label><textarea class="in" id="sCode" spellcheck="false" placeholder="Cole aqui o código do seu jogo">'+esc(s.code)+'</textarea><div class="dev" style="margin-top:8px"><button class="btn ghost sm" data-a="tpl">Usar modelo inicial</button></div>')
+   :'<label class="drop" style="margin-top:12px" for="sFile">'+ic('upload')+'<b>Toque para enviar</b><span>Um arquivo .html, .htm, .js ou .txt, ou um .zip com o jogo inteiro (HTML, JS, CSS, imagens, sons)</span><span style="color:var(--fg)">'+(s.code?'Carregado: '+(s.zip?s.zip+', ':'')+(s.code.length>1e5?(s.code.length/1e6).toFixed(1)+' MB':s.code.length+' caracteres'):'')+'</span></label><input id="sFile" type="file" accept=".html,.htm,.js,.txt,.zip,application/zip" hidden>')
  +'<label class="f">Bibliotecas incluídas</label><div class="libs">'+LIBS.map(function(l){return '<label><input type="checkbox" data-lib="'+l[0]+'"'+(s.libs[l[0]]?' checked':'')+'> '+l[1]+'</label>'}).join('')+'</div>'
  +'<p class="note">O app roda tudo que o navegador executa: HTML, CSS, JavaScript, TypeScript compilado, WebGL, Canvas e WebAssembly. Jogos em Python, C#, C++ ou Java entram depois de exportados para a web (Unity WebGL, Godot HTML5, Emscripten, Pygbag). Cole o HTML exportado ou envie o arquivo principal.</p>'
  +'<div class="dev" style="margin-top:16px"><button class="btn ghost" style="flex:1" data-a="stest">'+ic('play')+'Testar</button><button class="btn" style="flex:1" data-a="spub">'+ic('upload')+(s.editId?'Salvar':'Publicar')+'</button></div>'
@@ -648,7 +684,8 @@ function settings(){
  +(on()?'':'<label class="f" for="sName">Seu nome (modo offline)</label><input class="in" id="sName" value="'+esc(S.name)+'" maxlength="20">')
  +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação</div><div class="seg">'+[['auto','Automática'],['portrait','Vertical'],['landscape','Horizontal']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">'+(native()?'Automática gira com o aparelho. Vertical e Horizontal travam a tela.':'Estas opções funcionam no aplicativo Android. No navegador dependem do suporte do aparelho.')+'</p></div>'
  +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (demonstração)','admin'))+'</div>'
- +'<dl class="panel kv" style="margin-top:12px"><dt>Tema</dt><dd>Escuro</dd><dt>Idioma</dt><dd>Português (Brasil)</dd><dt>Versão</dt><dd>1.1</dd></dl>'
+ +updBanner()+updPanel()
+ +'<dl class="panel kv" style="margin-top:12px"><dt>Tema</dt><dd>Escuro</dd><dt>Idioma</dt><dd>Português (Brasil)</dd><dt>Versão</dt><dd>1.2'+(curBuild()?' (build '+curBuild()+')':'')+'</dd></dl>'
  +'<div class="sec"><h2>Dados deste aparelho</h2></div>'
  +(S.confirmReset?'<div class="panel"><b>Apagar tudo?</b><div class="note">Biblioteca, jogos publicados offline, avaliações, posts e mensagens deste aparelho serão removidos, e você sai da conta. Nada é apagado no servidor.</div><div class="dev" style="margin-top:10px"><button class="btn ghost sm" data-a="resetno">Cancelar</button><button class="btn sm" style="background:var(--bad);border-color:var(--bad)" data-a="resetyes">Apagar tudo</button></div></div>':'<button class="btn ghost full" data-a="reset">Apagar dados do aparelho</button>')
 }
@@ -736,6 +773,7 @@ async function publish(){
  if(!s.title.trim()){toast('Dê um nome ao jogo');return}
  if(!s.code.trim()){toast('Cole ou envie o código do jogo');return}
  var libs=JSON.parse(JSON.stringify(s.libs));
+ if(!on()&&s.code.length>2.5e6){toast('Jogo grande demais para guardar só no aparelho (limite 2,5 MB). Entre numa conta para publicar.');return}
  if(on()){
   var body={title:s.title.trim(),description:s.desc,category:s.cat,age:s.age,dim:s.dim,libs:Object.keys(libs).filter(function(k){return libs[k]}),code:s.code};
   try{
@@ -755,6 +793,18 @@ async function publish(){
   pushUpd('Jogo publicado',g.title+' já está na Loja.');toast('Publicado e adicionado à sua biblioteca');
  }
  S.studio={title:'',dim:'2D',mode:'code',code:'',libs:{},desc:'',cat:'Ação',age:'Livre',editId:null};render();
+}
+async function importZip(f){
+ if(f.size>15e6){toast('ZIP maior que 15 MB');return}
+ if(!window.JSZip||!window.GPBundle){toast('Leitor de ZIP indisponível');return}
+ keepForms();toast('Lendo o ZIP...');
+ try{
+  var r=await GPBundle.bundle(await JSZip.loadAsync(f));
+  if(r.html.length>18e6)throw new Error('Jogo grande demais (limite de uns 18 MB)');
+  S.studio.code=r.html;S.studio.zip=r.files+' arquivos';
+  if(!S.studio.title)S.studio.title=(r.title||f.name.replace(/\.[^.]+$/,'')).slice(0,40);
+  render(true);toast(r.warnings.length?r.warnings[0]:'ZIP carregado: '+r.files+' arquivos');
+ }catch(e){toast(e.message||'Não consegui ler o ZIP')}
 }
 async function authGo(){
  var g=function(i){var e=document.getElementById(i);return e?e.value.trim():''},reg=S.authTab==='reg';
@@ -805,6 +855,9 @@ async function act(a,v,t){
   case 'stab':S.stab=v;render();if(v==='painel'&&on())loadStats();break;
   case 'sdim':S.studio.dim=v;render(true);break;
   case 'smode':S.studio.mode=v;render(true);break;
+  case 'chkupd':checkUpdate(true);break;
+  case 'doupd':if(S.upv&&S.upv.url)openUrl(S.upv.url);break;
+  case 'sclear':S.studio.code='';S.studio.zip='';render(true);break;
   case 'tpl':S.studio.code=TEMPLATE;render(true);break;
   case 'stest':if(!S.studio.code.trim()){toast('Cole ou envie o código primeiro');return}openGame({title:S.studio.title||'Teste',code:S.studio.code,libs:S.studio.libs});break;
   case 'spub':await publish();break;
@@ -881,7 +934,8 @@ document.addEventListener('click',function(e){
 });
 document.addEventListener('change',function(e){
  var t=e.target;
- if(t.id==='sFile'&&t.files[0]){var f=t.files[0];if(f.size>4e6){toast('Arquivo maior que 4 MB');return}var r=new FileReader();r.onload=function(){keepForms();S.studio.code=String(r.result);if(!S.studio.title)S.studio.title=f.name.replace(/\.[^.]+$/,'');render(true);toast('Arquivo carregado')};r.readAsText(f)}
+ if(t.id==='sFile'&&t.files[0]&&/\.zip$/i.test(t.files[0].name)){importZip(t.files[0]);t.value=''}
+ else if(t.id==='sFile'&&t.files[0]){var f=t.files[0];if(f.size>4e6){toast('Arquivo maior que 4 MB');return}var r=new FileReader();r.onload=function(){keepForms();S.studio.code=String(r.result);S.studio.zip='';if(!S.studio.title)S.studio.title=f.name.replace(/\.[^.]+$/,'');render(true);toast('Arquivo carregado')};r.readAsText(f)}
  if(t.dataset.lib){S.studio.libs[t.dataset.lib]=t.checked}
  if(t.dataset.mon){S.mon[t.dataset.mon]=t.checked?1:0;save('mon');render(true)}
  if(t.dataset.cfg){S.cfg[t.dataset.cfg]=t.checked?1:0;save('cfg');if(t.dataset.cfg==='admin')render(true);if(t.dataset.cfg==='fs')applyNative()}
@@ -908,6 +962,8 @@ setInterval(function(){if(on()&&!document.hidden)refreshFriends()},20000);
   if(S.srvOk){connectWs();await refreshAll()}
   else toast('Sem conexão com o servidor. Você está vendo os dados locais.');
  }
+ var lc=+ld('gp_updchk',0)||+(localStorage.getItem('gp_updchk')||0);
+ if(curBuild()&&Date.now()-lc>6*36e5)setTimeout(function(){checkUpdate(false)},2500);
 })();
 })();
 </script>

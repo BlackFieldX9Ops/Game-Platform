@@ -21,13 +21,13 @@ const ORIGINS = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).f
 const CATEGORIES = ['Aventura', 'RPG', 'Corrida', 'Ação', 'Estratégia', 'Terror', 'Plataforma', 'Quebra-cabeça'];
 const AGES = ['Livre', '10+', '12+', '14+', '16+', '18+'];
 const LIBS = ['three', 'phaser', 'p5', 'pixi'];
-const MAX_CODE = 2_000_000;
+const MAX_CODE = 20_000_000;
 
 const app = express();
 app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: ORIGINS.length ? ORIGINS : true }));
-app.use(express.json({ limit: '3mb' }));
+app.use(express.json({ limit: '30mb' }));
 
 /* ---------- utilidades ---------- */
 class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
@@ -78,7 +78,7 @@ function gameInput(b) {
   const libs = Array.isArray(b.libs) ? b.libs : [];
   if (libs.some(l => !LIBS.includes(l))) bad('Biblioteca não suportada');
   if (typeof b.code !== 'string' || !b.code.trim()) bad('O código do jogo é obrigatório');
-  if (b.code.length > MAX_CODE) bad('Código maior que 2 MB');
+  if (b.code.length > MAX_CODE) bad('Código maior que 20 MB');
   return { title, description, category: b.category, age, dim: b.dim, libs: JSON.stringify([...new Set(libs)]), code: b.code };
 }
 
