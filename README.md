@@ -47,7 +47,11 @@ No **Studio > Enviar arquivo** você pode mandar um único `.html` ou um `.zip` 
 
 Sem servidor o app funciona offline. Com servidor, você tem contas, Loja compartilhada, amigos e chat.
 
-**Pelo Render (mais simples):**
+**De graça e com dados permanentes (Oracle Cloud):** siga `deploy/ORACLE.md`. É uma máquina sempre ligada; um script instala tudo, com HTTPS e backup diário. Precisa de cartão apenas para a Oracle verificar a conta.
+
+**Pelo Render (simples, mas pago para guardar dados):** o plano grátis do Render dorme após 15 minutos e apaga os arquivos locais (inclusive o banco SQLite) a cada reinício, então não serve para este servidor. O `render.yaml` usa o plano pago com disco.
+
+**Pelo Render, passo a passo:**
 
 1. Entre em render.com e escolha **New > Blueprint**. Conecte este repositório. O arquivo `render.yaml` já descreve o serviço.
 2. Quando pedir, preencha `ADMIN_EMAIL` com o seu e-mail. Quem se cadastrar com esse e-mail vira administrador. A chave `JWT_SECRET` é gerada sozinha.

@@ -1,0 +1,34 @@
+# Servidor + HTTPS automático (Caddy). Usado pelo install.sh; não precisa mexer.
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    volumes:
+      - dados:/app/data
+    expose:
+      - "3000"
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO: ${DOMINIO}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_dados:/data
+      - caddy_config:/config
+volumes:
+  dados:
+  caddy_dados:
+  caddy_config:
