@@ -118,6 +118,10 @@ async function main() {
   // --- capa, destaques, categorias e logs
   const PIX = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==';
   const base = { title: 'Com Capa', description: 'x', category: 'Ação', age: 'Livre', dim: '2D', libs: [], code: '<canvas></canvas>' };
+  ok('orientação inválida é recusada', (await call('POST', '/games', { ...base, orientation: 'diagonal' }, A)).s === 400);
+  const gl = await call('POST', '/games', { ...base, title: 'Deitado', orientation: 'landscape' }, A);
+  ok('jogo guarda a orientação pedida', gl.s === 201 && (await call('GET', '/games/' + gl.j.id)).j.game.orientation === 'landscape');
+  ok('orientação padrão é automática', (await call('GET', '/games/' + (await call('POST', '/games', { ...base, title: 'Livre' }, A)).j.id)).j.game.orientation === 'auto');
   const bad1 = await call('POST', '/games', { ...base, cover: 'http://x/y.png' }, A);
   ok('capa inválida é recusada', bad1.s === 400);
   const g1 = await call('POST', '/games', { ...base, cover: PIX }, A);

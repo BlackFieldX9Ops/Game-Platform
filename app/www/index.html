@@ -43,7 +43,7 @@ header.top{flex:none;display:flex;align-items:center;gap:10px;padding:8px var(--
 main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:6px var(--gut) 24px;scrollbar-width:none;overscroll-behavior:contain}
 main::-webkit-scrollbar{display:none}
 nav.bar{flex:none;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;background:#0d1124;border-top:1px solid var(--line);padding:6px 6px 6px}
-nav.bar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;color:var(--muted);font-size:10.5px;font-weight:600;border-radius:14px;transition:background .15s,color .15s}
+nav.bar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;color:#a9b0d6;font-size:11px;font-weight:600;border-radius:14px;transition:background .15s,color .15s}
 nav.bar button svg{width:21px;height:21px}
 nav.bar button[aria-current=page]{color:#fff;background:var(--soft)}
 nav.bar button[aria-current=page] svg{color:var(--accent)}
@@ -508,12 +508,10 @@ function updPanel(){
   +(cb?'<div class="dev">'+(u.st==='new'?'<button class="btn sm" data-a="doupd">Baixar e atualizar</button>':'')+'<button class="btn ghost sm" data-a="chkupd">Verificar agora</button></div><p class="note">Ao tocar em atualizar, o Android baixa o arquivo novo; abra-o para instalar por cima. Seus dados ficam.</p>':'')+'</div>'
 }
 function applyNative(){
- if(native()){try{window.GPNative.setFullscreen(!!S.cfg.fs);window.GPNative.setOrientation(S.cfg.ori||'auto')}catch(e){}return}
- try{
-  if(!S.cfg.fs&&document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen();
-  if(S.cfg.ori==='auto'&&screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();
-  else if(screen.orientation&&screen.orientation.lock&&document.fullscreenElement)screen.orientation.lock(S.cfg.ori).catch(function(){});
- }catch(e){}
+ /* Fora dos jogos o app fica sempre em pé; quem gira é o jogo (setOri em openGame). */
+ if(native()){try{window.GPNative.setFullscreen(!!S.cfg.fs);window.GPNative.setOrientation(cur?oriFor(cur):'portrait')}catch(e){}return}
+ try{if(!S.cfg.fs&&document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen()}catch(e){}
+ if(!cur)setOri('portrait');
 }
 
 /* ---------- conta e servidor ---------- */
@@ -534,7 +532,7 @@ async function probe(){
  try{var c=new AbortController(),t=setTimeout(function(){c.abort()},3500);var r=await fetch(base()+'/api/health',{signal:c.signal});clearTimeout(t);var j=await r.json();S.srvOk=!!(j&&j.ok)}catch(e){S.srvOk=false}
  return S.srvOk;
 }
-function mapGame(g){return{cover:g.cover||'',featured:!!g.featured,id:'r'+g.id,rid:g.id,remote:1,title:g.title,genre:g.category,cat:g.category,dim:g.dim,age:g.age,desc:g.description,rating:g.rating,dl:String(g.plays),color:PAL[g.id%PAL.length],icon:g.dim==='3D'?'cube':'pad',dev:g.developer,owner:g.owner_id}}
+function mapGame(g){return{ori:g.orientation||'auto',cover:g.cover||'',featured:!!g.featured,id:'r'+g.id,rid:g.id,remote:1,title:g.title,genre:g.category,cat:g.category,dim:g.dim,age:g.age,desc:g.description,rating:g.rating,dl:String(g.plays),color:PAL[g.id%PAL.length],icon:g.dim==='3D'?'cube':'pad',dev:g.developer,owner:g.owner_id}}
 function mapNotif(n){return{id:'n'+n.id,t:n.title,d:n.body,a:rel(n.created_at)}}
 function libsMap(a){var o={};(a||[]).forEach(function(k){o[k]=true});return o}
 async function refreshAll(){
@@ -681,7 +679,7 @@ function fmtSize(n){return n>=1e6?(n/1e6).toFixed(1).replace('.',',')+' MB':n>=1
 function lineCount(t){var n=1,i=-1;while((i=t.indexOf('\n',i+1))>-1)n++;return n}
 function gutText(n){var a=[];for(var i=1;i<=n;i++)a.push(i);return a.join('\n')}
 function nowSql(){return new Date().toISOString().slice(0,19).replace('T',' ')}
-function newStudio(){return{title:'',dim:'2D',mode:'file',code:'',libs:{},desc:'',cat:catNames()[0]||'Ação',age:'Livre',editId:null,cover:'',src:null,zip:'',draftId:null}}
+function newStudio(){return{ori:'auto',title:'',dim:'2D',mode:'file',code:'',libs:{},desc:'',cat:catNames()[0]||'Ação',age:'Livre',editId:null,cover:'',src:null,zip:'',draftId:null}}
 function draftsHtml(){
  if(!S.drafts.length)return '';
  return '<div class="sec"><h2>Rascunhos</h2><span class="note" style="margin:0">'+S.drafts.length+'</span></div><div class="list">'+S.drafts.map(function(d){
@@ -702,7 +700,8 @@ function publish_form(){
   +'<label class="f" for="sDesc">Descrição</label><textarea class="in" id="sDesc" maxlength="200" placeholder="Conte em uma frase como se joga">'+esc(s.desc)+'</textarea>'
   +'<div class="two"><div><label class="f" for="sCat">Categoria</label><select class="in" id="sCat">'+names.map(function(c){return '<option'+(s.cat===c?' selected':'')+'>'+esc(c)+'</option>'}).join('')+'</select></div>'
   +'<div><label class="f" for="sAge">Classificação</label><select class="in" id="sAge">'+AGES.map(function(a){return '<option'+(s.age===a?' selected':'')+'>'+a+'</option>'}).join('')+'</select></div></div>'
-  +'<label class="f">Tipo</label><div class="seg">'+['2D','3D'].map(function(d){return '<button data-a="sdim" data-v="'+d+'" aria-pressed="'+(s.dim===d)+'">'+d+'</button>'}).join('')+'</div></div>';
+  +'<label class="f">Tipo</label><div class="seg">'+['2D','3D'].map(function(d){return '<button data-a="sdim" data-v="'+d+'" aria-pressed="'+(s.dim===d)+'">'+d+'</button>'}).join('')+'</div>'
+  +'<label class="f">Orientação do jogo</label><div class="seg">'+[['auto','Automática'],['portrait','Retrato'],['landscape','Paisagem']].map(function(o){return '<button data-a="sori" data-v="'+o[0]+'" aria-pressed="'+((s.ori||'auto')===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">O app gira sozinho para essa posição quando o jogador abre o jogo. Automática lê o código (screen.orientation.lock) ou deixa o jogador girar.</p></div>';
  var fileOk=s.code?'<div class="fileok">'+ic('check')+'<div><b>'+esc(s.src&&s.src.name?s.src.name:'Código colado')+'</b><small>'+fmtSize(s.code.length)+(s.zip?' · '+s.zip:'')+'</small></div>'+(big?'':'<button class="btn ghost sm" data-a="smode" data-v="code">Ver código</button>')+'<button class="del" data-a="sclear">Remover</button></div>':'';
  var body;
  if(s.mode==='file'){
@@ -800,7 +799,7 @@ function settings(){
  +'<div class="row" style="margin-top:10px"><span class="note" style="margin:0"><span class="sd '+(S.srvOk?'on':'')+'"></span> '+(S.srvOk?'Servidor conectado':'Sem conexão')+'</span><button class="btn ghost sm" data-a="srvsave">Salvar e testar</button></div>'
  +(on()?'<div class="row" style="margin-top:14px"><span>Conectado como <b>'+esc(S.user.name)+'</b></span><button class="btn ghost sm" data-a="logout">Sair</button></div>':'<button class="btn sm" style="margin-top:14px" data-a="sub" data-v="auth">Entrar ou criar conta</button>')+'</div>'
  +(on()?'':'<label class="f" for="sName">Seu nome (modo offline)</label><input class="in" id="sName" value="'+esc(S.name)+'" maxlength="20">')
- +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação</div><div class="seg">'+[['auto','Automática'],['portrait','Vertical'],['landscape','Horizontal']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">'+(native()?'Automática gira com o aparelho. Vertical e Horizontal travam a tela.':'Estas opções funcionam no aplicativo Android. No navegador dependem do suporte do aparelho.')+'</p></div>'
+ +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação nos jogos</div><div class="seg">'+[['auto','O jogo decide'],['portrait','Sempre em pé'],['landscape','Sempre deitado']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">Fora dos jogos o app fica sempre em pé. Ao abrir um jogo, ele gira sozinho para a posição que o jogo pede (retrato ou paisagem). '+(native()?'Recursos do Android ativos.':'Neste navegador a rotação depende do aparelho.')+'</p></div>'
  +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (demonstração)','admin'))+'</div>'
  +updBanner()+updPanel()
  +'<dl class="panel kv" style="margin-top:12px"><dt>Tema</dt><dd>Escuro</dd><dt>Idioma</dt><dd>Português (Brasil)</dd><dt>Versão</dt><dd>1.2'+(curBuild()?' (build '+curBuild()+')':'')+'</dd></dl>'
@@ -887,19 +886,41 @@ function spark(){
 
 /* ---------- player ---------- */
 var cur=null;
+var ORI_SHIM='<script>(function(){try{var o=screen.orientation;if(o){o.lock=function(m){parent.postMessage({gp:"orient",m:String(m)},"*");return Promise.resolve()};o.unlock=function(){parent.postMessage({gp:"orient",m:"any"},"*")}}}catch(e){}})()<\/script>';
 function wrap(code,libs){
- var tags=LIBS.filter(function(l){return libs&&libs[l[0]]}).map(function(l){return '<script src="'+l[2]+'"><\/script>'}).join('');
+ var tags=ORI_SHIM+LIBS.filter(function(l){return libs&&libs[l[0]]}).map(function(l){return '<script src="'+l[2]+'"><\/script>'}).join('');
  var isDoc=/<\s*(html|!doctype|canvas|body|script)/i.test(code);
  if(!isDoc)return '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;background:#0b0e1f;overflow:hidden}</style>'+tags+'<script>'+code+'<\/script>';
- if(!tags)return code;
- return /<head[^>]*>/i.test(code)?code.replace(/<head[^>]*>/i,function(m){return m+tags}):tags+code;
+ if(/<head[^>]*>/i.test(code))return code.replace(/<head[^>]*>/i,function(m){return m+tags});
+ if(/<!doctype[^>]*>/i.test(code))return code.replace(/<!doctype[^>]*>/i,function(m){return m+tags});
+ return tags+code;
+}
+function oriDetect(code){
+ var m=/orientation["']?\s*[:=]\s*["']?(landscape|portrait)|\block\(\s*["']?(landscape|portrait)|screen-orientation["']?\s+content=["'](landscape|portrait)|data-orientation=["'](landscape|portrait)/i.exec(String(code||'').slice(0,400000));
+ return m?(m[1]||m[2]||m[3]||m[4]).toLowerCase():'';
+}
+window.GPT={oriDetect:oriDetect};
+function oriFor(g){
+ var o=S.cfg.ori;if(o==='portrait'||o==='landscape')return o;
+ if(g.ori==='portrait'||g.ori==='landscape')return g.ori;
+ return oriDetect(g.code)||'auto';
+}
+function setOri(m){
+ if(native()){try{window.GPNative.setOrientation(m)}catch(e){}return}
+ try{var so=screen.orientation;if(!so)return;if(m==='auto'){if(so.unlock)so.unlock()}else if(so.lock)so.lock(m).catch(function(){})}catch(e){}
 }
 function openGame(g){
- cur=g;$('#pTitle').textContent=g.title;$('#player').hidden=false;gameFs();showBar(true);
+ cur=g;$('#pTitle').textContent=g.title;$('#player').hidden=false;gameFs();setOri(oriFor(g));showBar(true);
  $('#frame').srcdoc=wrap(g.code,g.libs);
  if(g.id){S.pc[g.id]=(S.pc[g.id]||0)+1;sv('gp_pc',S.pc);S.plays++;S.xp+=25;sv('gp_plays',S.plays);sv('gp_xp',S.xp)}
 }
 function closeGame(){$('#player').hidden=true;$('#player').classList.remove('bar');$('#frame').srcdoc='';cur=null;applyNative();render(true)}
+window.addEventListener('message',function(e){
+ var d=e.data;if(!d||d.gp!=='orient'||!cur)return;
+ var f=$('#frame');if(f.contentWindow&&e.source!==f.contentWindow)return;
+ if(S.cfg.ori==='portrait'||S.cfg.ori==='landscape')return;
+ var m=String(d.m||'').toLowerCase();setOri(/landscape/.test(m)?'landscape':/portrait/.test(m)?'portrait':'auto');
+});
 var barT=0;
 function showBar(on){var p=$('#player');p.classList.toggle('bar',on);clearTimeout(barT);if(on)barT=setTimeout(function(){p.classList.remove('bar')},3000)}
 function gameFs(){
@@ -933,7 +954,7 @@ async function publish(){
  var libs=JSON.parse(JSON.stringify(s.libs));
  if(!on()&&s.code.length>2.5e6){toast('Jogo grande demais para guardar só no aparelho (limite 2,5 MB). Entre numa conta para publicar.');return}
  if(on()){
-  var body={title:s.title.trim(),description:s.desc,category:s.cat,age:s.age,dim:s.dim,libs:Object.keys(libs).filter(function(k){return libs[k]}),code:s.code};
+  var body={title:s.title.trim(),description:s.desc,category:s.cat,age:s.age,dim:s.dim,libs:Object.keys(libs).filter(function(k){return libs[k]}),code:s.code,orientation:s.ori||'auto'};
   if(s.cover||s.editId)body.cover=s.cover||null;
   try{
    if(s.editId){var g1=find(s.editId);await api('PUT','/games/'+g1.rid,body);toast('Jogo atualizado')}
@@ -945,10 +966,10 @@ async function publish(){
  }
  if(s.editId){
   var g0=S.mine.filter(function(g){return g.id===s.editId})[0];
-  if(g0){g0.title=s.title.trim();g0.dim=s.dim;g0.cat=s.cat;g0.genre=s.cat;g0.age=s.age;g0.desc=s.desc||g0.desc;g0.code=s.code;g0.cover=s.cover;g0.libs=libs;g0.icon=s.dim==='3D'?'cube':'pad'}
+  if(g0){g0.title=s.title.trim();g0.dim=s.dim;g0.cat=s.cat;g0.genre=s.cat;g0.age=s.age;g0.desc=s.desc||g0.desc;g0.code=s.code;g0.cover=s.cover;g0.ori=s.ori||'auto';g0.libs=libs;g0.icon=s.dim==='3D'?'cube':'pad'}
   save('mine');toast('Jogo atualizado');
  }else{
-  var g={id:'u'+Date.now(),title:s.title.trim(),genre:s.cat,cat:s.cat,dim:s.dim,age:s.age,dl:'0',color:PAL[S.mine.length%4],icon:s.dim==='3D'?'cube':'pad',dev:S.name,desc:s.desc||'Jogo publicado no Game Studio.',code:s.code,cover:s.cover,libs:libs};
+  var g={id:'u'+Date.now(),title:s.title.trim(),genre:s.cat,cat:s.cat,dim:s.dim,age:s.age,dl:'0',color:PAL[S.mine.length%4],icon:s.dim==='3D'?'cube':'pad',dev:S.name,desc:s.desc||'Jogo publicado no Game Studio.',code:s.code,cover:s.cover,ori:s.ori||'auto',libs:libs};
   S.mine.unshift(g);S.lib[g.id]=1;save('mine');save('lib');
   pushUpd('Jogo publicado',g.title+' já está na Loja.');toast('Publicado e adicionado à sua biblioteca');
  }
@@ -1047,18 +1068,19 @@ async function act(a,v,t){
   case 'chkupd':checkUpdate(true);break;
   case 'doupd':if(S.upv&&S.upv.url)openUrl(S.upv.url);break;
   case 'sclear':S.studio.code='';S.studio.zip='';S.studio.src=null;render(true);break;
+  case 'sori':S.studio.ori=v;render(true);break;
   case 'lib':S.studio.libs[v]=!S.studio.libs[v];render(true);break;
   case 'coverclear':S.studio.cover='';render(true);break;
   case 'draftsave':
    if(!S.studio.title.trim()&&!S.studio.code.trim()){toast('Nada para guardar ainda');return}
    if(S.studio.code.length>2.5e6){toast('Código grande demais para rascunho (limite 2,5 MB)');return}
-   var dr=S.studio,did2=dr.draftId||('d'+Date.now()),rec={id:did2,title:dr.title,desc:dr.desc,cat:dr.cat,age:dr.age,dim:dr.dim,libs:JSON.parse(JSON.stringify(dr.libs)),code:dr.code,cover:dr.cover,src:dr.src,zip:dr.zip,at:nowSql()};
+   var dr=S.studio,did2=dr.draftId||('d'+Date.now()),rec={id:did2,title:dr.title,desc:dr.desc,cat:dr.cat,age:dr.age,dim:dr.dim,libs:JSON.parse(JSON.stringify(dr.libs)),code:dr.code,cover:dr.cover,ori:dr.ori||'auto',src:dr.src,zip:dr.zip,at:nowSql()};
    S.drafts=S.drafts.filter(function(d){return d.id!==did2});S.drafts.unshift(rec);S.drafts=S.drafts.slice(0,10);dr.draftId=did2;
    try{localStorage.setItem('gp_drafts',JSON.stringify(S.drafts))}catch(er){toast('Sem espaço no aparelho para o rascunho');return}
    toast('Rascunho guardado');render(true);break;
   case 'draftopen':
    var d0=S.drafts.filter(function(d){return d.id===v})[0];if(!d0)break;
-   S.studio={title:d0.title,dim:d0.dim,mode:d0.code.length>3e5?'file':'code',code:d0.code,libs:d0.libs||{},desc:d0.desc||'',cat:d0.cat,age:d0.age,editId:null,cover:d0.cover||'',src:d0.src||null,zip:d0.zip||'',draftId:d0.id};
+   S.studio={title:d0.title,dim:d0.dim,mode:d0.code.length>3e5?'file':'code',code:d0.code,libs:d0.libs||{},desc:d0.desc||'',cat:d0.cat,age:d0.age,editId:null,cover:d0.cover||'',ori:d0.ori||'auto',src:d0.src||null,zip:d0.zip||'',draftId:d0.id};
    render();view.scrollTop=0;toast('Rascunho aberto');break;
   case 'draftdel':S.drafts=S.drafts.filter(function(d){return d.id!==v});save('drafts');render(true);break;
   case 'atab':S.atab=v;render();if(on()&&S.user.role==='admin')loadAdmin();break;
@@ -1083,7 +1105,7 @@ async function act(a,v,t){
    g=myGames().filter(function(x){return x.id===v})[0];if(!g)break;
    var code=g.code,libs=g.libs||{};
    if(g.remote){try{var src=await api('GET','/games/'+g.rid+'/source');code=src.code;libs=libsMap(src.libs)}catch(e){toast(e.message);return}}
-   S.studio={title:g.title,dim:g.dim,mode:'code',code:code,libs:JSON.parse(JSON.stringify(libs)),desc:g.desc||'',cat:g.cat||'Ação',age:g.age||'Livre',editId:g.id,cover:g.cover||'',src:null,zip:'',draftId:null};S.stab='pub';render();toast('Editando '+g.title);break;
+   S.studio={title:g.title,dim:g.dim,mode:'code',code:code,libs:JSON.parse(JSON.stringify(libs)),desc:g.desc||'',cat:g.cat||'Ação',age:g.age||'Livre',editId:g.id,cover:g.cover||'',ori:g.ori||'auto',src:null,zip:'',draftId:null};S.stab='pub';render();toast('Editando '+g.title);break;
   case 'del':
    g=find(v);
    if(g&&g.remote){try{await api('DELETE','/games/'+g.rid)}catch(e){toast(e.message);return}toast('Jogo removido');await refreshAll();break}
@@ -1182,6 +1204,7 @@ document.addEventListener('keydown',function(ev){
 $('#q').addEventListener('input',function(e){S.q=e.target.value;S.tab='store';S.sub=null;S.detail=null;render(true)});
 render();
 applyNative();
+setTimeout(applyNative,1200);
 var fsTry=0;
 document.addEventListener('pointerdown',function(){
  if(native()||!S.cfg.fs||fsTry>2||document.fullscreenElement||!document.documentElement.requestFullscreen||!matchMedia('(pointer:coarse)').matches)return;

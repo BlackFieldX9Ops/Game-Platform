@@ -25,11 +25,10 @@ Isso só funciona porque todo APK é assinado com a mesma chave (`app/keystore/d
 
 ### Tela cheia e rotação
 
-No app Android, abra **Perfil > Configurações > Tela**:
-
-- **Tela cheia automática** (ligada por padrão) esconde a barra de status e a de navegação e usa também a área do recorte da câmera. Deslize a partir da borda para ver as barras por um instante.
-- **Orientação:** *Automática* gira junto com o aparelho (mesmo com o bloqueio de rotação do Android ligado), *Vertical* e *Horizontal* travam a tela.
-- Na posição horizontal, a barra de navegação passa para a lateral e as listas ganham mais colunas.
+- **Tela cheia de ponta a ponta:** o app desenha por trás da barra de status e do recorte da câmera (sem faixa branca). Deslize a partir da borda para ver as barras por um instante. Dá para desligar em **Perfil > Configurações > Tela**.
+- **Fora dos jogos o app fica sempre em pé.** Ao abrir um jogo, ele gira sozinho para a posição que o jogo pede, e volta para em pé ao sair.
+- **Como o app sabe a posição do jogo**, nesta ordem: (1) sua escolha em Configurações (*Sempre em pé* ou *Sempre deitado*); (2) o campo **Orientação do jogo** que o criador marca no Studio (Automática, Retrato ou Paisagem); (3) o código do jogo, quando ele chama `screen.orientation.lock('landscape')` ou `'portrait'` (o app intercepta a chamada, que dentro do jogo isolado não funcionaria sozinha); (4) se nada disso existir, o jogador gira o aparelho como quiser.
+- Jogos em tela cheia não mostram o cabeçalho do app; o botão discreto de três pontinhos no canto mostra Voltar e Recarregar por 3 segundos.
 
 O código nativo dessa parte está em `app/native/MainActivity.java` e entra no APK pelo fluxo **Gerar APK**.
 

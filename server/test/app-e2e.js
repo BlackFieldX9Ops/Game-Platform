@@ -154,6 +154,29 @@ async function main() {
   ok('demo: destacar gera log local', await until(() => /Jogo destacado/.test(A.text())));
   A.click('[data-a="go"][data-v="home"]');
   ok('demo: jogo destacado aparece com a marca na Início', await until(() => /Destaque/.test(A.text())));
+  // orientação: fora do jogo em pé; o jogo pede paisagem e o app gira
+  const calls = []; A.w.GPNative = { setFullscreen() {}, setOrientation(m) { calls.push(m); }, getBuild() { return '0'; }, openUrl() {} };
+  A.click('[data-a="go"][data-v="studio"]'); await until(() => A.$('[data-a="sori"][data-v="landscape"]'));
+  A.set('sTitle', 'Deitado'); A.click('[data-a="smode"][data-v="code"]'); A.click('[data-a="tpl"]');
+  A.click('[data-a="sori"][data-v="landscape"]');
+  ok('Studio marca a orientação escolhida', await until(() => A.$('[data-a="sori"][data-v="landscape"]').getAttribute('aria-pressed') === 'true'));
+  A.click('[data-a="spub"]'); await until(() => /Deitado/.test(A.text()) && A.d.querySelectorAll('[data-a="play"]').length);
+  const play = [...A.d.querySelectorAll('[data-a="play"]')].find(b => /Deitado/.test(b.closest('.li').textContent));
+  play.click();
+  ok('jogo marcado como paisagem gira o app para paisagem', await until(() => calls.includes('landscape')));
+  A.$('#pClose').click();
+  ok('ao sair do jogo o app volta para retrato', await until(() => calls[calls.length - 1] === 'portrait'));
+  const outro = [...A.d.querySelectorAll('[data-a="play"]')].find(b => /Rascunho Um/.test(b.closest('.li').textContent));
+  outro.click(); await wait(200);
+  ok('jogo automático não força a posição', calls[calls.length - 1] === 'auto');
+  A.w.dispatchEvent(new A.w.MessageEvent('message', { data: { gp: 'orient', m: 'landscape-primary' }, source: A.$('#frame').contentWindow }));
+  ok('jogo que pede paisagem por screen.orientation.lock gira o app', await until(() => calls[calls.length - 1] === 'landscape'));
+  A.w.dispatchEvent(new A.w.MessageEvent('message', { data: { gp: 'orient', m: 'any' }, source: A.$('#frame').contentWindow }));
+  A.w.dispatchEvent(new A.w.MessageEvent('message', { data: { gp: 'orient', m: 'portrait' }, source: A.$('#frame').contentWindow }));
+  ok('jogo que pede retrato gira o app para retrato', await until(() => calls[calls.length - 1] === 'portrait'));
+  A.$('#pClose').click();
+  const det = A.w.eval("[GPT.oriDetect(\"screen.orientation.lock('landscape')\"),GPT.oriDetect('{orientation:\"portrait\"}'),GPT.oriDetect('var x=1'),GPT.oriDetect('<meta name=\"screen-orientation\" content=\"landscape\">')].join()");
+  ok('detecta a orientação pelo código do jogo', det === 'landscape,portrait,,landscape');
   ok('nenhum erro de script', [A, B, AD].every(x => x.errs.length === 0), JSON.stringify([A.errs, B.errs, AD.errs]));
 }
 try { await main(); } catch (e) { fail++; console.error('ERRO', e); }

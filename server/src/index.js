@@ -60,7 +60,7 @@ function auth(req, _res, next) {
 const adminOnly = (req, _res, next) => req.user.role === 'admin' ? next() : next(new HttpError(403, 'Acesso restrito a administradores'));
 const notify = (userId, title, body = '') => run('INSERT INTO notifications (user_id, title, body) VALUES (?,?,?)', userId, title, body);
 
-const GAME_COLS = `g.id, g.cover, g.featured, g.title, g.description, g.category, g.age, g.dim, g.libs, g.plays, g.created_at, g.owner_id,
+const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.description, g.category, g.age, g.dim, g.libs, g.plays, g.created_at, g.owner_id,
   u.name AS developer,
   (SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.game_id = g.id) AS rating,
   (SELECT COUNT(*) FROM reviews r WHERE r.game_id = g.id) AS review_count`;
@@ -83,13 +83,15 @@ function gameInput(b) {
   if (libs.some(l => !LIBS.includes(l))) bad('Biblioteca não suportada');
   if (typeof b.code !== 'string' || !b.code.trim()) bad('O código do jogo é obrigatório');
   if (b.code.length > MAX_CODE) bad('Código maior que 20 MB');
+  const orientation = b.orientation === undefined ? 'auto' : b.orientation;
+  if (!['auto', 'portrait', 'landscape'].includes(orientation)) bad('Orientação inválida');
   let cover; // undefined = não mexer; null = remover
   if ('cover' in b) {
     if (b.cover === null || b.cover === '') cover = null;
     else if (typeof b.cover === 'string' && b.cover.length <= 200_000 && COVER_RE.test(b.cover)) cover = b.cover;
     else bad('Capa inválida (use JPG, PNG ou WebP de até 150 KB)');
   }
-  return { title, description, category: b.category, age, dim: b.dim, libs: JSON.stringify([...new Set(libs)]), code: b.code, cover };
+  return { title, description, category: b.category, age, dim: b.dim, libs: JSON.stringify([...new Set(libs)]), code: b.code, cover, orientation };
 }
 
 /* ---------- saúde ---------- */
@@ -159,7 +161,7 @@ app.post('/api/games/:id/play', auth, wrap((req, res) => {
 app.post('/api/games', auth, wrap((req, res) => {
   const d = gameInput(req.body);
   if (get("SELECT COUNT(*) AS n FROM games WHERE owner_id = ? AND status = 'published'", req.user.id).n >= 50) bad('Limite de 50 jogos publicados');
-  const r = run('INSERT INTO games (owner_id, title, description, category, age, dim, libs, code, cover) VALUES (?,?,?,?,?,?,?,?,?)', req.user.id, d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.cover ?? null);
+  const r = run('INSERT INTO games (owner_id, title, description, category, age, dim, libs, code, cover, orientation) VALUES (?,?,?,?,?,?,?,?,?,?)', req.user.id, d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.cover ?? null, d.orientation);
   logAct(req, 'Jogo publicado', d.title);
   run('INSERT OR IGNORE INTO library (user_id, game_id) VALUES (?,?)', req.user.id, r.lastInsertRowid);
   notify(req.user.id, 'Jogo publicado', `${d.title} já está na Loja.`);
@@ -169,7 +171,7 @@ app.put('/api/games/:id', auth, wrap((req, res) => {
   const g = loadGame(int(req.params.id, 'id'));
   if (g.owner_id !== req.user.id) bad('Você só pode editar seus jogos', 403);
   const d = gameInput(req.body);
-  run("UPDATE games SET title=?, description=?, category=?, age=?, dim=?, libs=?, code=?, cover=CASE WHEN ? THEN ? ELSE cover END, updated_at=datetime('now') WHERE id=?", d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.cover === undefined ? 0 : 1, d.cover ?? null, g.id);
+  run("UPDATE games SET title=?, description=?, category=?, age=?, dim=?, libs=?, code=?, orientation=?, cover=CASE WHEN ? THEN ? ELSE cover END, updated_at=datetime('now') WHERE id=?", d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.orientation, d.cover === undefined ? 0 : 1, d.cover ?? null, g.id);
   res.json({ ok: true });
 }));
 app.delete('/api/games/:id', auth, wrap((req, res) => {

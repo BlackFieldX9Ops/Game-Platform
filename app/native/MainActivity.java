@@ -2,10 +2,13 @@ package com.gameplatform.app;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -19,13 +22,19 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 /**
- * Tela cheia automática e controle de orientação para o Game Platform.
- * O app web chama window.GPNative.setFullscreen(boolean) e window.GPNative.setOrientation("auto" | "portrait" | "landscape").
+ * Tela cheia de ponta a ponta e controle de orientação para o Game Platform.
+ *
+ * O app web chama window.GPNative:
+ *   setFullscreen(boolean)  esconde ou mostra as barras do sistema
+ *   setOrientation("portrait" | "landscape" | "auto")  trava a tela em pé, deitada, ou deixa girar
+ *   getBuild() / openUrl(url)  usados pela atualização do app
+ *
+ * Fora dos jogos o app fica em pé; ao abrir um jogo o app web pede a orientação do jogo.
  * Este arquivo substitui o MainActivity gerado pelo Capacitor (veja .github/workflows/build-apk.yml).
  */
 public class MainActivity extends BridgeActivity {
+  private static final int BG = 0xFF0A0D1C;
   private boolean fullscreen = true;
-  private String orientation = "auto";
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -33,27 +42,32 @@ public class MainActivity extends BridgeActivity {
 
     SharedPreferences prefs = getSharedPreferences("gp", MODE_PRIVATE);
     fullscreen = prefs.getBoolean("fullscreen", true);
-    orientation = prefs.getString("orientation", "auto");
 
-    // Usa também a área do recorte da câmera (notch) nas bordas curtas da tela.
+    Window window = getWindow();
+    // O app desenha por trás das barras e do recorte da câmera, sem faixa branca em volta.
+    WindowCompat.setDecorFitsSystemWindows(window, false);
+    window.setBackgroundDrawable(new ColorDrawable(BG));
+    window.setStatusBarColor(Color.TRANSPARENT);
+    window.setNavigationBarColor(Color.TRANSPARENT);
     if (Build.VERSION.SDK_INT >= 28) {
-      WindowManager.LayoutParams lp = getWindow().getAttributes();
+      WindowManager.LayoutParams lp = window.getAttributes();
       lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-      getWindow().setAttributes(lp);
+      window.setAttributes(lp);
     }
 
-    // Avisa o app web quanto espaço do recorte deve ser evitado (variáveis CSS --sat, --sar, --sab, --sal).
-    ViewCompat.setOnApplyWindowInsetsListener(getWindow().getDecorView(), (v, insets) -> {
+    // Avisa o app web quanto espaço evitar (variáveis CSS --sat, --sar, --sab, --sal).
+    ViewCompat.setOnApplyWindowInsetsListener(window.getDecorView(), (v, insets) -> {
       pushInsets(insets);
       return ViewCompat.onApplyWindowInsets(v, insets);
     });
 
     WebView web = getBridge().getWebView();
     if (web != null) {
+      web.setBackgroundColor(BG);
       web.addJavascriptInterface(new Native(), "GPNative");
     }
 
-    applyOrientation();
+    setOrientation("portrait");
     applyFullscreen();
   }
 
@@ -78,27 +92,25 @@ public class MainActivity extends BridgeActivity {
     getWindow().getDecorView().requestApplyInsets();
   }
 
-  private void applyOrientation() {
-    int mode;
-    switch (orientation) {
-      case "portrait":
-        mode = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
-        break;
-      case "landscape":
-        mode = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
-        break;
-      default:
-        mode = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR;
+  private void setOrientation(String mode) {
+    int value;
+    if ("landscape".equals(mode)) {
+      value = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;   // as duas posições deitadas
+    } else if ("auto".equals(mode)) {
+      value = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR;        // o jogador gira como quiser
+    } else {
+      value = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;           // em pé, sem girar
     }
-    setRequestedOrientation(mode);
+    setRequestedOrientation(value);
   }
 
   private void pushInsets(WindowInsetsCompat insets) {
     WebView web = getBridge() != null ? getBridge().getWebView() : null;
     if (web == null) return;
-    // Com as barras do sistema visíveis, o Android já posiciona o app abaixo delas.
-    // Só quando elas estão escondidas é preciso evitar o recorte da câmera.
-    Insets i = fullscreen ? insets.getInsets(WindowInsetsCompat.Type.displayCutout()) : Insets.NONE;
+    // Com as barras escondidas só o recorte da câmera importa; com elas visíveis, as barras também.
+    int types = WindowInsetsCompat.Type.displayCutout();
+    if (!fullscreen) types |= WindowInsetsCompat.Type.systemBars();
+    Insets i = insets.getInsets(types);
     float d = getResources().getDisplayMetrics().density;
     String js = "(function(s){s.setProperty('--sat','" + (i.top / d) + "px');"
         + "s.setProperty('--sar','" + (i.right / d) + "px');"
@@ -145,11 +157,7 @@ public class MainActivity extends BridgeActivity {
 
     @JavascriptInterface
     public void setOrientation(final String mode) {
-      runOnUiThread(() -> {
-        orientation = ("portrait".equals(mode) || "landscape".equals(mode)) ? mode : "auto";
-        getSharedPreferences("gp", MODE_PRIVATE).edit().putString("orientation", orientation).apply();
-        applyOrientation();
-      });
+      runOnUiThread(() -> MainActivity.this.setOrientation(mode));
     }
   }
 }

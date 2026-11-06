@@ -110,6 +110,7 @@ CREATE TABLE IF NOT EXISTS logs (
 // Migração simples para bancos criados antes de capa e destaque existirem.
 const gameCols = db.prepare('PRAGMA table_info(games)').all().map(c => c.name);
 if (!gameCols.includes('cover')) db.exec('ALTER TABLE games ADD COLUMN cover TEXT');
+if (!gameCols.includes('orientation')) db.exec("ALTER TABLE games ADD COLUMN orientation TEXT NOT NULL DEFAULT 'auto'");
 if (!gameCols.includes('featured')) db.exec('ALTER TABLE games ADD COLUMN featured INTEGER NOT NULL DEFAULT 0');
 
 export const all = (sql, ...p) => db.prepare(sql).all(...p);
