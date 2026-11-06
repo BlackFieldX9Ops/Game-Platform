@@ -18,13 +18,14 @@ let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { c ? pass++ : fail++; console.log(`${c ? 'OK   ' : 'FALHA'} ${n}${c ? '' : ' ' + x}`); };
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
-function open() {
+function open(seed) {
   const dom = new JSDOM(html, {
     runScripts: 'dangerously', pretendToBeVisual: true, url: URL_,
     beforeParse(w) {
       w.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, { get: () => () => {}, set: () => true });
       w.fetch = (u, o) => fetch(new URL(u, URL_), o);
       w.WebSocket = WebSocket; w.AbortController = AbortController;
+      if (seed) Object.entries(seed).forEach(([k, v]) => w.localStorage.setItem(k, JSON.stringify(v)));
     }
   });
   const w = dom.window, d = w.document, errs = [];
@@ -42,6 +43,30 @@ async function main() {
   for (let i = 0; i < 40; i++) { try { if ((await fetch(URL_ + 'api/health')).ok) break; } catch {} await wait(150); }
   const A = open(), B = open();
   await wait(400);
+
+  // app limpo: nada de conteúdo fictício
+  const FAKE = /LunaPixel|DarkNinja|Mito_Gamer|Arcanist|Mythic|Chuva de Blocos|Túnel Neon|Eternal Quest|ShadowNinja|LuaAstral|DarkPlayer|exemplo/;
+  const C = open();
+  await wait(300);
+  ok('início vazio, sem jogos de exemplo', /Ainda não há jogos publicados/.test(C.text()) && !FAKE.test(C.text()));
+  for (const [tab, sub] of [['store'], ['lib'], ['profile'], ['profile', 'community'], ['profile', 'friends'], ['profile', 'wish'], ['profile', 'upd'], ['profile', 'ach']]) {
+    C.click(`[data-a="go"][data-v="${tab}"]`); if (sub) C.click(`[data-a="sub"][data-v="${sub}"]`);
+    if (FAKE.test(C.text())) ok(`sem conteúdo fictício em ${tab}/${sub || ''}`, false, C.text().slice(0, 80));
+  }
+  ok('sem conteúdo fictício em nenhuma tela', true);
+  C.click('[data-a="go"][data-v="profile"]'); C.click('[data-a="sub"][data-v="community"]');
+  ok('comunidade começa sem posts', /Ninguém publicou ainda/.test(C.text()));
+  C.click('[data-a="back"]'); C.click('[data-a="go"][data-v="profile"]'); C.click('[data-a="sub"][data-v="friends"]');
+  ok('amigos offline pedem conta e não listam ninguém', /precisam de uma conta/.test(C.text()) && !C.$('[data-a="chatopen"]'));
+  C.click('[data-a="back"]'); C.click('[data-a="sub"][data-v="upd"]');
+  ok('notificações começam vazias', /Nenhuma notificação/.test(C.text()));
+  // dados de demonstração salvos por versões antigas são apagados uma única vez
+  const old = open({ gp_friends: [{ n: 'LunaPixel', st: 'online', g: 'x' }], gp_mod: [{ id: 1, t: 'Relato', m: 'x', a: '1' }], gp_users: [{ n: 'ShadowNinja', e: 'a@b.c', st: 'Ativo' }], gp_upd: [{ id: 'u1', t: 'Túnel Neon', d: 'x', a: '2 h' }], gp_lib: { d1: 1, u9: 1 }, gp_plays: 12, gp_xp: 300, gp_chats: { LunaPixel: [{ me: 1, t: 'oi' }] }, gp_name: 'Eu' });
+  await wait(300);
+  ok('migração apaga amigos, moderação, usuários, notificações, chats e contadores de demonstração', old.w.localStorage.getItem('gp_friends') === null && old.w.localStorage.getItem('gp_chats') === null && old.w.localStorage.getItem('gp_xp') === null && old.w.localStorage.getItem('gp_plays') === null && !FAKE.test(old.text()));
+  ok('migração tira só os jogos de exemplo da biblioteca', JSON.stringify(JSON.parse(old.w.localStorage.getItem('gp_lib'))) === '{"u9":1}');
+  ok('migração mantém o nome do usuário', JSON.parse(old.w.localStorage.getItem('gp_name')) === 'Eu');
+  ok('app limpo sem erros de script', C.errs.length === 0 && old.errs.length === 0, JSON.stringify([C.errs, old.errs]));
 
   // Ana cria conta
   A.click('[data-a="go"][data-v="profile"]'); A.click('[data-a="sub"][data-v="auth"]');
