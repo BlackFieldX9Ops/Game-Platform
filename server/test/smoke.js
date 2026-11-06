@@ -158,6 +158,52 @@ async function main() {
   ok('admin publica um jogo próprio', mg.s === 201);
   ok('admin exclui o próprio jogo', (await call('DELETE', `/games/${mg.j.id}`, null, ADM)).s === 200 && (await call('GET', `/games/${mg.j.id}`)).s === 404);
   ok('log registra a exclusão do jogo próprio', (await call('GET', '/admin/logs', null, ADM)).j.logs.some(l => l.action === 'Jogo próprio excluído'));
+  // --- gerenciamento avançado de jogos
+  const caio = await call('POST', '/auth/register', { name: 'Caio', email: 'caio@teste.com', password: 'senha12345' });
+  const C = caio.j.token;
+  const rich = { ...game, title: 'Rico', tags: ['Ação ', 'ação', 'Rápido'], version: '2.1.0', visibility: 'public', ai: true, cover: px,
+    settings: { fullscreen: 0, controls: ['touch', 'gamepad', 'volante'], saveProgress: true, monetization: 'ads', ext: [{ n: 'Lib A', u: 'https://cdn.exemplo.com/a.js' }, { n: 'Lib B', c: 'window.B=1' }] } };
+  const rc = await call('POST', '/games', rich, A);
+  ok('jogo com tags, versão, IA e configurações é criado', rc.s === 201);
+  const rg = (await call('GET', `/games/${rc.j.id}`)).j.game;
+  ok('tags são normalizadas e sem repetição', JSON.stringify(rg.tags) === JSON.stringify(['ação', 'rápido']));
+  ok('versão, IA e configurações voltam certinhas', rg.version === '2.1.0' && rg.ai === true && rg.settings.fullscreen === 0 && rg.settings.saveProgress === 1 && rg.settings.monetization === 'ads' && JSON.stringify(rg.settings.controls) === '["touch","gamepad"]' && rg.settings.ext.length === 2);
+  ok('play entrega as bibliotecas externas e as configurações', (await call('POST', `/games/${rc.j.id}/play`, null, C)).j.ext.length === 2);
+  ok('versão inválida é recusada', (await call('POST', '/games', { ...game, version: 'x y' }, A)).s === 400);
+  ok('visibilidade inválida é recusada', (await call('POST', '/games', { ...game, visibility: 'secreto' }, A)).s === 400);
+  ok('biblioteca externa só aceita https', (await call('POST', '/games', { ...game, settings: { ext: [{ n: 'x', u: 'http://a.com/x.js' }] } }, A)).s === 400);
+  ok('capa é servida como imagem', (await fetch(`${BASE}/games/${rc.j.id}/cover`)).headers.get('content-type') === 'image/png');
+  const priv = (await call('POST', '/games', { ...game, title: 'Secreto', visibility: 'private' }, A)).j.id;
+  const unl = (await call('POST', '/games', { ...game, title: 'Escondido', visibility: 'unlisted' }, A)).j.id;
+  const pubList = (await call('GET', '/games?limit=60')).j.games.map(g => g.title);
+  ok('privado e não listado não aparecem na Loja', !pubList.includes('Secreto') && !pubList.includes('Escondido') && pubList.includes('Rico'));
+  ok('privado não abre para estranhos, mas o não listado abre pelo endereço', (await call('GET', `/games/${priv}`)).s === 404 && (await call('GET', `/games/${priv}`, null, C)).s === 404 && (await call('GET', `/games/${unl}`)).s === 200);
+  ok('o dono e o admin enxergam o privado', (await call('GET', `/games/${priv}`, null, A)).s === 200 && (await call('GET', `/games/${priv}/source`, null, ADM)).s === 200);
+  ok('outro usuário não vê o código-fonte', (await call('GET', `/games/${rc.j.id}/source`, null, C)).s === 403);
+  const mine = (await call('GET', '/my/games', null, A)).j.games;
+  ok('"meus jogos" traz todos os do dono, inclusive privados', mine.some(g => g.title === 'Secreto') && mine.some(g => g.title === 'Rico'));
+  ok('dono despublica o próprio jogo', (await call('POST', `/games/${rc.j.id}/status`, { status: 'unpublished' }, A)).s === 200);
+  ok('despublicado some da Loja e não pode ser jogado', !(await call('GET', '/games?limit=60')).j.games.some(g => g.title === 'Rico') && (await call('POST', `/games/${rc.j.id}/play`, null, C)).s === 404);
+  ok('despublicado continua em "meus jogos" com o estado certo', (await call('GET', '/my/games', null, A)).j.games.find(g => g.title === 'Rico').status === 'unpublished');
+  ok('outro usuário não despublica jogo alheio', (await call('POST', `/games/${rc.j.id}/status`, { status: 'published' }, C)).s === 404);
+  ok('dono republica', (await call('POST', `/games/${rc.j.id}/status`, { status: 'published' }, A)).s === 200 && (await call('GET', '/games?limit=60')).j.games.some(g => g.title === 'Rico'));
+  ok('usuário comum não edita jogo alheio', (await call('PUT', `/games/${rc.j.id}`, { ...rich, title: 'Hack' }, C)).s === 403);
+  const ed = await call('PUT', `/games/${rc.j.id}`, { ...rich, title: 'Rico Editado', version: '2.2.0' }, ADM);
+  ok('admin edita jogo de outro usuário', ed.s === 200 && (await call('GET', `/games/${rc.j.id}`)).j.game.title === 'Rico Editado');
+  ok('o dono é avisado da edição do admin', (await call('GET', '/notifications', null, A)).j.notifications.some(n => /editado pela administração/.test(n.body)));
+  ok('admin despublica jogo de outro usuário', (await call('POST', `/games/${rc.j.id}/status`, { status: 'unpublished' }, ADM)).s === 200);
+  const mg2 = (await call('POST', '/games', { ...game, title: 'Do Admin' }, ADM)).j.id;
+  const ag = async q => (await call('GET', '/admin/games' + q, null, ADM)).j.games.map(g => g.title).sort().join('|');
+  ok('admin lista jogos de todos, em qualquer estado, com criador e capa', (await call('GET', '/admin/games', null, ADM)).j.games.some(g => g.title === 'Rico Editado' && g.status === 'unpublished' && g.developer === 'Ana' && g.has_cover && g.ai));
+  ok('filtro "Eu" mostra só os do admin', await ag('?creator=me') === 'Do Admin');
+  ok('filtro "IA" mostra só os gerados por IA', await ag('?creator=ai') === 'Rico Editado');
+  ok('filtro "Outros usuários" não traz os do admin nem os de IA', !(await ag('?creator=others')).includes('Do Admin') && !(await ag('?creator=others')).includes('Rico Editado'));
+  ok('filtro por estado', (await ag('?status=unpublished')).includes('Rico Editado') && !(await ag('?status=unpublished')).includes('Do Admin'));
+  ok('filtro por dono e busca por nome', (await ag(`?owner=${ana.j.user.id}&q=Rico`)) === 'Rico Editado');
+  ok('usuário comum não usa a lista do admin', (await call('GET', '/admin/games', null, A)).s === 403);
+  ok('lista de usuários do admin traz a contagem de jogos', (await call('GET', '/admin/users', null, ADM)).j.users.find(u => u.name === 'Ana').games >= 3);
+  ok('admin exclui jogo de outro usuário', (await call('DELETE', `/games/${priv}`, null, ADM)).s === 200 && (await call('GET', `/games/${priv}`, null, A)).s === 404);
+  ok('admin exclui jogo próprio e de IA', (await call('DELETE', `/games/${mg2}`, null, ADM)).s === 200 && (await call('DELETE', `/games/${rc.j.id}`, null, ADM)).s === 200);
   ok('JSON inválido devolve 400', (await fetch(BASE + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{x' })).status === 400);
 }
 

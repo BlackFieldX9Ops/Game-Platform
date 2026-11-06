@@ -57,22 +57,30 @@ function auth(req, _res, next) {
   if (!u) return next(new HttpError(401, 'Faça login para continuar'));
   req.user = u; next();
 }
+function softAuth(req, _res, next) {
+  const h = req.headers.authorization || '';
+  req.user = h.startsWith('Bearer ') ? userFromToken(h.slice(7)) || undefined : undefined; next();
+}
 const adminOnly = (req, _res, next) => req.user.role === 'admin' ? next() : next(new HttpError(403, 'Acesso restrito a administradores'));
 const notify = (userId, title, body = '') => run('INSERT INTO notifications (user_id, title, body) VALUES (?,?,?)', userId, title, body);
 
-const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.description, g.category, g.age, g.dim, g.libs, g.plays, g.created_at, g.owner_id,
+const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.description, g.category, g.age, g.dim, g.libs, g.plays, g.created_at, g.updated_at, g.owner_id, g.status, g.ai, g.tags, g.version, g.visibility, g.settings,
   u.name AS developer,
   (SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.game_id = g.id) AS rating,
   (SELECT COUNT(*) FROM reviews r WHERE r.game_id = g.id) AS review_count`;
-const shapeGame = g => ({ ...g, featured: !!g.featured, libs: JSON.parse(g.libs) });
+const parseJ = (s, d) => { try { return JSON.parse(s); } catch { return d; } };
+const shapeGame = g => ({ ...g, featured: !!g.featured, ai: !!g.ai, libs: parseJ(g.libs, []), tags: parseJ(g.tags, []), settings: parseJ(g.settings, {}) });
 const categories = () => { const r = get("SELECT value FROM settings WHERE key = 'categories'"); try { return r ? JSON.parse(r.value) : DEFAULT_CATEGORIES; } catch { return DEFAULT_CATEGORIES; } };
 const logAct = (req, action, detail = '') => run('INSERT INTO logs (actor_id, actor, action, detail) VALUES (?,?,?,?)', req.user.id, req.user.name, action, String(detail).slice(0, 160));
 const COVER_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
-function loadGame(id, { owned } = {}) {
+// Quem pode ver o jogo: todos (publicado e não privado), ou o dono e os administradores em qualquer estado.
+function loadGame(id, user) {
   const g = get('SELECT * FROM games WHERE id = ?', id);
-  if (!g || g.status !== 'published') bad('Jogo não encontrado', 404);
+  const staff = user && (user.id === g?.owner_id || user.role === 'admin');
+  if (!g || !(staff || (g.status === 'published' && g.visibility !== 'private'))) bad('Jogo não encontrado', 404);
   return g;
 }
+const canEdit = (g, user) => g.owner_id === user.id || user.role === 'admin';
 function gameInput(b) {
   const title = str(b.title, 'Nome', 2, 40);
   const description = typeof b.description === 'string' ? b.description.trim().slice(0, 200) : '';
@@ -91,7 +99,21 @@ function gameInput(b) {
     else if (typeof b.cover === 'string' && b.cover.length <= 200_000 && COVER_RE.test(b.cover)) cover = b.cover;
     else bad('Capa inválida (use JPG, PNG ou WebP de até 150 KB)');
   }
-  return { title, description, category: b.category, age, dim: b.dim, libs: JSON.stringify([...new Set(libs)]), code: b.code, cover, orientation };
+  const tags = [...new Set((Array.isArray(b.tags) ? b.tags : []).map(t => String(t).trim().toLowerCase().slice(0, 20)).filter(Boolean))].slice(0, 8);
+  const version = b.version === undefined ? '1.0.0' : String(b.version).trim();
+  if (!/^[0-9A-Za-z][0-9A-Za-z.+-]{0,11}$/.test(version)) bad('Versão inválida (ex.: 1.0.0)');
+  const visibility = b.visibility === undefined ? 'public' : b.visibility;
+  if (!['public', 'private', 'unlisted'].includes(visibility)) bad('Visibilidade inválida');
+  const st = b.settings && typeof b.settings === 'object' ? b.settings : {};
+  const settings = { fullscreen: st.fullscreen === 0 || st.fullscreen === false ? 0 : 1, saveProgress: st.saveProgress ? 1 : 0, monetization: ['free', 'ads', 'paid'].includes(st.monetization) ? st.monetization : 'free',
+    controls: (Array.isArray(st.controls) ? st.controls : ['touch', 'keyboard']).filter(c => ['touch', 'keyboard', 'gamepad'].includes(c)), ext: [] };
+  let extBytes = 0;
+  for (const x of (Array.isArray(st.ext) ? st.ext : []).slice(0, 6)) {
+    const n = typeof x?.n === 'string' ? x.n.trim().slice(0, 40) : ''; if (!n) bad('Biblioteca externa sem nome');
+    if (typeof x.u === 'string' && x.u) { if (!/^https:\/\/[^\s"'<>]{4,300}$/.test(x.u)) bad('Biblioteca externa: use um endereço https'); settings.ext.push({ n, u: x.u }); }
+    else if (typeof x.c === 'string' && x.c) { extBytes += x.c.length; if (extBytes > 300_000) bad('Bibliotecas externas passam de 300 KB'); settings.ext.push({ n, c: x.c }); }
+  }
+  return { title, description, category: b.category, age, dim: b.dim, libs: JSON.stringify([...new Set(libs)]), code: b.code, cover, orientation, tags: JSON.stringify(tags), version, visibility, settings: JSON.stringify(settings), ai: b.ai ? 1 : 0 };
 }
 
 /* ---------- saúde ---------- */
@@ -145,7 +167,7 @@ app.patch('/api/me', auth, wrap((req, res) => {
 
 /* ---------- jogos ---------- */
 app.get('/api/games', wrap((req, res) => {
-  const where = ["g.status = 'published'"], p = [];
+  const where = ["g.status = 'published'", "g.visibility = 'public'"], p = [];
   if (req.query.category) { where.push('g.category = ?'); p.push(String(req.query.category)); }
   if (req.query.dim) { where.push('g.dim = ?'); p.push(String(req.query.dim)); }
   if (req.query.q) { where.push('(g.title LIKE ? OR g.description LIKE ?)'); const l = `%${String(req.query.q).slice(0, 40)}%`; p.push(l, l); }
@@ -154,41 +176,64 @@ app.get('/api/games', wrap((req, res) => {
   const rows = all(`SELECT ${GAME_COLS} FROM games g JOIN users u ON u.id = g.owner_id WHERE ${where.join(' AND ')} ORDER BY g.featured DESC, g.plays DESC, g.id DESC LIMIT ? OFFSET ?`, ...p, limit, offset);
   res.json({ games: rows.map(shapeGame) });
 }));
-app.get('/api/games/:id', wrap((req, res) => {
-  const id = int(req.params.id, 'id'); loadGame(id);
+app.get('/api/games/:id', softAuth, wrap((req, res) => {
+  const id = int(req.params.id, 'id'); loadGame(id, req.user);
   res.json({ game: shapeGame(get(`SELECT ${GAME_COLS} FROM games g JOIN users u ON u.id = g.owner_id WHERE g.id = ?`, id)) });
 }));
 // Código-fonte para o dono editar (não conta partida nem XP).
 app.get('/api/games/:id/source', auth, wrap((req, res) => {
-  const g = loadGame(int(req.params.id, 'id'));
-  if (g.owner_id !== req.user.id) bad('Só o dono vê o código-fonte', 403);
-  res.json({ code: g.code, libs: JSON.parse(g.libs) });
+  const g = loadGame(int(req.params.id, 'id'), req.user);
+  if (!canEdit(g, req.user)) bad('Só o dono ou um administrador vê o código-fonte', 403);
+  res.json({ code: g.code, libs: JSON.parse(g.libs), game: shapeGame(get(`SELECT ${GAME_COLS} FROM games g JOIN users u ON u.id = g.owner_id WHERE g.id = ?`, g.id)) });
 }));
 // Entrega o código para jogar, conta a partida e dá XP.
 app.post('/api/games/:id/play', auth, wrap((req, res) => {
-  const g = loadGame(int(req.params.id, 'id'));
+  const g = loadGame(int(req.params.id, 'id'), req.user);
+  if (g.status !== 'published') bad('Jogo despublicado', 404);
   run('UPDATE games SET plays = plays + 1 WHERE id = ?', g.id);
   run('UPDATE users SET xp = xp + 25 WHERE id = ?', req.user.id);
-  res.json({ title: g.title, code: g.code, libs: JSON.parse(g.libs), xp: req.user.xp + 25 });
+  res.json({ title: g.title, code: g.code, libs: JSON.parse(g.libs), ext: parseJ(g.settings, {}).ext || [], settings: parseJ(g.settings, {}), xp: req.user.xp + 25 });
 }));
 app.post('/api/games', auth, wrap((req, res) => {
   const d = gameInput(req.body);
   if (get("SELECT COUNT(*) AS n FROM games WHERE owner_id = ? AND status = 'published'", req.user.id).n >= 50) bad('Limite de 50 jogos publicados');
-  const r = run('INSERT INTO games (owner_id, title, description, category, age, dim, libs, code, cover, orientation) VALUES (?,?,?,?,?,?,?,?,?,?)', req.user.id, d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.cover ?? null, d.orientation);
+  const r = run('INSERT INTO games (owner_id, title, description, category, age, dim, libs, code, cover, orientation, tags, version, visibility, settings, ai) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', req.user.id, d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.cover ?? null, d.orientation, d.tags, d.version, d.visibility, d.settings, d.ai);
   logAct(req, 'Jogo publicado', d.title);
   run('INSERT OR IGNORE INTO library (user_id, game_id) VALUES (?,?)', req.user.id, r.lastInsertRowid);
   notify(req.user.id, 'Jogo publicado', `${d.title} já está na Loja.`);
   res.status(201).json({ id: Number(r.lastInsertRowid) });
 }));
 app.put('/api/games/:id', auth, wrap((req, res) => {
-  const g = loadGame(int(req.params.id, 'id'));
-  if (g.owner_id !== req.user.id) bad('Você só pode editar seus jogos', 403);
+  const g = loadGame(int(req.params.id, 'id'), req.user);
+  if (!canEdit(g, req.user)) bad('Você só pode editar seus jogos', 403);
   const d = gameInput(req.body);
-  run("UPDATE games SET title=?, description=?, category=?, age=?, dim=?, libs=?, code=?, orientation=?, cover=CASE WHEN ? THEN ? ELSE cover END, updated_at=datetime('now') WHERE id=?", d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.orientation, d.cover === undefined ? 0 : 1, d.cover ?? null, g.id);
+  run("UPDATE games SET title=?, description=?, category=?, age=?, dim=?, libs=?, code=?, orientation=?, tags=?, version=?, visibility=?, settings=?, ai=?, cover=CASE WHEN ? THEN ? ELSE cover END, updated_at=datetime('now') WHERE id=?", d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.orientation, d.tags, d.version, d.visibility, d.settings, d.ai, d.cover === undefined ? 0 : 1, d.cover ?? null, g.id);
+  if (g.owner_id !== req.user.id) { logAct(req, 'Jogo editado pelo admin', g.title); notify(g.owner_id, 'Seu jogo foi atualizado', `${d.title} foi editado pela administração.`); }
   res.json({ ok: true });
 }));
+app.post('/api/games/:id/status', auth, wrap((req, res) => {
+  const g = loadGame(int(req.params.id, 'id'), req.user);
+  if (!canEdit(g, req.user)) bad('Sem permissão', 403);
+  const status = req.body.status;
+  if (!['published', 'unpublished'].includes(status)) bad('Estado inválido');
+  run("UPDATE games SET status = ?, updated_at = datetime('now') WHERE id = ?", status, g.id);
+  if (status === 'unpublished') run('UPDATE games SET featured = 0 WHERE id = ?', g.id);
+  if (g.owner_id !== req.user.id) { logAct(req, status === 'published' ? 'Jogo republicado pelo admin' : 'Jogo despublicado pelo admin', g.title); notify(g.owner_id, status === 'published' ? 'Jogo republicado' : 'Jogo despublicado', g.title); }
+  res.json({ ok: true });
+}));
+// Todos os jogos do próprio usuário, em qualquer estado.
+app.get('/api/my/games', auth, (req, res) => {
+  res.json({ games: all(`SELECT ${GAME_COLS} FROM games g JOIN users u ON u.id = g.owner_id WHERE g.owner_id = ? ORDER BY g.id DESC LIMIT 100`, req.user.id).map(shapeGame) });
+});
+// Capa como imagem (usada nas listas pesadas do painel).
+app.get('/api/games/:id/cover', wrap((req, res) => {
+  const g = get('SELECT cover FROM games WHERE id = ?', int(req.params.id, 'id'));
+  const m = g?.cover && /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(g.cover);
+  if (!m) return res.status(404).end();
+  res.set('Content-Type', m[1]).set('Cache-Control', 'public, max-age=3600').send(Buffer.from(m[2], 'base64'));
+}));
 app.delete('/api/games/:id', auth, wrap((req, res) => {
-  const g = loadGame(int(req.params.id, 'id'));
+  const g = loadGame(int(req.params.id, 'id'), req.user);
   if (g.owner_id !== req.user.id && req.user.role !== 'admin') bad('Sem permissão', 403);
   run('DELETE FROM games WHERE id = ?', g.id);
   if (req.user.role === 'admin') logAct(req, g.owner_id === req.user.id ? 'Jogo próprio excluído' : 'Jogo removido', g.title);
@@ -196,12 +241,12 @@ app.delete('/api/games/:id', auth, wrap((req, res) => {
 }));
 
 /* ---------- avaliações ---------- */
-app.get('/api/games/:id/reviews', wrap((req, res) => {
-  const id = int(req.params.id, 'id'); loadGame(id);
+app.get('/api/games/:id/reviews', softAuth, wrap((req, res) => {
+  const id = int(req.params.id, 'id'); loadGame(id, req.user);
   res.json({ reviews: all('SELECT r.id, r.stars, r.text, r.created_at, u.name AS author FROM reviews r JOIN users u ON u.id = r.user_id WHERE r.game_id = ? ORDER BY r.id DESC LIMIT 100', id) });
 }));
 app.post('/api/games/:id/reviews', auth, wrap((req, res) => {
-  const g = loadGame(int(req.params.id, 'id'));
+  const g = loadGame(int(req.params.id, 'id'), req.user);
   const stars = Number(req.body.stars); if (!Number.isInteger(stars) || stars < 1 || stars > 5) bad('A nota deve ir de 1 a 5');
   const text = typeof req.body.text === 'string' ? req.body.text.trim().slice(0, 300) : '';
   run('INSERT INTO reviews (game_id, user_id, stars, text) VALUES (?,?,?,?) ON CONFLICT(game_id, user_id) DO UPDATE SET stars=excluded.stars, text=excluded.text', g.id, req.user.id, stars, text);
@@ -216,7 +261,7 @@ for (const [route, table] of [['library', 'library'], ['wishlist', 'wishlist']])
     res.json({ games: rows.map(shapeGame) });
   });
   app.put(`/api/${route}/:gameId`, auth, wrap((req, res) => {
-    const g = loadGame(int(req.params.gameId, 'id'));
+    const g = loadGame(int(req.params.gameId, 'id'), req.user);
     run(`INSERT OR IGNORE INTO ${table} (user_id, game_id) VALUES (?,?)`, req.user.id, g.id);
     res.json({ ok: true });
   }));
@@ -239,7 +284,7 @@ app.get('/api/posts', wrap((req, res) => {
 app.post('/api/posts', auth, wrap((req, res) => {
   const text = str(req.body.text, 'Texto', 1, 240);
   let gameId = null;
-  if (req.body.gameId) gameId = loadGame(int(req.body.gameId, 'gameId')).id;
+  if (req.body.gameId) gameId = loadGame(int(req.body.gameId, 'gameId'), req.user).id;
   const r = run('INSERT INTO posts (user_id, game_id, text) VALUES (?,?,?)', req.user.id, gameId, text);
   res.status(201).json({ id: Number(r.lastInsertRowid) });
 }));
@@ -365,7 +410,7 @@ app.post('/api/admin/reports/:id/resolve', auth, adminOnly, wrap((req, res) => {
   res.json({ ok: true });
 }));
 app.get('/api/admin/users', auth, adminOnly, (_req, res) => {
-  res.json({ users: all('SELECT id, name, email, role, status, xp, created_at FROM users ORDER BY id DESC LIMIT 200') });
+  res.json({ users: all('SELECT id, name, email, role, status, xp, created_at, (SELECT COUNT(*) FROM games WHERE owner_id = users.id) AS games FROM users ORDER BY id DESC LIMIT 200') });
 });
 app.post('/api/admin/users/:id/status', auth, adminOnly, wrap((req, res) => {
   const id = int(req.params.id, 'id'), status = req.body.status;
@@ -390,11 +435,21 @@ app.put('/api/admin/categories', auth, adminOnly, wrap((req, res) => {
   logAct(req, 'Categorias alteradas', list.join(', '));
   res.json({ categories: list });
 }));
-app.get('/api/admin/games', auth, adminOnly, (_req, res) => {
-  res.json({ games: all("SELECT g.id, g.title, g.category, g.featured, g.plays, u.name AS developer FROM games g JOIN users u ON u.id = g.owner_id WHERE g.status = 'published' ORDER BY g.featured DESC, g.plays DESC, g.id DESC LIMIT 100").map(g => ({ ...g, featured: !!g.featured })) });
+app.get('/api/admin/games', auth, adminOnly, (req, res) => {
+  const w = [], p = [], q = req.query;
+  if (q.creator === 'me') { w.push('g.owner_id = ?'); p.push(req.user.id); }
+  if (q.creator === 'others') { w.push('g.owner_id != ? AND g.ai = 0'); p.push(req.user.id); }
+  if (q.creator === 'ai') w.push('g.ai = 1');
+  if (['published', 'unpublished'].includes(q.status)) { w.push('g.status = ?'); p.push(q.status); }
+  if (q.owner) { w.push('g.owner_id = ?'); p.push(int(q.owner, 'owner')); }
+  if (q.q) { w.push('g.title LIKE ?'); p.push(`%${String(q.q).slice(0, 40)}%`); }
+  const rows = all(`SELECT g.id, g.title, g.category, g.dim, g.status, g.visibility, g.featured, g.plays, g.ai, g.version, g.created_at, g.owner_id, u.name AS developer,
+    (g.cover IS NOT NULL) AS has_cover, (SELECT COUNT(*) FROM reports r WHERE r.target_type = 'game' AND r.target_id = g.id AND r.status = 'open') AS reports
+    FROM games g JOIN users u ON u.id = g.owner_id ${w.length ? 'WHERE ' + w.join(' AND ') : ''} ORDER BY g.id DESC LIMIT 200`, ...p);
+  res.json({ games: rows.map(g => ({ ...g, featured: !!g.featured, ai: !!g.ai, has_cover: !!g.has_cover, mine: g.owner_id === req.user.id })) });
 });
 app.post('/api/admin/games/:id/feature', auth, adminOnly, wrap((req, res) => {
-  const g = loadGame(int(req.params.id, 'id')), on = req.body.featured ? 1 : 0;
+  const g = loadGame(int(req.params.id, 'id'), req.user), on = req.body.featured ? 1 : 0;
   if (on && get('SELECT COUNT(*) AS n FROM games WHERE featured = 1').n >= 8 && !g.featured) bad('No máximo 8 jogos em destaque');
   run('UPDATE games SET featured = ? WHERE id = ?', on, g.id);
   logAct(req, on ? 'Jogo destacado' : 'Destaque removido', g.title);

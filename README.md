@@ -121,3 +121,16 @@ Enquanto não há servidor, **Perfil > Configurações > Modo administrador (loc
 - Ao fechar o app ele bloqueia de novo. Dá para bloquear na hora ou trocar o código.
 - Esqueceu o código? *Apagar dados deste aparelho* remove o código e os dados locais.
 - **Limite honesto:** como tudo roda no aparelho, quem controla o próprio celular pode contornar essa trava. Serve para uso temporário e demonstração. Quando o servidor entrar, o papel de administrador vem da conta (já funciona assim com conta online) e esta opção deixa de valer.
+
+## Painel de administração e Studio avançados
+
+- **Administração > Jogos:** lista todos os jogos, de qualquer criador (usuário, administrador ou IA), com capa, criador, categoria, data e status. Filtros por criador (Todos, Eu, Outros, IA), por status e por nome. Em cada jogo: **Editar** (informações), **Modificar** (código), **Publicar/Despublicar**, **Excluir** (com confirmação) e destaque. **Adicionar jogo** publica direto como administrador. Em **Usuários**, *Ver jogos* filtra a lista pelo criador.
+- **Studio:** abas *Informações* (capa, nome, descrição com contador, categoria, classificação, tags, 2D/3D, "criado com IA"), *Código* (enviar arquivo, colar com cores e números de linha, ou modelo), *Bibliotecas* (Three.js, Phaser, p5.js, PixiJS e bibliotecas externas por https ou arquivo .js) e *Avançado* (versão, orientação, tela cheia, controles, salvar progresso, monetização, visibilidade). **Testar**, **Rascunho**, **Publicar** e pré-visualização da capa e das informações.
+- **Meus jogos:** Jogar, Editar, Atualizar (sobe a versão), Despublicar/Publicar, Estatísticas e Excluir.
+- **Visibilidade:** público aparece na Loja; não listado só abre por quem tem o endereço; privado só o dono e a administração veem.
+- **Salvar progresso:** quando ligado, o que o jogo guarda em `localStorage` fica salvo no aparelho entre as partidas.
+- **Servidor:** novas colunas em `games` (ai, tags, version, visibility, settings) e rotas `/api/my/games`, `/api/games/:id/status`, `/api/games/:id/cover`, `/api/admin/games` (com filtros); editar e excluir jogos de qualquer usuário é permitido ao administrador. As colunas são criadas sozinhas ao iniciar.
+
+## App limpo
+
+Não existe mais nenhum jogo, post, amigo, usuário, avaliação ou número de exemplo. O app começa vazio e só mostra o que usuários criaram de verdade. Quem atualizar de uma versão antiga tem os dados de demonstração apagados uma única vez (a conta, o servidor e os jogos criados por você são mantidos).

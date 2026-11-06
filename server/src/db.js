@@ -114,6 +114,11 @@ if (!userCols.includes('bio')) db.exec("ALTER TABLE users ADD COLUMN bio TEXT NO
 const gameCols = db.prepare('PRAGMA table_info(games)').all().map(c => c.name);
 if (!gameCols.includes('cover')) db.exec('ALTER TABLE games ADD COLUMN cover TEXT');
 if (!gameCols.includes('orientation')) db.exec("ALTER TABLE games ADD COLUMN orientation TEXT NOT NULL DEFAULT 'auto'");
+if (!gameCols.includes('ai')) db.exec('ALTER TABLE games ADD COLUMN ai INTEGER NOT NULL DEFAULT 0');
+if (!gameCols.includes('tags')) db.exec("ALTER TABLE games ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'");
+if (!gameCols.includes('version')) db.exec("ALTER TABLE games ADD COLUMN version TEXT NOT NULL DEFAULT '1.0.0'");
+if (!gameCols.includes('visibility')) db.exec("ALTER TABLE games ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'");
+if (!gameCols.includes('settings')) db.exec("ALTER TABLE games ADD COLUMN settings TEXT NOT NULL DEFAULT '{}'");
 if (!gameCols.includes('featured')) db.exec('ALTER TABLE games ADD COLUMN featured INTEGER NOT NULL DEFAULT 0');
 
 export const all = (sql, ...p) => db.prepare(sql).all(...p);
