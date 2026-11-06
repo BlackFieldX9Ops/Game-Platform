@@ -103,3 +103,11 @@ Senhas com bcrypt, limite de tentativas no login, contas suspensas perdem o aces
 - **Perfil:** toque na câmera ou em *Editar perfil* para trocar a foto (ela é reduzida no próprio aparelho), o nome e o texto *Sobre você*. Com conta online os dados ficam no servidor; sem conta, no aparelho.
 - **Início:** mostra só os jogos lançados, com os mais novos primeiro (destacados vêm antes). O nível e o XP ficam só no Perfil.
 - **Administração > Loja:** o administrador pode excluir qualquer jogo, inclusive os que ele mesmo publicou. Há uma confirmação antes de excluir e a ação vai para os logs.
+
+## Atualização automática
+
+- O app confere se há versão nova ao abrir, ao voltar para ele e a cada 30 minutos, e baixa e instala sozinho (Configurações > Atualização do app > *Atualizar sozinho*, ligado por padrão).
+- **Primeira vez:** o Android exige que você libere *Instalar apps desta fonte* para o Game Platform. O app avisa e leva até a tela certa. É uma permissão do sistema; nenhum app comum consegue pular essa etapa.
+- **Depois disso:** no Android 12 ou mais novo a atualização costuma entrar sem nenhuma pergunta. Em versões mais antigas, o Android mostra uma tela de confirmação.
+- Não atualiza no meio de uma partida. Ao terminar a instalação o Android fecha o app; é só abrir de novo. Seus dados e jogos ficam.
+- A abertura mostra o logotipo, o nome e uma barra de carregamento por pelo menos 3 segundos.

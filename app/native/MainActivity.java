@@ -1,18 +1,25 @@
 package com.gameplatform.app;
 
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInstaller;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -21,12 +28,24 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.getcapacitor.BridgeActivity;
 
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 /**
  * Tela cheia de ponta a ponta e controle de orientação para o Game Platform.
  *
  * O app web chama window.GPNative:
  *   setFullscreen(boolean)  esconde ou mostra as barras do sistema
  *   setOrientation("portrait" | "landscape" | "auto")  trava a tela em pé, deitada, ou deixa girar
+ *   canInstall() / openInstallSettings() / installApk(url)  atualização automática do app
  *   getBuild() / openUrl(url)  usados pela atualização do app
  *
  * Fora dos jogos o app fica em pé; ao abrir um jogo o app web pede a orientação do jogo.
@@ -34,7 +53,32 @@ import com.getcapacitor.BridgeActivity;
  */
 public class MainActivity extends BridgeActivity {
   private static final int BG = 0xFF0A0D1C;
+  private static final String ACT_INSTALL = "com.gameplatform.app.INSTALL_DONE";
   private boolean fullscreen = true;
+  private volatile boolean updating = false;
+
+  /** Recebe o resultado da instalação do APK novo. */
+  private final BroadcastReceiver installReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context c, Intent i) {
+      int st = i.getIntExtra(PackageInstaller.EXTRA_STATUS, -1);
+      if (st == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+        // O Android exige uma confirmação desta vez (ex.: Android 11 ou menos, ou primeira instalação).
+        Intent ask = i.getParcelableExtra(Intent.EXTRA_INTENT);
+        if (ask != null) {
+          ask.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+          try { startActivity(ask); } catch (Exception ignored) { }
+          js("inst-ask", "");
+        }
+      } else if (st == PackageInstaller.STATUS_SUCCESS) {
+        updating = false;
+      } else {
+        updating = false;
+        String m = i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+        js("err", m == null ? "Falha ao instalar" : m);
+      }
+    }
+  };
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -69,6 +113,69 @@ public class MainActivity extends BridgeActivity {
 
     setOrientation("portrait");
     applyFullscreen();
+
+    new File(getCacheDir(), "update.apk").delete();
+    ContextCompat.registerReceiver(this, installReceiver, new IntentFilter(ACT_INSTALL), ContextCompat.RECEIVER_NOT_EXPORTED);
+  }
+
+  @Override
+  public void onDestroy() {
+    try { unregisterReceiver(installReceiver); } catch (Exception ignored) { }
+    super.onDestroy();
+  }
+
+  /** Avisa o app web (window.GPUpd) sobre o andamento da atualização. */
+  private void js(final String st, final String v) {
+    runOnUiThread(() -> {
+      WebView web = getBridge() != null ? getBridge().getWebView() : null;
+      if (web != null) {
+        web.evaluateJavascript("window.GPUpd&&GPUpd(" + JSONObject.quote(st) + "," + JSONObject.quote(v) + ")", null);
+      }
+    });
+  }
+
+  private void downloadAndInstall(String url) throws Exception {
+    File f = new File(getCacheDir(), "update.apk");
+    HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+    c.setConnectTimeout(15000);
+    c.setReadTimeout(30000);
+    c.setInstanceFollowRedirects(true);
+    c.setRequestProperty("User-Agent", "GamePlatform");
+    int code = c.getResponseCode();
+    if (code != 200) throw new IOException("Servidor respondeu " + code);
+    long total = c.getContentLengthLong();
+    try (InputStream in = c.getInputStream(); OutputStream out = new FileOutputStream(f)) {
+      byte[] buf = new byte[65536];
+      long done = 0;
+      int n, last = -1;
+      while ((n = in.read(buf)) > 0) {
+        out.write(buf, 0, n);
+        done += n;
+        if (total > 0) {
+          int p = (int) (done * 100 / total);
+          if (p != last) { last = p; js("dl", String.valueOf(p)); }
+        }
+      }
+    }
+    if (f.length() < 1_000_000) throw new IOException("Arquivo incompleto");
+    js("inst", "");
+
+    PackageInstaller pi = getPackageManager().getPackageInstaller();
+    PackageInstaller.SessionParams sp = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+    // Android 12+: permite instalar a atualização sem perguntar quando o próprio app a instala.
+    if (Build.VERSION.SDK_INT >= 31) sp.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
+    int id = pi.createSession(sp);
+    try (PackageInstaller.Session s = pi.openSession(id)) {
+      try (InputStream in = new FileInputStream(f); OutputStream out = s.openWrite("gp.apk", 0, f.length())) {
+        byte[] buf = new byte[65536];
+        int n;
+        while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+        s.fsync(out);
+      }
+      Intent it = new Intent(ACT_INSTALL).setPackage(getPackageName());
+      int fl = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
+      s.commit(PendingIntent.getBroadcast(this, id, it, fl).getIntentSender());
+    }
   }
 
   @Override
@@ -133,6 +240,38 @@ public class MainActivity extends BridgeActivity {
     @JavascriptInterface
     public String getBuild() {
       return String.valueOf(versionCode());
+    }
+
+    /** O Android só deixa o app instalar quando o usuário liberou "instalar apps desta fonte". */
+    @JavascriptInterface
+    public boolean canInstall() {
+      return Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls();
+    }
+
+    @JavascriptInterface
+    public void openInstallSettings() {
+      runOnUiThread(() -> {
+        try {
+          Intent it = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
+          startActivity(it);
+        } catch (Exception ignored) {
+        }
+      });
+    }
+
+    /** Baixa o APK e instala por cima, sem tirar o app do lugar. */
+    @JavascriptInterface
+    public void installApk(final String url) {
+      if (url == null || !url.startsWith("https://") || updating) return;
+      updating = true;
+      new Thread(() -> {
+        try {
+          downloadAndInstall(url);
+        } catch (Exception e) {
+          updating = false;
+          js("err", e.getMessage() == null ? "Falha no download" : e.getMessage());
+        }
+      }).start();
     }
 
     @JavascriptInterface

@@ -51,8 +51,12 @@ jobs:
       - name: Criar o projeto Android
         run: npx cap add android
 
-      - name: Aplicar o código nativo (tela cheia e rotação)
-        run: cp native/MainActivity.java android/app/src/main/java/com/gameplatform/app/MainActivity.java
+      - name: Aplicar o código nativo (tela cheia, rotação e atualização automática)
+        run: |
+          cp native/MainActivity.java android/app/src/main/java/com/gameplatform/app/MainActivity.java
+          M=android/app/src/main/AndroidManifest.xml
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n</manifest>#' "$M"
+          grep -q REQUEST_INSTALL_PACKAGES "$M" || { echo "Permissão de instalação não entrou no manifesto"; exit 1; }
 
       - name: Usar a chave fixa e numerar a versão (permite atualizar por cima)
         env:
