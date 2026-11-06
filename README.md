@@ -96,3 +96,10 @@ npm run test:app     # o app de verdade contra o servidor, com dois jogadores
 ## Segurança
 
 Senhas com bcrypt, limite de tentativas no login, contas suspensas perdem o acesso na hora, e só amigos trocam mensagens. Os jogos rodam em um `iframe` isolado (`sandbox` sem `allow-same-origin`), então o código de um jogo não lê o login nem os dados do jogador.
+
+## Abertura, perfil e jogos lançados
+
+- **Abertura:** ao abrir o app aparece o logotipo com o nome *Game Platform* por cerca de 2 segundos.
+- **Perfil:** toque na câmera ou em *Editar perfil* para trocar a foto (ela é reduzida no próprio aparelho), o nome e o texto *Sobre você*. Com conta online os dados ficam no servidor; sem conta, no aparelho.
+- **Início:** mostra só os jogos lançados, com os mais novos primeiro (destacados vêm antes). O nível e o XP ficam só no Perfil.
+- **Administração > Loja:** o administrador pode excluir qualquer jogo, inclusive os que ele mesmo publicou. Há uma confirmação antes de excluir e a ação vai para os logs.

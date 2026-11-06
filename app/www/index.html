@@ -316,11 +316,62 @@ button.card:active{transform:scale(.985);border-color:var(--accent)}
 #toast{position:fixed;left:50%;top:calc(64px + max(env(safe-area-inset-top,0px),var(--sat,0px)));transform:translateX(-50%);background:var(--surface3);border:1px solid var(--accent);padding:10px 16px;border-radius:13px;font-weight:600;font-size:13px;z-index:60;max-width:90%;text-align:center;box-shadow:0 14px 36px -12px #000}
 @media (orientation:landscape) and (max-height:520px){#toast{top:58px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* abertura */
+#splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(90% 60% at 50% 38%,#2a1a66 0%,#0a0d1c 72%);transition:opacity .55s ease}
+#splash.out{opacity:0;pointer-events:none}
+.sp-in{display:grid;justify-items:center;gap:12px;text-align:center;padding:0 24px;animation:spIn .8s cubic-bezier(.2,.8,.2,1) both}
+.sp-in img{width:112px;height:112px;border-radius:28px;box-shadow:0 0 0 1px #8b5cf655,0 18px 60px #8b5cf666}
+.sp-in h1{margin:8px 0 0;font-size:28px;letter-spacing:-.02em}
+.sp-in p{margin:0;color:var(--muted);font-weight:600;font-size:13px}
+.sp-bar{display:block;width:120px;height:3px;border-radius:9px;background:#ffffff18;overflow:hidden;position:relative;margin-top:14px}
+.sp-bar::after{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;border-radius:9px;background:linear-gradient(90deg,var(--accent2),#c4b5fd);animation:spBar 1.2s ease-in-out infinite}
+@keyframes spIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes spBar{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+@media (prefers-reduced-motion:reduce){.sp-in,.sp-bar::after{animation:none}}
+/* perfil */
+.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.avatar.xl{width:96px;height:96px;font-size:36px;border:3px solid var(--accent2);box-shadow:0 0 0 4px #8b5cf622,0 0 28px #8b5cf655}
+.pf-head{display:flex;align-items:center;gap:16px;margin-top:6px}
+.pf-av{position:relative;flex:none;width:96px;height:96px}
+.pf-av .lvl{position:absolute;right:-8px;bottom:-6px;min-width:44px;text-align:center;background:var(--surface);border:1.5px solid var(--accent2);border-radius:12px;padding:3px 6px;line-height:1.05;font-size:10px;font-weight:800;color:#c4b5fd}
+.pf-av .lvl b{display:block;font-size:16px;color:#fff}
+.pf-av .cam{position:absolute;left:-4px;top:-4px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;border:2px solid var(--bg)}
+.pf-av .cam svg{width:15px;height:15px}
+.pf-info{min-width:0;flex:1}
+.pf-info h1{margin:0;font-size:24px;line-height:1.1;overflow:hidden;text-overflow:ellipsis}
+.pf-info .st{color:var(--muted);font-size:13px;margin:3px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf-xp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pf-xp b{color:#c4b5fd}
+.pf-xp .bar-xp{flex:1}
+.pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.pstat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 8px;text-align:center;min-width:0}
+.pstat svg{width:22px;height:22px;color:var(--accent2)}
+.pstat b{display:block;font-size:22px;font-variant-numeric:tabular-nums;margin-top:2px}
+.pstat span{display:block;color:var(--muted);font-size:11px}
+.legacy{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.legacy::-webkit-scrollbar{display:none}
+.lg{flex:none;width:68px;text-align:center;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.lg i{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 5px;border-radius:50%;background:var(--surface);border:1.5px solid var(--line2);color:var(--muted)}
+.lg i svg{width:24px;height:24px}
+.lg.ok{color:#c4b5fd}
+.lg.ok i{border-color:var(--accent2);color:#c4b5fd;box-shadow:0 0 16px #8b5cf644;background:#8b5cf61c}
+.pbanner{position:relative;overflow:hidden;border-radius:18px;padding:18px;margin-top:12px;border:1px solid #3a3190;background:radial-gradient(120% 140% at 90% 100%,#5b34d1 0%,#241565 46%,#0f1130 100%)}
+.pbanner h3{margin:0 0 12px;font-size:19px;line-height:1.2;color:#d8c9ff;max-width:14ch}
+.pbanner .btn{min-height:34px;font-size:12px}
+.pf-edit{display:grid;gap:12px}
+.pf-pic{display:flex;align-items:center;gap:16px}
+.pf-pic .acts{display:flex;flex-wrap:wrap;gap:8px}
+.pf-edit label.f{margin:0}
+.pf-edit textarea.in{min-height:84px;white-space:normal;font-family:var(--font);font-size:14px}
+.vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 </style>
 
 </head>
 <body>
 <div id="app">
+<div id="splash" role="img" aria-label="Game Platform"><div class="sp-in"><img src="data:image/jpeg;base64,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" alt="" width="112" height="112"><h1>Game Platform</h1><p>Jogue. Crie. Compartilhe.</p><i class="sp-bar"></i></div></div>
+<script>setTimeout(function(){var s=document.getElementById("splash");if(!s)return;s.classList.add("out");setTimeout(function(){s.parentNode&&s.parentNode.removeChild(s)},600)},1700)</script>
   <header class="top">
     <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-3.9 3.2l-1.3 6A3 3 0 0 0 4.4 18c1 0 1.6-.5 2.1-1.2L8 15h8l1.5 1.8c.5.7 1.1 1.2 2.1 1.2a3 3 0 0 0 2.9-3.8l-1.3-6A4 4 0 0 0 17.3 5z"/></svg>GAME<b>PLATFORM</b></div>
     <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="q" type="search" placeholder="Buscar jogos ou categorias" aria-label="Buscar"></label>
@@ -341,6 +392,8 @@ button.card:active{transform:scale(.985);border-color:var(--accent)}
 'use strict';
 /* ---------- ícones ---------- */
 var P={
+ lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+ camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
  home:'<path d="M3 11 12 3l9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
  store:'<path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/>',
  lib:'<path d="M4 4h4v16H4zM10 4h4v16h-4z"/><path d="m16 5 4-1 3 15-4 1z" transform="translate(-2 0)"/>',
@@ -454,7 +507,7 @@ var DEF_UPD=[{id:'u1',t:'Nova expansão disponível',d:'Túnel Neon ganhou novos
 var SEED_POSTS=[{id:'s1',n:'LunaPixel',t:'Bati meu recorde no Túnel Neon: 480 m. Alguém consegue passar?',g:'d2'},{id:'s2',n:'DarkNinja_7',t:'Dica: no Chuva de Blocos, fique sempre no meio da tela.',g:'d1'}];
 var SEED_REV={d1:[{n:'Arcanist_7',s:5,t:'Simples e viciante.',d:'28/10/2026'}],d2:[{n:'LunaPixel',s:5,t:'O 3D roda muito bem no celular.',d:'27/10/2026'},{n:'ValkyrieX',s:4,t:'Dificuldade na medida.',d:'26/10/2026'}]};
 var AGES=['Livre','10+','12+','14+','16+','18+'];
-var SUBTAB={community:'home',upd:'home',friends:'profile',chat:'profile',ach:'profile',wish:'profile',settings:'profile',admin:'profile',auth:'profile'};
+var SUBTAB={editprof:'profile',community:'home',upd:'home',friends:'profile',chat:'profile',ach:'profile',wish:'profile',settings:'profile',admin:'profile',auth:'profile'};
 var PAL=[['#7c3aed','#06b6d4'],['#db2777','#f59e0b'],['#059669','#3b82f6'],['#dc2626','#7c3aed'],['#0ea5e9','#6d28d9'],['#1e3a8a','#7c3aed']];
 var LIBS=[['three','Three.js','https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'],['phaser','Phaser','https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js'],['p5','p5.js','https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js'],['pixi','PixiJS','https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.2/pixi.min.js']];
 var TEMPLATE='<!doctype html>\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<style>html,body{margin:0;height:100%;background:#0b0e1f;overflow:hidden}canvas{width:100%;height:100%;display:block}</style>\n<canvas id="c"></canvas>\n<script>\nconst c=document.getElementById("c"),x=c.getContext("2d");\nfunction rs(){c.width=innerWidth;c.height=innerHeight}rs();addEventListener("resize",rs);\nlet t=0;\nfunction loop(){\n  t++;\n  x.fillStyle="#0b0e1f";x.fillRect(0,0,c.width,c.height);\n  x.fillStyle="#a78bfa";\n  x.beginPath();x.arc(c.width/2+Math.cos(t/30)*80,c.height/2+Math.sin(t/20)*80,24,0,7);x.fill();\n  requestAnimationFrame(loop);\n}\nloop();\n<\/script>';
@@ -465,7 +518,7 @@ function init(){return{tab:'home',sub:null,stab:'pub',dtab:'rev',stars:5,detail:
  draft:{rev:'',post:'',pg:''},
  server:ld('gp_server',metaServer()),token:ld('gp_token',''),user:ld('gp_user',null),
  rgames:[],rposts:[],rfriends:[],rupd:[],rvc:{},rmsgs:{},rstats:null,radmin:null,
- lib:ld('gp_lib',{d1:1}),mine:ld('gp_mine',[]),xp:ld('gp_xp',0),plays:ld('gp_plays',0),pc:ld('gp_pc',{}),wish:ld('gp_wish',{}),rev:ld('gp_rev',{}),posts:ld('gp_posts',[]),likes:ld('gp_likes',{}),friends:ld('gp_friends',D(DEF_FRIENDS)),chats:ld('gp_chats',{}),cfg:Object.assign({sound:1,notif:1,saver:0,admin:0,fs:1,ori:'auto'},ld('gp_cfg',{})),mod:ld('gp_mod',D(DEF_MOD)),users:ld('gp_users',D(DEF_USERS)),mon:ld('gp_mon',{ads:0,iap:0,pass:0}),name:ld('gp_name','Jogador'),upd:ld('gp_upd',D(DEF_UPD)),seen:ld('gp_seen',[]),
+ lib:ld('gp_lib',{d1:1}),mine:ld('gp_mine',[]),xp:ld('gp_xp',0),plays:ld('gp_plays',0),pc:ld('gp_pc',{}),wish:ld('gp_wish',{}),rev:ld('gp_rev',{}),posts:ld('gp_posts',[]),likes:ld('gp_likes',{}),friends:ld('gp_friends',D(DEF_FRIENDS)),chats:ld('gp_chats',{}),cfg:Object.assign({sound:1,notif:1,saver:0,admin:0,fs:1,ori:'auto'},ld('gp_cfg',{})),mod:ld('gp_mod',D(DEF_MOD)),users:ld('gp_users',D(DEF_USERS)),mon:ld('gp_mon',{ads:0,iap:0,pass:0}),name:ld('gp_name','Jogador'),avatar:ld('gp_avatar',''),bio:ld('gp_bio',''),pf:null,gdel:null,upd:ld('gp_upd',D(DEF_UPD)),seen:ld('gp_seen',[]),
  studio:null,feat:ld('gp_feat',{}),cats:ld('gp_cats',null),logs:ld('gp_logs',[]),drafts:ld('gp_drafts',[]),srvCats:null,atab:'resumo'}}
 var S=init();
 function save(k){sv('gp_'+k,S[k])}
@@ -517,6 +570,10 @@ function applyNative(){
 /* ---------- conta e servidor ---------- */
 function on(){return !!(S.token&&S.user)}
 function myName(){return on()?S.user.name:S.name}
+function myAvatar(){return on()?(S.user.avatar||''):S.avatar}
+function myBio(){return on()?(S.user.bio||''):S.bio}
+function avatarEl(url,nm,cls){return '<div class="avatar'+(cls?' '+cls:'')+'">'+(url?'<img src="'+url+'" alt="">':esc(((nm||'J')[0]||'J').toUpperCase()))+'</div>'}
+function released(){var r=on()?S.rgames.slice().sort(function(a,b){return b.rid-a.rid}):S.mine.slice().reverse();return r.concat(CATALOG)}
 function xpNow(){return on()?S.user.xp:S.xp}
 function level(){var x=xpNow();return{n:Math.floor(x/500)+1,cur:x%500,max:500}}
 function base(){return (S.server||'').replace(/\/+$/,'')}
@@ -627,11 +684,9 @@ function updRow(u){return '<div class="li"><div class="avatar" style="width:38px
 
 /* ---------- telas ---------- */
 function home(){
- var l=level();
  return updBanner()+'<div class="hero"><canvas id="hc"></canvas><h1>Jogue. Crie. Compartilhe.</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="go" data-v="store">'+ic('play')+'Jogar agora</button><button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button></div></div>'
  +'<div class="sec"><h2>Categorias</h2></div><div class="cats">'+CATL().map(function(c){return '<button class="cat" data-a="cat" data-v="'+c[0]+'">'+ic(c[1])+c[0]+'</button>'}).join('')+'</div>'
- +'<div class="sec"><h2>Jogos em destaque</h2><button data-a="go" data-v="store">Ver todos</button></div><div class="grid sm">'+featFirst(all()).slice(0,4).map(card).join('')+'</div>'
- +'<div class="panel prog"><b>Nível '+l.n+'</b><div class="bar-xp"><i style="width:'+(l.cur/l.max*100)+'%"></i></div><span class="note">'+l.cur+' / '+l.max+' XP</span></div>'
+ +'<div class="sec"><h2>Jogos lançados</h2><button data-a="go" data-v="store">Ver todos</button></div><div class="grid sm">'+featFirst(released()).slice(0,8).map(card).join('')+'</div>'
 }
 function store(){
  var cats=['Todos'].concat(CATL().map(function(c){return c[0]}));
@@ -744,13 +799,27 @@ function creator(){
 }
 function achList(){return [['Primeira partida',S.plays,1],['Dez partidas',S.plays,10],['Cinquenta partidas',S.plays,50],['Colecionador (5 jogos)',libCount(),5],['Criador',myGames().length,1],['Estúdio ativo (3 jogos)',myGames().length,3],['Crítico',myReviews(),1],['Comunicativo',postCount(),1],['Sociável (5 amigos)',friendCount(),5],['Nível 5',level().n,5]]}
 function profile(){
- var l=level(),done=achList().filter(function(a){return a[1]>=a[2]}).length,nm=myName(),isAdm=on()?S.user.role==='admin':!!S.cfg.admin;
+ var l=level(),nm=myName(),isAdm=on()?S.user.role==='admin':!!S.cfg.admin,al=achList(),done=al.filter(function(a){return a[1]>=a[2]}).length,bio=myBio();
+ var icons=['play','play','play','lib','studio','studio','chat','chat','users','star'];
+ var leg=al.map(function(a,i){return{ok:a[1]>=a[2],n:a[0].replace(/ \(.*\)/,''),i:icons[i]||'star'}}).sort(function(x,y){return (y.ok?1:0)-(x.ok?1:0)}).slice(0,6);
  return '<h1>Perfil</h1>'
- +(on()?'':'<div class="panel" style="margin-top:10px"><b>Jogue com amigos</b><div class="note">Entre ou crie uma conta para publicar jogos na Loja, fazer amigos e conversar.</div><button class="btn sm" style="margin-top:10px" data-a="sub" data-v="auth">Entrar ou criar conta</button></div>')
- +'<div class="panel" style="margin-top:10px"><div class="row" style="justify-content:flex-start;gap:14px"><div class="avatar">'+esc((nm[0]||'J').toUpperCase())+'</div><div style="min-width:0"><b style="font-size:17px">'+esc(nm)+'</b><div><span class="badge">Nível '+l.n+'</span> '+(on()?'<span class="badge ok">Conta online</span>':'<span class="badge">Offline</span>')+'</div></div></div>'
- +'<div class="bar-xp" style="margin-top:14px"><i style="width:'+(l.cur/l.max*100)+'%"></i></div><div class="row" style="margin-top:6px"><span class="note" style="margin:0">'+l.cur+' / '+l.max+' XP</span><span class="note" style="margin:0">Próximo nível: '+(l.max-l.cur)+' XP</span></div>'
- +'<div class="stats"><div><b>'+libCount()+'</b><span>Na biblioteca</span></div><div><b>'+(on()?friendCount():S.plays)+'</b><span>'+(on()?'Amigos':'Partidas')+'</span></div><div><b>'+myGames().length+'</b><span>Publicados</span></div></div></div>'
- +'<div class="list" style="margin-top:14px">'+mrow('trophy','Conquistas','sub','ach',done+'/'+achList().length)+mrow('users','Amigos e mensagens','sub','friends',friendCount())+mrow('users','Comunidade','sub','community','')+mrow('heart','Lista de desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mrow('bell','Notificações','sub','upd',unseen()||'')+(isAdm?mrow('shield','Administração','sub','admin',on()?'':S.mod.length):'')+mrow('cog','Configurações','sub','settings','')+'</div>'
+ +'<div class="pf-head"><div class="pf-av">'+avatarEl(myAvatar(),nm,'xl')+'<button class="cam" data-a="sub" data-v="editprof" aria-label="Editar foto de perfil">'+ic('camera')+'</button><div class="lvl">NÍVEL<b>'+l.n+'</b></div></div>'
+ +'<div class="pf-info"><h1>'+esc(nm)+'</h1><div class="st">'+(bio?esc(bio):'Jogador')+' • '+(on()?'Conta online':'Offline')+'</div>'
+ +'<div class="pf-xp"><span><b>'+l.cur+'</b> / '+l.max+' XP</span><div class="bar-xp"><i style="width:'+(l.cur/l.max*100)+'%"></i></div></div></div></div>'
+ +'<div class="pstats"><div class="pstat">'+ic('lib')+'<b>'+libCount()+'</b><span>Na biblioteca</span></div><div class="pstat">'+ic('pad')+'<b>'+S.plays+'</b><span>Partidas</span></div><div class="pstat">'+ic('studio')+'<b>'+myGames().length+'</b><span>Publicados</span></div></div>'
+ +(on()?'':'<div class="panel" style="margin-top:14px"><b>Jogue com amigos</b><div class="note">Entre ou crie uma conta para publicar jogos na Loja, fazer amigos e conversar.</div><button class="btn sm" style="margin-top:10px" data-a="sub" data-v="auth">Entrar ou criar conta</button></div>')
+ +'<div class="sec"><h2>Meu legado</h2><button data-a="sub" data-v="ach">Ver todos</button></div><div class="legacy">'+leg.map(function(x){return '<div class="lg'+(x.ok?' ok':'')+'"><i>'+(x.ok?ic(x.i):ic('lock'))+'</i>'+esc(x.n)+'</div>'}).join('')+'</div>'
+ +'<div class="pbanner"><h3>Legado não se herda. Se constrói.</h3><button class="btn ghost" data-a="sub" data-v="editprof">'+ic('edit')+'Personalizar</button></div>'
+ +'<div class="list" style="margin-top:14px">'+mrow('edit','Editar perfil','sub','editprof','')+mrow('trophy','Conquistas','sub','ach',done+'/'+al.length)+mrow('users','Amigos e mensagens','sub','friends',friendCount())+mrow('users','Comunidade','sub','community','')+mrow('heart','Lista de desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mrow('bell','Notificações','sub','upd',unseen()||'')+(isAdm?mrow('shield','Administração','sub','admin',on()?'':S.mod.length):'')+mrow('cog','Configurações','sub','settings','')+'</div>'
+}
+function pfInit(){return{name:myName(),bio:myBio(),avatar:myAvatar()}}
+function editprof(){
+ var f=S.pf||(S.pf=pfInit());
+ return subhead('Editar perfil')+'<div class="panel pf-edit"><div class="pf-pic">'+avatarEl(f.avatar,f.name,'xl')+'<div class="acts"><label class="btn sm" for="pfIn">'+ic('camera')+'Trocar foto</label>'+(f.avatar?'<button class="btn ghost sm" data-a="pfrm">'+ic('trash')+'Remover</button>':'')+'</div><input type="file" id="pfIn" class="vh" accept="image/*"></div>'
+ +'<div><label class="f" for="pfName">Nome</label><input class="in" id="pfName" value="'+esc(f.name)+'" maxlength="20" autocomplete="off"></div>'
+ +'<div><label class="f" for="pfBio">Sobre você</label><textarea class="in" id="pfBio" maxlength="120" placeholder="Conte algo sobre você">'+esc(f.bio)+'</textarea></div>'
+ +'<button class="btn full" data-a="pfsave">'+ic('check')+'Salvar perfil</button></div>'
+ +'<p class="note">Nome com 3 a 20 letras, números, _ . ou -. A foto é reduzida automaticamente.</p>'
 }
 function ach(){
  return subhead('Conquistas')+'<div class="list">'+achList().map(function(a){var p=Math.min(a[1],a[2]),ok=a[1]>=a[2];return '<div class="li"><div class="avatar" style="width:40px;height:40px;font-size:16px;'+(ok?'':'filter:grayscale(1);opacity:.5')+'">'+(ok?ic('check'):ic('trophy'))+'</div><div class="body"><div class="row"><b>'+a[0]+'</b><span class="badge'+(ok?' ok':'')+'">'+(ok?'Concluída':p+'/'+a[2])+'</span></div><div class="bar-xp" style="margin-top:6px"><i style="width:'+(p/a[2]*100)+'%"></i></div></div></div>'}).join('')+'</div>'
@@ -798,7 +867,6 @@ function settings(){
  +'<label class="f" for="srvUrl" style="margin-top:8px">Endereço do servidor</label><input class="in" id="srvUrl" value="'+esc(S.server)+'" placeholder="https://seu-servidor.com (vazio usa este site)" autocapitalize="off" autocomplete="off" inputmode="url">'
  +'<div class="row" style="margin-top:10px"><span class="note" style="margin:0"><span class="sd '+(S.srvOk?'on':'')+'"></span> '+(S.srvOk?'Servidor conectado':'Sem conexão')+'</span><button class="btn ghost sm" data-a="srvsave">Salvar e testar</button></div>'
  +(on()?'<div class="row" style="margin-top:14px"><span>Conectado como <b>'+esc(S.user.name)+'</b></span><button class="btn ghost sm" data-a="logout">Sair</button></div>':'<button class="btn sm" style="margin-top:14px" data-a="sub" data-v="auth">Entrar ou criar conta</button>')+'</div>'
- +(on()?'':'<label class="f" for="sName">Seu nome (modo offline)</label><input class="in" id="sName" value="'+esc(S.name)+'" maxlength="20">')
  +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação nos jogos</div><div class="seg">'+[['auto','O jogo decide'],['portrait','Sempre em pé'],['landscape','Sempre deitado']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">Fora dos jogos o app fica sempre em pé. Ao abrir um jogo, ele gira sozinho para a posição que o jogo pede (retrato ou paisagem). '+(native()?'Recursos do Android ativos.':'Neste navegador a rotação depende do aparelho.')+'</p></div>'
  +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (demonstração)','admin'))+'</div>'
  +updBanner()+updPanel()
@@ -813,13 +881,13 @@ function admVM(){
   return{demo:0,ov:a.ov,
    reports:a.reports.map(function(m){return{t:({game:'Jogo',post:'Post',user:'Jogador'}[m.target_type])+': '+(m.target_title||'#'+m.target_id),m:m.reason,by:m.reporter,a:'há '+(rel(m.created_at)||'pouco'),ok:'repres',okv:m.id+':dismiss',rm:'repres',rmv:m.id+':remove'}}),
    users:a.users.map(function(u){var sus=u.status!=='active';return{n:u.name,e:u.email,adm:u.role==='admin',sus:sus,me:u.id===S.user.id,a:'usertgr',v:u.id+':'+(sus?'active':'suspended')}}),
-   games:a.games.map(function(g){return{k:String(g.id),t:g.title,c:g.category,d:g.developer,p:g.plays,f:g.featured}}),
+   games:a.games.map(function(g){return{k:String(g.id),t:g.title,c:g.category,d:g.developer,p:g.plays,f:g.featured,x:1}}),
    logs:a.logs.map(function(l){return{a:l.action,d:l.detail,who:l.actor,t:'há '+(rel(l.created_at)||'pouco')}})};
  }
  return{demo:1,ov:{users:128745+S.users.length,games:340+all().length,openReports:S.mod.length,plays:48210},
   reports:S.mod.map(function(m){return{t:m.t,m:m.m,by:'Moderação',a:'há '+m.a,ok:'modok',okv:String(m.id),rm:'modrm',rmv:String(m.id)}}),
   users:S.users.map(function(u,i){return{n:u.n,e:u.e,adm:false,sus:u.st==='Suspenso',me:false,a:'usertg',v:String(i)}}),
-  games:all().map(function(g){return{k:g.id,t:g.title,c:g.cat,d:g.dev,p:g.dl,f:!!S.feat[g.id]}}),
+  games:all().map(function(g){return{k:g.id,t:g.title,c:g.cat,d:g.dev,p:g.dl,f:!!S.feat[g.id],x:S.mine.some(function(m){return m.id===g.id})?1:0}}),
   logs:S.logs.map(function(l){return{a:l.a,d:l.d,who:l.who,t:'há '+(rel(l.t)||'pouco')}})};
 }
 function admin(){
@@ -852,7 +920,7 @@ function admin(){
  }else if(tab==='loja'){
   var nf=v.games.filter(function(g){return g.f}).length,cl=catNames();
   h+='<div class="sec" style="margin-top:4px"><h2>Destaques da loja</h2><span class="note" style="margin:0">'+nf+'/8</span></div><p class="note" style="margin:-4px 0 10px">Jogos destacados aparecem primeiro na Loja e na tela inicial.</p>'
-   +(v.games.length?'<div class="list">'+v.games.map(function(g){return '<div class="frow"><div class="body"><b>'+esc(g.t)+'</b><span class="note">'+esc(g.c)+' · '+esc(g.d||'')+'</span></div><button class="star-btn" data-a="gfeat" data-v="'+esc(g.k)+':'+(g.f?0:1)+'" aria-pressed="'+!!g.f+'" aria-label="'+(g.f?'Tirar dos destaques':'Destacar')+' '+esc(g.t)+'">'+ic('star')+'</button></div>'}).join('')+'</div>':'<div class="empty">Nenhum jogo publicado ainda.</div>')
+   +(v.games.length?'<div class="list">'+v.games.map(function(g){return '<div class="frow"><div class="body"><b>'+esc(g.t)+'</b><span class="note">'+esc(g.c)+' · '+esc(g.d||'')+'</span></div><button class="star-btn" data-a="gfeat" data-v="'+esc(g.k)+':'+(g.f?0:1)+'" aria-pressed="'+!!g.f+'" aria-label="'+(g.f?'Tirar dos destaques':'Destacar')+' '+esc(g.t)+'">'+ic('star')+'</button>'+(g.x?(S.gdel===g.k?'<button class="btn danger sm" data-a="gdel" data-v="'+esc(g.k)+'">Confirmar</button><button class="btn ghost sm" data-a="gdelx">Cancelar</button>':'<button class="ib sm" data-a="gdel" data-v="'+esc(g.k)+'" aria-label="Excluir '+esc(g.t)+'">'+ic('trash')+'</button>'):'')+'</div>'}).join('')+'</div>':'<div class="empty">Nenhum jogo publicado ainda.</div>')
    +'<div class="sec"><h2>Categorias</h2><span class="note" style="margin:0">'+cl.length+'</span></div><div class="list">'+cl.map(function(c){return '<div class="frow"><div class="body"><b>'+esc(c)+'</b></div><button class="ib sm" data-a="catrm" data-v="'+esc(c)+'" aria-label="Remover categoria '+esc(c)+'">'+ic('trash')+'</button></div>'}).join('')+'</div>'
    +'<div class="catrow" style="margin-top:10px"><input class="in" id="newCat" placeholder="Nova categoria" maxlength="16"><button class="btn" data-a="catadd">'+ic('plus')+'Adicionar</button></div><p class="note">Jogos que já usam uma categoria removida continuam na Loja em “Todos”.</p>';
  }else{
@@ -868,7 +936,7 @@ function render(keep){
  var u=unseen();$('#bell').innerHTML=ic('bell')+(u?'<i class="dot">'+u+'</i>':'');
  var y=view.scrollTop,html;
  if(S.detail){var g=find(S.detail);html=g?detail(g):home()}
- else if(S.sub){html={community:community,friends:friends,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView}[S.sub]()}
+ else if(S.sub){html={community:community,friends:friends,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,editprof:editprof}[S.sub]()}
  else html={home:home,store:store,lib:library,studio:studio,profile:profile}[S.tab]();
  view.innerHTML=html;
  if(S.sub==='upd'){var ch=false;updList().forEach(function(x){if(S.seen.indexOf(x.id)<0){S.seen.push(x.id);ch=true}});if(ch){save('seen')}}
@@ -996,6 +1064,26 @@ function importFile(f){
  r.onload=function(){keepForms();S.studio.code=String(r.result);S.studio.zip='';S.studio.src={name:f.name,size:f.size};S.studio.mode='file';if(!S.studio.title)S.studio.title=f.name.replace(/\.[^.]+$/,'').slice(0,40);render(true);toast('Arquivo carregado')};
  r.readAsText(f);
 }
+function pfKeep(){var n=document.getElementById('pfName'),b=document.getElementById('pfBio');if(!S.pf)S.pf=pfInit();if(n)S.pf.name=n.value;if(b)S.pf.bio=b.value}
+function setAvatar(f){
+ if(!/^image\//.test(f.type)){toast('Escolha uma imagem (JPG, PNG ou WebP)');return}
+ var u=URL.createObjectURL(f),im=new Image();
+ im.onload=function(){
+  try{
+   var out='',q=[.85,.7,.55];
+   for(var k=0;k<q.length;k++){
+    var c=document.createElement('canvas');c.width=c.height=256;var x=c.getContext('2d');
+    var sc=Math.max(256/im.naturalWidth,256/im.naturalHeight),w=im.naturalWidth*sc,h=im.naturalHeight*sc;
+    x.fillStyle='#11152a';x.fillRect(0,0,256,256);x.drawImage(im,(256-w)/2,(256-h)/2,w,h);
+    out=c.toDataURL('image/jpeg',q[k]);if(out.length<=60000)break;
+   }
+   pfKeep();S.pf.avatar=out;render(true);
+  }catch(er){toast('Não foi possível usar essa imagem')}
+  URL.revokeObjectURL(u);
+ };
+ im.onerror=function(){URL.revokeObjectURL(u);toast('Não foi possível abrir essa imagem')};
+ im.src=u;
+}
 function setCover(f){
  if(!/^image\//.test(f.type)){toast('Escolha uma imagem (JPG, PNG ou WebP)');return}
  var u=URL.createObjectURL(f),im=new Image();
@@ -1028,7 +1116,7 @@ async function act(a,v,t){
  var g;
  switch(a){
   case 'go':S.tab=v;S.sub=null;S.detail=null;render();break;
-  case 'sub':S.sub=v;S.tab=SUBTAB[v]||S.tab;S.detail=null;if(v==='settings')S.confirmReset=false;render();
+  case 'sub':if(v==='editprof')S.pf=pfInit();S.sub=v;S.tab=SUBTAB[v]||S.tab;S.detail=null;if(v==='settings')S.confirmReset=false;render();
    if(v==='admin'&&on()&&S.user.role==='admin')loadAdmin();
    if(v==='friends'&&on())refreshFriends();
    if(v==='community'&&on())api('GET','/posts').then(function(r){S.rposts=r.posts;if(S.sub==='community')render(true)}).catch(function(){});
@@ -1065,6 +1153,20 @@ async function act(a,v,t){
   case 'stab':S.stab=v;render();if(v==='painel'&&on())loadStats();break;
   case 'sdim':S.studio.dim=v;render(true);break;
   case 'smode':S.studio.mode=v;render(true);break;
+  case 'pfrm':pfKeep();S.pf.avatar='';render(true);break;
+  case 'pfsave':
+   pfKeep();var pn=(S.pf.name||'').trim(),pb=(S.pf.bio||'').trim().slice(0,120);
+   if(pn.length<3||pn.length>20){toast('O nome precisa ter de 3 a 20 caracteres');return}
+   if(!/^[\p{L}\p{N}_.-]+$/u.test(pn)){toast('O nome só pode ter letras, números, _ . e -');return}
+   if(on()){try{var pr=await api('PATCH','/me',{name:pn,bio:pb,avatar:S.pf.avatar||null});S.user=pr.user;save('user')}catch(er){toast(er.message);return}}
+   else{S.name=pn;S.bio=pb;S.avatar=S.pf.avatar||'';save('name');save('bio');save('avatar')}
+   S.pf=null;S.sub=null;toast('Perfil salvo');render();break;
+  case 'gdel':
+   if(S.gdel!==v){S.gdel=v;render(true);break}
+   S.gdel=null;
+   if(on()){try{await api('DELETE','/games/'+v)}catch(er){toast(er.message);return}toast('Jogo excluído');await refreshAll();await loadAdmin();break}
+   g=find(v);S.mine=S.mine.filter(function(x){return x.id!==v});delete S.lib[v];save('mine');save('lib');logLocal('Jogo excluído',g?g.title:v);toast('Jogo excluído');render(true);break;
+  case 'gdelx':S.gdel=null;render(true);break;
   case 'chkupd':checkUpdate(true);break;
   case 'doupd':if(S.upv&&S.upv.url)openUrl(S.upv.url);break;
   case 'sclear':S.studio.code='';S.studio.zip='';S.studio.src=null;render(true);break;
@@ -1177,6 +1279,7 @@ document.addEventListener('change',function(e){
  var t=e.target;
  if(t.id==='sFile'&&t.files[0]){importFile(t.files[0]);t.value=''}
  if(t.id==='sCoverIn'&&t.files[0]){setCover(t.files[0]);t.value=''}
+ if(t.id==='pfIn'&&t.files[0]){setAvatar(t.files[0]);t.value=''}
  if(t.dataset.lib){S.studio.libs[t.dataset.lib]=t.checked}
  if(t.dataset.mon){S.mon[t.dataset.mon]=t.checked?1:0;save('mon');render(true)}
  if(t.dataset.cfg){S.cfg[t.dataset.cfg]=t.checked?1:0;save('cfg');if(t.dataset.cfg==='admin')render(true);if(t.dataset.cfg==='fs')applyNative()}

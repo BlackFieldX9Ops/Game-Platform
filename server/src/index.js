@@ -41,7 +41,7 @@ function str(v, name, min, max) {
   return t;
 }
 const int = (v, name) => { const n = Number(v); if (!Number.isInteger(n) || n < 1) bad(`${name} inválido`); return n; };
-const publicUser = u => ({ id: u.id, name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1 });
+const publicUser = u => ({ id: u.id, name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '' });
 const sign = u => jwt.sign({ id: u.id }, SECRET, { expiresIn: '30d' });
 
 function userFromToken(token) {
@@ -122,12 +122,25 @@ app.post('/api/auth/login', authLimiter, wrap((req, res) => {
 }));
 app.get('/api/me', auth, (req, res) => res.json({ user: { ...publicUser(req.user), email: req.user.email } }));
 app.patch('/api/me', auth, wrap((req, res) => {
-  const name = str(req.body.name, 'Nome', 3, 20);
-  if (!/^[\p{L}\p{N}_.-]+$/u.test(name)) bad('O nome só pode ter letras, números, _ . e -');
-  const taken = get('SELECT id FROM users WHERE name = ?', name);
-  if (taken && taken.id !== req.user.id) bad('Esse nome já está em uso', 409);
-  run('UPDATE users SET name = ? WHERE id = ?', name, req.user.id);
-  res.json({ user: publicUser(get('SELECT * FROM users WHERE id = ?', req.user.id)) });
+  const b = req.body || {}, cur = req.user;
+  let name = cur.name, bio = cur.bio || '', avatar = cur.avatar || null;
+  if (b.name !== undefined) {
+    name = str(b.name, 'Nome', 3, 20);
+    if (!/^[\p{L}\p{N}_.-]+$/u.test(name)) bad('O nome só pode ter letras, números, _ . e -');
+    const taken = get('SELECT id FROM users WHERE name = ?', name);
+    if (taken && taken.id !== cur.id) bad('Esse nome já está em uso', 409);
+  }
+  if (b.bio !== undefined) {
+    if (typeof b.bio !== 'string') bad('Texto inválido');
+    bio = b.bio.trim().slice(0, 120);
+  }
+  if ('avatar' in b) {
+    if (b.avatar === null || b.avatar === '') avatar = null;
+    else if (typeof b.avatar === 'string' && b.avatar.length <= 80_000 && COVER_RE.test(b.avatar)) avatar = b.avatar;
+    else bad('Foto inválida (use JPG, PNG ou WebP pequenos)');
+  }
+  run('UPDATE users SET name = ?, bio = ?, avatar = ? WHERE id = ?', name, bio, avatar, cur.id);
+  res.json({ user: publicUser(get('SELECT * FROM users WHERE id = ?', cur.id)) });
 }));
 
 /* ---------- jogos ---------- */
@@ -178,7 +191,7 @@ app.delete('/api/games/:id', auth, wrap((req, res) => {
   const g = loadGame(int(req.params.id, 'id'));
   if (g.owner_id !== req.user.id && req.user.role !== 'admin') bad('Sem permissão', 403);
   run('DELETE FROM games WHERE id = ?', g.id);
-  if (req.user.role === 'admin' && g.owner_id !== req.user.id) logAct(req, 'Jogo removido', g.title);
+  if (req.user.role === 'admin') logAct(req, g.owner_id === req.user.id ? 'Jogo próprio excluído' : 'Jogo removido', g.title);
   res.json({ ok: true });
 }));
 

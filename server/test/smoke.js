@@ -146,6 +146,18 @@ async function main() {
   const logs = await call('GET', '/admin/logs', null, ADM);
   ok('logs registram as ações do admin', logs.s === 200 && ['Jogo destacado', 'Categorias alteradas', 'Usuário suspenso', 'Notificação global'].every(a => logs.j.logs.some(l => l.action === a)));
   ok('logs: usuário comum é bloqueado', (await call('GET', '/admin/logs', null, A)).s === 403);
+  // --- perfil: foto, bio e exclusão de jogos pelo admin
+  const px = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  const pf = await call('PATCH', '/me', { bio: '  Criador de jogos  ', avatar: px }, A);
+  ok('perfil: salva foto e bio sem mudar o nome', pf.s === 200 && pf.j.user.avatar === px && pf.j.user.bio === 'Criador de jogos' && pf.j.user.name === 'Ana');
+  ok('perfil: foto aparece em /me', (await call('GET', '/me', null, A)).j.user.avatar === px);
+  ok('perfil: foto inválida é recusada', (await call('PATCH', '/me', { avatar: 'http://x/y.png' }, A)).s === 400);
+  ok('perfil: foto grande demais é recusada', (await call('PATCH', '/me', { avatar: 'data:image/png;base64,' + 'A'.repeat(90000) }, A)).s === 400);
+  ok('perfil: remove a foto', (await call('PATCH', '/me', { avatar: null }, A)).j.user.avatar === null);
+  const mg = await call('POST', '/games', game, ADM);
+  ok('admin publica um jogo próprio', mg.s === 201);
+  ok('admin exclui o próprio jogo', (await call('DELETE', `/games/${mg.j.id}`, null, ADM)).s === 200 && (await call('GET', `/games/${mg.j.id}`)).s === 404);
+  ok('log registra a exclusão do jogo próprio', (await call('GET', '/admin/logs', null, ADM)).j.logs.some(l => l.action === 'Jogo próprio excluído'));
   ok('JSON inválido devolve 400', (await fetch(BASE + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{x' })).status === 400);
 }
 
