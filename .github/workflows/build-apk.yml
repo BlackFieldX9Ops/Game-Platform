@@ -103,8 +103,9 @@ jobs:
       - name: Conferir que a assinatura é a chave fixa
         run: |
           APK=android/app/build/outputs/apk/debug/app-debug.apk
-          WANT=$(keytool -list -v -keystore keystore/debug.keystore -storepass android 2>/dev/null | grep -m1 'SHA256:' | sed 's/.*SHA256: *//')
-          GOT=$(keytool -printcert -jarfile "$APK" 2>/dev/null | grep -m1 'SHA256:' | sed 's/.*SHA256: *//')
+          WANT=$(keytool -list -v -keystore keystore/debug.keystore -storepass android 2>/dev/null | grep -m1 'SHA256:' | sed 's/.*SHA256: *//' | tr -d ':' | tr 'a-f' 'A-F')
+          SIGNER=$(ls "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/apksigner | sort -V | tail -1)
+          GOT=$("$SIGNER" verify --print-certs "$APK" | grep -m1 'SHA-256 digest' | sed 's/.*: *//' | tr -d ':' | tr 'a-f' 'A-F')
           echo "esperada: $WANT"; echo "do APK:   $GOT"
           [ -n "$WANT" ] && [ "$WANT" = "$GOT" ] || { echo "A assinatura do APK não é a da chave fixa"; exit 1; }
 
