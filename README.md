@@ -155,3 +155,8 @@ Sem conta, essas telas pedem login e não mostram nada inventado. No servidor: r
 - **Avisos importantes não expiram** e ficam marcados como *Importante*: atualização do app, permissões, códigos enviados e compras (passe, pacote, skin, Premium para enviar jogos ao Studio). Só saem quando o jogador apaga. No servidor, use `notify(userId, título, texto)` com um destes tipos: `update`, `perm`, `code`, `purchase`, `premium`.
 - Avisos gerais da administração apagados por um jogador somem só para ele.
 - **Atualização silenciosa:** o APK agora declara a permissão `UPDATE_PACKAGES_WITHOUT_USER_ACTION`. A primeira atualização feita pelo próprio app ainda mostra a tela de confirmação do Android; as seguintes, no Android 12 ou mais novo, entram sem perguntar.
+
+## Apagar jogo pela administração e Android 16
+
+- **Apagar um jogo** (administrador ou dono) o remove da plataforma inteira: Loja, busca, biblioteca, favoritos, histórico e progresso salvo de todos. **Quem comprou continua com o jogo**: ele fica guardado como "Removido da Loja", só nas bibliotecas dos compradores, e continua jogável. Sem compradores, o jogo é apagado de vez. Quem está com o app aberto vê o jogo sumir na hora. A tabela `purchases` já existe no servidor; o fluxo de pagamento ainda será criado.
+- **Android 16:** o APK agora é compilado com Capacitor 8, Java 21 e `targetSdk`/`compileSdk` 36.

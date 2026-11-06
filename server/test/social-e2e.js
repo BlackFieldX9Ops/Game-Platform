@@ -152,8 +152,15 @@ async function main() {
   ok('notificação de jogo publicado é clicável', await until(() => A.d.querySelector('button.li[data-a="open"]'), 4000), A.text().slice(0, 200));
   A.click('button.li[data-a="open"]');
   ok('toque na notificação abre o jogo', await until(() => /Meu Labirinto/.test(A.text()) && A.$('[data-a="back"]')));
+  // jogo apagado some da biblioteca de quem o tinha, sem recarregar
+  const ef = await api('POST', '/games', { title: 'Jogo Efemero', category: 'Ação', dim: '2D', code: '<h1>e</h1>' }, rb.token);
+  await api('PUT', '/library/' + ef.id, null, ra.token);
+  A.click('#bell'); await wait(900); A.click('[data-a="go"][data-v="lib"]');
+  ok('jogo aparece na biblioteca antes de ser apagado', await until(() => /Jogo Efemero/.test(A.text()), 4000), A.text().slice(0, 150));
+  await api('DELETE', '/games/' + ef.id, null, rb.token);
+  ok('apagar o jogo some da biblioteca de quem tinha, em tempo real', await until(() => !/Jogo Efemero/.test(A.text()), 4000));
   // deslizar para a esquerda apaga
-  A.click('[data-a="back"]');
+  A.click('#bell');
   await until(() => A.d.querySelectorAll('.swp').length > 0);
   const n0 = A.d.querySelectorAll('.swp').length, row = A.d.querySelector('.swp');
   const ev = (t, x) => row.firstChild.dispatchEvent(new A.w.MouseEvent(t, { bubbles: true, clientX: x, clientY: 20 }));

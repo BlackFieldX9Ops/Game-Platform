@@ -201,3 +201,12 @@ CREATE TABLE IF NOT EXISTS notif_dismissed (
   PRIMARY KEY (user_id, notif_id)
 );
 `);
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS purchases (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, game_id)
+);
+`);

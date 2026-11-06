@@ -737,8 +737,12 @@ async function refreshAll(){
  if(!on())return;
  try{
   var r=await Promise.all([api('GET','/games?limit=60'),api('GET','/my/games'),api('GET','/library'),api('GET','/wishlist'),api('GET','/posts?filter='+S.cf),api('GET','/friends'),api('GET','/notifications'),api('GET','/me'),api('GET','/categories')]);
-  var seen={},list=[];r[0].games.concat(r[1].games).forEach(function(g){if(!seen[g.id]){seen[g.id]=1;list.push(mapGame(g))}});
+  var seen={},list=[];r[0].games.concat(r[1].games,r[2].games).forEach(function(g){if(!seen[g.id]){seen[g.id]=1;list.push(mapGame(g))}});
   S.rgames=list;
+  // Jogo apagado pela administração: some do histórico e do progresso salvo (menos para quem comprou, que ainda o recebe do servidor).
+  var have={};list.forEach(function(g){have[g.id]=1});
+  [S.pc,S.saves].forEach(function(o){Object.keys(o).forEach(function(k){if(k[0]==='r'&&!have[k])delete o[k]})});
+  sv('gp_pc',S.pc);sv('gp_saves',S.saves);
   [S.lib,S.wish].forEach(function(o){Object.keys(o).forEach(function(k){if(k[0]==='r')delete o[k]})});
   r[2].games.forEach(function(g){S.lib['r'+g.id]=1});r[3].games.forEach(function(g){S.wish['r'+g.id]=1});
   S.rposts=r[4].posts;S.rfriends=r[5].friends;S.rupd=r[6].notifications.map(mapNotif);S.user=r[7].user;S.srvCats=r[8].categories;loadConvs();
@@ -757,9 +761,10 @@ function connectWs(){
  var u=base()?base().replace(/^http/,'ws'):((location.protocol==='https:'?'wss://':'ws://')+location.host);
  try{ws=new WebSocket(u+'/ws?token='+encodeURIComponent(S.token))}catch(e){return}
  ws.onopen=function(){wsTry=0};
- ws.onmessage=function(ev){var m;try{m=JSON.parse(ev.data)}catch(e){return}if(m.type==='message')onIncoming(m.message);else if(m.type==='room')onRoom(m)};
+ ws.onmessage=function(ev){var m;try{m=JSON.parse(ev.data)}catch(e){return}if(m.type==='message')onIncoming(m.message);else if(m.type==='room')onRoom(m);else if(m.type==='games'){clearTimeout(onGames.h);onGames.h=setTimeout(refreshAll,400)}};
  ws.onclose=function(e){if(e.code===4401||!on())return;clearTimeout(wsTimer);wsTimer=setTimeout(connectWs,Math.min(30000,1000*Math.pow(2,wsTry++)))};
 }
+function onGames(){}
 function onIncoming(m){
  (S.rooms['direct:'+m.from_id]=S.rooms['direct:'+m.from_id]||[]).push(m);
  if(S.sub==='chat'&&S.room&&S.room.type==='direct'&&S.room.id===m.from_id){render(true);view.scrollTop=view.scrollHeight;api('GET','/messages/'+m.from_id).catch(function(){})}
@@ -826,7 +831,7 @@ function CATL(){return catNames().map(function(n){return[n,catIcon(n)]})}
 function isFeat(g){return on()?!!g.featured:!!S.feat[g.id]}
 function featFirst(a){return a.filter(isFeat).concat(a.filter(function(g){return !isFeat(g)}))}
 function cover(g,cls){return '<div class="cover '+(cls||'')+'" style="background:linear-gradient(135deg,'+g.color[0]+','+g.color[1]+')">'+(g.cover?'<img src="'+g.cover+'" alt="" loading="lazy">':ic(g.icon||'pad'))+(isFeat(g)?'<span class="tag star">'+ic('star')+'Destaque</span>':'')+'<span class="tag">'+g.dim+'</span></div>'}
-function card(g){var a=avg(g.id);return '<button class="card" data-a="open" data-v="'+g.id+'" aria-label="Abrir '+esc(g.title)+'">'+cover(g)+'<div class="meta"><div class="t">'+esc(g.title)+'</div><div class="row"><span class="g">'+esc(g.genre)+'</span><span class="stars">'+(a?'★ '+a:'Novo')+'</span></div></div></button>'}
+function card(g){var a=avg(g.id);return '<button class="card" data-a="open" data-v="'+g.id+'" aria-label="Abrir '+esc(g.title)+'">'+cover(g)+'<div class="meta"><div class="t">'+esc(g.title)+(g.status==='removed'?' <span class="badge warn">Removido da Loja</span>':'')+'</div><div class="row"><span class="g">'+esc(g.genre)+'</span><span class="stars">'+(a?'★ '+a:'Novo')+'</span></div></div></button>'}
 function subhead(t){return '<div class="row" style="margin:4px 0 12px;justify-content:flex-start;gap:10px"><button class="ib" data-a="back" aria-label="Voltar">'+ic('back')+'</button><h1 style="margin:0">'+t+'</h1></div>'}
 function mrow(i,l,a,v,b){return '<button class="mrow" data-a="'+a+'"'+(v?' data-v="'+v+'"':'')+'>'+ic(i)+'<span>'+l+'</span>'+(b!==undefined&&b!==''?'<em>'+b+'</em>':'')+ic('chev','chv')+'</button>'}
 function starRow(n){var s='';for(var i=1;i<=5;i++)s+='<svg viewBox="0 0 24 24" width="13" height="13" fill="'+(i<=n?'#fbbf24':'none')+'" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px">'+P.star+'</svg>';return s}

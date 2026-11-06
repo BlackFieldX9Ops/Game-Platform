@@ -143,6 +143,26 @@ async function main() {
   ok('não apaga aviso de outro jogador', (await call('DELETE', `/notifications/${nPay}`, null, B)).s === 404);
   ok('aviso geral apagado só some para quem apagou', (await call('DELETE', `/notifications/${bro}`, null, A)).s === 200 && !(await call('GET', '/notifications', null, A)).j.notifications.some(n => n.id === bro) && (await call('GET', '/notifications', null, B)).j.notifications.some(n => n.id === bro));
   dbx.close();
+  // admin apaga um jogo: some da plataforma inteira, menos para quem comprou
+  const bl = await call('POST', '/games', { title: 'Bloco Edition', category: 'Aventura', dim: '3D', code: '<h1>b</h1>' }, B);
+  const blk = bl.j.id;
+  await call('PUT', `/library/${blk}`, null, A); await call('PUT', `/library/${blk}`, null, C); await call('PUT', `/wishlist/${blk}`, null, A);
+  const dbp = new DatabaseSync(path.join(dir, 't.db'));
+  dbp.prepare('INSERT INTO purchases (user_id, game_id) VALUES (?,?)').run(cid, blk); // Caio comprou
+  ok('antes de apagar: jogo está na biblioteca de todos', (await call('GET', '/library', null, A)).j.games.some(g => g.id === blk) && (await call('GET', '/library', null, C)).j.games.some(g => g.id === blk));
+  ok('admin apaga o jogo de outro usuário', (await call('DELETE', `/games/${blk}`, null, ADM)).s === 200);
+  ok('some da Loja e da busca', !(await call('GET', '/games')).j.games.some(g => g.id === blk) && (await call('GET', `/games/${blk}`, null, A)).s === 404);
+  ok('some da biblioteca e dos favoritos de quem jogava de graça', !(await call('GET', '/library', null, A)).j.games.some(g => g.id === blk) && !(await call('GET', '/wishlist', null, A)).j.games.some(g => g.id === blk));
+  ok('quem comprou continua com o jogo na biblioteca', (await call('GET', '/library', null, C)).j.games.some(g => g.id === blk && g.status === 'removed'));
+  ok('quem comprou ainda consegue jogar', (await call('POST', `/games/${blk}/play`, null, C)).s === 200 && (await call('GET', `/games/${blk}`, null, C)).s === 200);
+  ok('quem não comprou não joga mais', (await call('POST', `/games/${blk}/play`, null, A)).s === 404);
+  ok('o criador não vê mais o jogo removido', !(await call('GET', '/my/games', null, B)).j.games.some(g => g.id === blk) && (await call('GET', `/games/${blk}`, null, B)).s === 404);
+  ok('não aparece na lista de jogos do admin', !(await call('GET', '/admin/games', null, ADM)).j.games.some(g => g.id === blk));
+  const sem = (await call('POST', '/games', { title: 'Sem compradores', category: 'Ação', dim: '2D', code: '<h1>s</h1>' }, B)).j.id;
+  await call('PUT', `/library/${sem}`, null, A);
+  await call('DELETE', `/games/${sem}`, null, ADM);
+  ok('sem compradores o jogo é apagado de vez', !dbp.prepare('SELECT 1 FROM games WHERE id = ?').get(sem) && !(await call('GET', '/library', null, A)).j.games.some(g => g.id === sem));
+  dbp.close();
   ok('apagar post leva os comentários', (await call('DELETE', `/posts/${p1.j.id}`, null, B)).s === 200);
 }
 try { await main(); } catch (e) { fail++; console.error('ERRO NO TESTE', e); }

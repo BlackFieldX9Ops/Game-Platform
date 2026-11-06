@@ -77,6 +77,11 @@ const COVER_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 // Quem pode ver o jogo: todos (publicado e não privado), ou o dono e os administradores em qualquer estado.
 function loadGame(id, user) {
   const g = get('SELECT * FROM games WHERE id = ?', id);
+  // Jogo removido pela administração: só quem comprou (e a própria administração) ainda o enxerga.
+  if (g && g.status === 'removed') {
+    if (user && (user.role === 'admin' || get('SELECT 1 FROM purchases WHERE user_id = ? AND game_id = ?', user.id, g.id))) return g;
+    bad('Jogo não encontrado', 404);
+  }
   const staff = user && (user.id === g?.owner_id || user.role === 'admin');
   if (!g || !(staff || (g.status === 'published' && g.visibility !== 'private'))) bad('Jogo não encontrado', 404);
   return g;
@@ -190,7 +195,7 @@ app.get('/api/games/:id/source', auth, wrap((req, res) => {
 // Entrega o código para jogar, conta a partida e dá XP.
 app.post('/api/games/:id/play', auth, wrap((req, res) => {
   const g = loadGame(int(req.params.id, 'id'), req.user);
-  if (g.status !== 'published') bad('Jogo despublicado', 404);
+  if (g.status === 'unpublished') bad('Jogo despublicado', 404);
   run('UPDATE games SET plays = plays + 1 WHERE id = ?', g.id);
   run('UPDATE users SET xp = xp + 25 WHERE id = ?', req.user.id);
   res.json({ title: g.title, code: g.code, libs: JSON.parse(g.libs), ext: parseJ(g.settings, {}).ext || [], settings: parseJ(g.settings, {}), xp: req.user.xp + 25 });
@@ -224,7 +229,7 @@ app.post('/api/games/:id/status', auth, wrap((req, res) => {
 }));
 // Todos os jogos do próprio usuário, em qualquer estado.
 app.get('/api/my/games', auth, (req, res) => {
-  res.json({ games: all(`SELECT ${GAME_COLS} FROM games g JOIN users u ON u.id = g.owner_id WHERE g.owner_id = ? ORDER BY g.id DESC LIMIT 100`, req.user.id).map(shapeGame) });
+  res.json({ games: all(`SELECT ${GAME_COLS} FROM games g JOIN users u ON u.id = g.owner_id WHERE g.owner_id = ? AND g.status != 'removed' ORDER BY g.id DESC LIMIT 100`, req.user.id).map(shapeGame) });
 });
 // Capa como imagem (usada nas listas pesadas do painel).
 app.get('/api/games/:id/cover', wrap((req, res) => {
@@ -236,7 +241,14 @@ app.get('/api/games/:id/cover', wrap((req, res) => {
 app.delete('/api/games/:id', auth, wrap((req, res) => {
   const g = loadGame(int(req.params.id, 'id'), req.user);
   if (g.owner_id !== req.user.id && req.user.role !== 'admin') bad('Sem permissão', 403);
-  run('DELETE FROM games WHERE id = ?', g.id);
+  // Apagar tira o jogo da plataforma inteira (Loja, biblioteca, favoritos e histórico de todos).
+  // Quem comprou continua com ele: nesse caso o jogo fica guardado como "removido", só para os compradores.
+  if (get('SELECT 1 FROM purchases WHERE game_id = ?', g.id)) {
+    run("UPDATE games SET status = 'removed', featured = 0 WHERE id = ?", g.id);
+    run('DELETE FROM library WHERE game_id = ? AND user_id NOT IN (SELECT user_id FROM purchases WHERE game_id = ?)', g.id, g.id);
+    run('DELETE FROM wishlist WHERE game_id = ?', g.id);
+  } else run('DELETE FROM games WHERE id = ?', g.id);
+  for (const uid of online.keys()) pushTo(uid, { type: 'games' });
   if (req.user.role === 'admin') logAct(req, g.owner_id === req.user.id ? 'Jogo próprio excluído' : 'Jogo removido', g.title);
   res.json({ ok: true });
 }));
@@ -258,7 +270,7 @@ app.post('/api/games/:id/reviews', auth, wrap((req, res) => {
 /* ---------- biblioteca e desejos ---------- */
 for (const [route, table] of [['library', 'library'], ['wishlist', 'wishlist']]) {
   app.get(`/api/${route}`, auth, (req, res) => {
-    const rows = all(`SELECT ${GAME_COLS} FROM ${table} t JOIN games g ON g.id = t.game_id JOIN users u ON u.id = g.owner_id WHERE t.user_id = ? AND g.status = 'published'`, req.user.id);
+    const rows = all(`SELECT ${GAME_COLS} FROM ${table} t JOIN games g ON g.id = t.game_id JOIN users u ON u.id = g.owner_id WHERE t.user_id = ? AND (g.status = 'published'${table === 'library' ? " OR (g.status = 'removed' AND EXISTS (SELECT 1 FROM purchases pu WHERE pu.user_id = t.user_id AND pu.game_id = g.id))" : ''})`, req.user.id);
     res.json({ games: rows.map(shapeGame) });
   });
   app.put(`/api/${route}/:gameId`, auth, wrap((req, res) => {
@@ -392,7 +404,7 @@ app.put('/api/admin/categories', auth, adminOnly, wrap((req, res) => {
   res.json({ categories: list });
 }));
 app.get('/api/admin/games', auth, adminOnly, (req, res) => {
-  const w = [], p = [], q = req.query;
+  const w = ["g.status != 'removed'"], p = [], q = req.query;
   if (q.creator === 'me') { w.push('g.owner_id = ?'); p.push(req.user.id); }
   if (q.creator === 'others') { w.push('g.owner_id != ? AND g.ai = 0'); p.push(req.user.id); }
   if (q.creator === 'ai') w.push('g.ai = 1');

@@ -22,12 +22,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Definir o servidor padrão do app
         env:
@@ -58,6 +58,13 @@ jobs:
           sed -i 's#</manifest>#    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />\n</manifest>#' "$M"
           grep -q UPDATE_PACKAGES_WITHOUT_USER_ACTION "$M" || { echo "Permissão de atualização silenciosa não entrou no manifesto"; exit 1; }
           grep -q REQUEST_INSTALL_PACKAGES "$M" || { echo "Permissão de instalação não entrou no manifesto"; exit 1; }
+
+      - name: Compilar para o Android 16 (API 36)
+        run: |
+          V=android/variables.gradle
+          sed -i -E 's/(compileSdkVersion|targetSdkVersion) *= *[0-9]+/\1 = 36/' "$V"
+          grep -E "compileSdkVersion|targetSdkVersion|minSdkVersion" "$V"
+          grep -q "targetSdkVersion = 36" "$V" || { echo "targetSdk 36 não foi aplicado"; exit 1; }
 
       - name: Usar a chave fixa e numerar a versão (permite atualizar por cima)
         env:
