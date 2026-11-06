@@ -1,0 +1,6 @@
+.git
+**/node_modules
+app/android
+server/data
+server/test
+.env

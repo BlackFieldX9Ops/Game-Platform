@@ -1,0 +1,8 @@
+node_modules/
+app/android/
+server/data/
+*.db
+*.db-shm
+*.db-wal
+.env
+*.keystore

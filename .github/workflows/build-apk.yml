@@ -1,0 +1,79 @@
+name: Gerar APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Definir o servidor padrão do app
+        env:
+          SERVER_URL: ${{ vars.SERVER_URL }}
+        run: |
+          if [ -n "$SERVER_URL" ]; then
+            sed -i "s|<meta name=\"gp-server\" content=\"\">|<meta name=\"gp-server\" content=\"$SERVER_URL\">|" www/index.html
+            echo "Servidor padrão: $SERVER_URL"
+          else
+            echo "SERVER_URL não definida: o app pedirá o endereço do servidor nas configurações."
+          fi
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Criar o projeto Android
+        run: npx cap add android
+
+      - name: Gerar ícones e tela de abertura
+        run: npx capacitor-assets generate --android --iconBackgroundColor '#0a0d1c' --splashBackgroundColor '#0a0d1c'
+
+      - name: Copiar o app para o Android
+        run: npx cap sync android
+
+      - name: Compilar o APK
+        working-directory: app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Guardar o APK na execução
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-platform-apk
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publicar o APK no link fixo
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          cp app/android/app/build/outputs/apk/debug/app-debug.apk game-platform.apk
+          gh release delete apk-latest --yes --cleanup-tag || true
+          gh release create apk-latest game-platform.apk \
+            --target "${{ github.sha }}" \
+            --prerelease \
+            --title "APK mais recente" \
+            --notes "APK de teste do Game Platform. Baixe o arquivo game-platform.apk no celular Android e abra para instalar. O Android pede para permitir a instalação de apps desconhecidos."

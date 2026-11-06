@@ -1,0 +1,9 @@
+{
+  "appId": "com.gameplatform.app",
+  "appName": "Game Platform",
+  "webDir": "www",
+  "backgroundColor": "#0a0d1c",
+  "android": {
+    "allowMixedContent": false
+  }
+}
