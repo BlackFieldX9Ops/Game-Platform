@@ -98,6 +98,37 @@ async function main() {
   ok('comprador e criador recebem aviso de compra', (await call('GET', '/notifications', null, cara.token)).j.notifications.some(n => n.kind === 'purchase') && (await call('GET', '/notifications', null, ana.token)).j.notifications.some(n => n.kind === 'purchase'));
   ok('jogo gratuito não pode ser comprado', (await call('POST', `/games/${(await call('POST', '/games', GAME, ana.token)).j.id}/buy`, {}, cara.token)).s === 400);
 
+  // skins que os outros jogadores veem
+  await call('POST', '/store/buy', { id: 'coins500' }, cara.token);
+  await call('POST', '/store/buy', { id: 'fr_gold' }, cara.token); await call('POST', '/store/buy', { id: 'nc_gold' }, cara.token); await call('POST', '/store/buy', { id: 'bb_aurora' }, cara.token); await call('POST', '/store/buy', { id: 'ti_pioneer' }, cara.token);
+  for (const [slot, id] of [['frame', 'fr_gold'], ['ncolor', 'nc_gold'], ['bubble', 'bb_aurora'], ['title', 'ti_pioneer']]) await call('POST', '/store/equip', { slot, id }, cara.token);
+  ok('balão novo existe na loja', (await call('GET', '/store', null, cara.token)).j.items.some(i => i.id === 'bb_aurora' || i.id === 'bb_gold'));
+  const cp = await call('POST', '/posts', { text: 'olá com skins' }, cara.token);
+  const feed = (await call('GET', '/posts', null, ana.token)).j.posts.find(p => p.text === 'olá com skins');
+  ok('feed mostra moldura, cor do nome, título e balão do autor', feed && feed.author_frame === 'fr_gold' && feed.author_ncolor === 'nc_gold' && feed.author_titleName === 'Pioneiro' && feed.author_bubble === 'bb_aurora', JSON.stringify(feed));
+  const cmt = await call('POST', `/posts/${cp.j.post?.id || feed.id}/comments`, { text: 'oi' }, cara.token);
+  const cms = (await call('GET', `/posts/${feed.id}/comments`, null, ana.token)).j.comments;
+  ok('comentário traz as skins do autor', cms.length && cms[0].author_frame === 'fr_gold' && cms[0].author_titleName === 'Pioneiro');
+  await call('POST', '/friends/request', { id: cara.user.id }, ana.token);
+  await call('POST', `/friends/${ana.user.id}/accept`, {}, cara.token);
+  const convs = (await call('GET', '/conversations', null, ana.token)).j.conversations;
+  const cv = convs.find(c => c.type === 'direct' && c.id === cara.user.id);
+  ok('conversa traz as skins do amigo', cv && cv.frame === 'fr_gold' && cv.ncolor === 'nc_gold' && cv.bubble === 'bb_aurora' && cv.titleName === 'Pioneiro', JSON.stringify(cv));
+
+  // novidades da versão
+  const gn = await call('POST', '/games', { ...GAME, title: 'Com notas', settings: { monetization: 'free', notes: '  Novo nível e correções  ' } }, ana.token);
+  const gl = (await call('GET', '/games?limit=60')).j.games.find(g => g.title === 'Com notas');
+  ok('novidades da versão são guardadas e aparecem no jogo', gn.s === 201 && gl && gl.settings?.notes === 'Novo nível e correções' || gl?.cfg?.notes === 'Novo nível e correções', JSON.stringify(gl && (gl.settings || gl.cfg)));
+  const gn2 = await call('POST', '/games', { ...GAME, title: 'Notas longas', settings: { monetization: 'free', notes: 'x'.repeat(900) } }, ana.token);
+  const gl2 = (await call('GET', '/games?limit=60')).j.games.find(g => g.title === 'Notas longas');
+  ok('novidades são limitadas a 300 letras', gn2.s === 201 && ((gl2.settings || gl2.cfg || {}).notes || '').length === 300);
+
+  // extrato e vendas reais
+  const lg = (await call('GET', '/store/log', null, cara.token)).j.log;
+  ok('extrato mostra a compra do jogo e das skins', lg.some(l => l.delta === -100 && /Jogo:/.test(l.note)) && lg.some(l => l.delta === -150 && /Moldura dourada/.test(l.note)) && lg.some(l => l.delta > 0));
+  const cs = (await call('GET', '/creator/stats', null, ana.token)).j;
+  ok('painel do criador conta vendas e moedas ganhas', cs.totals.sales === 1 && cs.totals.earned === 70 && cs.games.find(g => g.id === pg.j.id)?.sales === 1, JSON.stringify(cs.totals));
+
   console.log(`\n${pass} passaram, ${fail} falharam`);
   srv.kill(); process.exit(fail ? 1 : 0);
 }

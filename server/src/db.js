@@ -255,6 +255,15 @@ CREATE TABLE IF NOT EXISTS user_items (
   PRIMARY KEY (user_id, item_id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_uid ON users(uid);
+CREATE TABLE IF NOT EXISTS coin_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  delta INTEGER NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  ref TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS coin_log_user ON coin_log(user_id, id);
 `);
 // quem já existe recebe ID em ordem de cadastro; o primeiro administrador é o 000
 for (const u of db.prepare('SELECT id, role FROM users WHERE uid IS NULL ORDER BY id').all()) {

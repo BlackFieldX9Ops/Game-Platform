@@ -210,3 +210,9 @@ Sem essas variáveis o botão do Google não aparece e a recuperação de senha 
 - **Criar** tem 6 abas: Informações (capa, nome, descrição, tags, pré-visualização), Código (envio/edição, análise automática do código e Testar), Bibliotecas, Missões, Avançado (versão, orientação, controles, monetização, visibilidade) e **Revisar** (checklist clicável, resumo, Testar, Rascunho e Publicar, mais a lista de rascunhos).
 - **Meus jogos** lista os jogos publicados (jogar, editar, atualizar, despublicar, estatísticas, excluir). **Painel** mostra os números do criador.
 - Chat: com o teclado aberto a barra de baixo some e a tela não rola sozinha.
+
+## Skins visíveis, novidades da versão, vendas e extrato
+- **Skins para todos:** moldura, cor do nome, título e balão aparecem para os outros jogadores no feed, comentários, conversas, membros de grupos e no chat. Dois balões novos: aurora e ouro (Premium).
+- **Novidades da versão:** campo na aba **Revisar** do Studio (até 300 letras). Aparece na página do jogo e nas Atualizações de jogos do Início. Ao atualizar um jogo o campo começa vazio.
+- **Vendas reais no Painel:** vendas de jogos pagos e moedas ganhas (70% de cada venda), por jogo.
+- **Extrato de moedas** na aba Moedas da Loja: bônus diário, pacotes, skins, jogos comprados e vendas. Tabela `coin_log` (só passa a registrar a partir deste build).

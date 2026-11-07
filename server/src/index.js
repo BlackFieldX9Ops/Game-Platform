@@ -124,6 +124,7 @@ function gameInput(b) {
     settings.price = price;
   } else settings.price = 0;
   settings.early = st.early ? 1 : 0;
+  settings.notes = typeof st.notes === 'string' ? st.notes.trim().slice(0, 300) : '';
   let extBytes = 0;
   for (const x of (Array.isArray(st.ext) ? st.ext : []).slice(0, 6)) {
     const n = typeof x?.n === 'string' ? x.n.trim().slice(0, 40) : ''; if (!n) bad('Biblioteca externa sem nome');
@@ -369,9 +370,11 @@ app.get('/api/creator/stats', auth, (req, res) => {
     (SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.game_id = g.id) AS rating,
     (SELECT COUNT(*) FROM reviews r WHERE r.game_id = g.id) AS reviews,
     (SELECT COUNT(*) FROM library l WHERE l.game_id = g.id) AS in_libraries,
-    (SELECT COUNT(*) FROM wishlist w WHERE w.game_id = g.id) AS in_wishlists
+    (SELECT COUNT(*) FROM wishlist w WHERE w.game_id = g.id) AS in_wishlists,
+    (SELECT COUNT(*) FROM coin_log c WHERE c.ref = 'sale:' || g.id AND c.user_id = g.owner_id) AS sales,
+    (SELECT COALESCE(SUM(c.delta),0) FROM coin_log c WHERE c.ref = 'sale:' || g.id AND c.user_id = g.owner_id) AS earned
     FROM games g WHERE g.owner_id = ? AND g.status = 'published' ORDER BY g.plays DESC`, req.user.id);
-  res.json({ games, totals: { games: games.length, plays: games.reduce((a, g) => a + g.plays, 0), reviews: games.reduce((a, g) => a + g.reviews, 0) } });
+  res.json({ games, totals: { games: games.length, plays: games.reduce((a, g) => a + g.plays, 0), reviews: games.reduce((a, g) => a + g.reviews, 0), sales: games.reduce((a, g) => a + g.sales, 0), earned: games.reduce((a, g) => a + g.earned, 0) } });
 });
 
 /* ---------- administração ---------- */

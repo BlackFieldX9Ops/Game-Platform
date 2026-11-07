@@ -116,6 +116,8 @@ async function main() {
   ok('comprar o jogo troca o botão por Jogar agora', await until(() => C.$('[data-a="play"]') && !C.$('[data-a="buygame"]')), C.toast());
   C.click('[data-a="go"][data-v="profile"]');
   ok('moedas do perfil descontadas', /\b10\b/.test(C.$('.idc.coin').textContent));
+  C.click('[data-a="sttab"][data-v="coins"]');
+  ok('aba Moedas mostra o extrato com bônus e compra do jogo', await until(() => /Extrato de moedas/.test(C.text()) && /Bônus diário/.test(C.text()) && /Jogo: Jogo Caro/.test(C.text())), C.text().slice(0, 300));
 
   // Administrador: ID 000, ícone no topo, libera o Studio de outra pessoa
   const bia = await api('POST', '/auth/register', { name: 'Bia', email: 'bia@x.com', password: 'senha12345' });

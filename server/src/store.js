@@ -9,7 +9,7 @@ export const fmtUid = u => String(u.uid ?? 0).padStart(3, '0');
 const PLANS = [
   { id: 'studio30', kind: 'studio', name: 'Studio 30 dias', days: 30, price: 1990, perks: ['Publicar jogos na Loja', 'Vender jogos por moedas e lançar em acesso antecipado', 'Missões próprias por jogo', 'Painel de estatísticas e modo avançado'] },
   { id: 'studio365', kind: 'studio', name: 'Studio 1 ano', days: 365, price: 17990, perks: ['Tudo do plano de 30 dias', 'Economia de cerca de 25%'] },
-  { id: 'premium30', kind: 'premium', name: 'Premium 30 dias', days: 30, price: 990, perks: ['Selo Premium no perfil', 'Bônus diário de 30 moedas (em vez de 10)', '+10% de moedas em todos os pacotes', 'Itens exclusivos: moldura gema, fundo ouro, tema ouro, título Premium'] },
+  { id: 'premium30', kind: 'premium', name: 'Premium 30 dias', days: 30, price: 990, perks: ['Selo Premium no perfil', 'Bônus diário de 30 moedas (em vez de 10)', '+10% de moedas em todos os pacotes', 'Itens exclusivos: moldura gema, fundo ouro, tema ouro, balão ouro, título Premium'] },
 ];
 const PACKS = [
   { id: 'coins100', name: '100 moedas', coins: 100, price: 490 },
@@ -26,7 +26,7 @@ const ITEMS = [
   I('ti_pioneer', 'title', 'Pioneiro', 100), I('ti_builder', 'title', 'Construtor', 150), I('ti_speed', 'title', 'Velocista', 150), I('ti_legend', 'title', 'Lenda', 300), I('ti_premium', 'title', 'Premium', 0, true),
   I('nc_gold', 'ncolor', 'Nome dourado', 120), I('nc_cyan', 'ncolor', 'Nome ciano', 120), I('nc_pink', 'ncolor', 'Nome rosa', 120), I('nc_green', 'ncolor', 'Nome verde', 120), I('nc_rainbow', 'ncolor', 'Nome arco-íris', 300),
   I('th_ocean', 'theme', 'Tema oceano', 250), I('th_forest', 'theme', 'Tema floresta', 250), I('th_rose', 'theme', 'Tema rosa', 250), I('th_sun', 'theme', 'Tema sol', 250), I('th_gold', 'theme', 'Tema ouro', 300, true),
-  I('bb_cyan', 'bubble', 'Balão ciano', 100), I('bb_pink', 'bubble', 'Balão rosa', 100), I('bb_green', 'bubble', 'Balão verde', 100), I('bb_orange', 'bubble', 'Balão laranja', 100),
+  I('bb_cyan', 'bubble', 'Balão ciano', 100), I('bb_pink', 'bubble', 'Balão rosa', 100), I('bb_green', 'bubble', 'Balão verde', 100), I('bb_orange', 'bubble', 'Balão laranja', 100), I('bb_aurora', 'bubble', 'Balão aurora', 200), I('bb_gold', 'bubble', 'Balão ouro', 300, true),
 ];
 export const SLOTS = ['frame', 'banner', 'title', 'ncolor', 'theme', 'bubble'];
 export const itemName = id => (ITEMS.find(i => i.id === id) || {}).name || null;
@@ -35,6 +35,7 @@ export const GAME_SHARE = 0.7; // parte do preço que fica com o criador
 export function mountStore(c) {
   const { app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ } = c;
   const notifyK = (userId, title, body, kind, ref = '') => run('INSERT INTO notifications (user_id, title, body, kind, ref) VALUES (?,?,?,?,?)', userId, title, body, kind, ref);
+  const clog = (userId, delta, note, ref = null) => run('INSERT INTO coin_log (user_id, delta, note, ref) VALUES (?,?,?,?)', userId, delta, note, ref);
   const owned = id => all('SELECT item_id FROM user_items WHERE user_id = ?', id).map(r => r.item_id);
   const dailyReward = u => hasPremium(u) ? 30 : 10;
   const dailyWait = u => u.daily_at ? Math.max(0, new Date(u.daily_at).getTime() + 20 * 3600_000 - Date.now()) : 0;
@@ -49,6 +50,7 @@ export function mountStore(c) {
     };
   };
 
+  app.get('/api/store/log', auth, (req, res) => res.json({ log: all('SELECT id, delta, note, created_at FROM coin_log WHERE user_id = ? ORDER BY id DESC LIMIT 50', req.user.id) }));
   app.get('/api/store', auth, (req, res) => res.json({ plans: PLANS, packs: PACKS, items: ITEMS, test: true, ...state(req.user) }));
 
   app.post('/api/store/daily', auth, wrap((req, res) => {
@@ -56,6 +58,7 @@ export function mountStore(c) {
     if (dailyWait(u) > 0) bad('O bônus de hoje já foi coletado. Volte mais tarde.', 429);
     const r = dailyReward(u);
     run('UPDATE users SET coins = coins + ?, daily_at = ? WHERE id = ?', r, now(), u.id);
+    clog(u.id, r, 'Bônus diário');
     res.json({ reward: r, ...state(u) });
   }));
 
@@ -70,12 +73,15 @@ export function mountStore(c) {
       run(`UPDATE users SET ${col} = ? WHERE id = ?`, new Date(base + plan.days * 86_400_000).toISOString(), u.id);
       notifyK(u.id, plan.kind === 'premium' ? 'Premium ativo' : 'Studio liberado', plan.kind === 'premium' ? `${plan.name} ativo. Aproveite o bônus diário e os itens exclusivos.` : `${plan.name} ativo. Você já pode publicar jogos.`, 'premium');
     } else if (pack) {
-      run('UPDATE users SET coins = coins + ? WHERE id = ?', hasPremium(u) ? Math.floor(pack.coins * 1.1) : pack.coins, u.id);
+      const got = hasPremium(u) ? Math.floor(pack.coins * 1.1) : pack.coins;
+      run('UPDATE users SET coins = coins + ? WHERE id = ?', got, u.id);
+      clog(u.id, got, 'Pacote ' + pack.name + ' (teste)');
     } else if (item) {
       if (owned(u.id).includes(item.id)) bad('Você já tem este item', 409);
       if (item.premium && !hasPremium(u)) bad('Item exclusivo de quem tem o Premium', 403);
       if (u.coins < item.coins) bad('Moedas insuficientes', 402);
       run('UPDATE users SET coins = coins - ? WHERE id = ?', item.coins, u.id);
+      clog(u.id, -item.coins, item.name);
       run('INSERT INTO user_items (user_id, item_id) VALUES (?,?)', u.id, item.id);
       run(`UPDATE users SET ${item.slot} = ? WHERE id = ?`, item.id, u.id);
     } else bad('Item não encontrado', 404);
@@ -107,6 +113,8 @@ export function mountStore(c) {
     const cut = Math.floor(price * GAME_SHARE);
     run('UPDATE users SET coins = coins - ? WHERE id = ?', price, u.id);
     run('UPDATE users SET coins = coins + ? WHERE id = ?', cut, g.owner_id);
+    clog(u.id, -price, 'Jogo: ' + g.title, 'buy:' + g.id);
+    clog(g.owner_id, cut, 'Venda: ' + g.title, 'sale:' + g.id);
     run('INSERT INTO purchases (user_id, game_id) VALUES (?,?)', u.id, g.id);
     run('INSERT OR IGNORE INTO library (user_id, game_id) VALUES (?,?)', u.id, g.id);
     notifyK(u.id, 'Compra confirmada', `${g.title} é seu para sempre.`, 'purchase', 'game:' + g.id);

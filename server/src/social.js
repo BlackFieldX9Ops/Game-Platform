@@ -1,4 +1,6 @@
 // Chat e comunidade: feed, comentários, seguidores, grupos, comunidades, conversas e notificações sociais.
+import { itemName } from './store.js';
+const withSkin = r => ({ ...r, author_titleName: itemName(r.author_title) });
 export function mountSocial(c) {
   const { app, auth, softAuth, wrap, bad, str, int, get, all, run, areFriends, pushTo, isOnline, publicUser, loadGame, COVER_RE } = c;
 
@@ -77,7 +79,7 @@ export function mountSocial(c) {
     }
     if (filter === 'following') { where.push('(p.user_id IN (SELECT followed_id FROM follows WHERE follower_id = ?) OR p.user_id = ?)'); args.push(me, me); }
     if (filter === 'games') where.push('p.game_id IS NOT NULL');
-    const rows = all(`SELECT p.id, p.text, p.created_at, p.game_id, p.space_id, p.user_id AS author_id, u.name AS author, u.avatar AS author_avatar,
+    const rows = all(`SELECT p.id, p.text, p.created_at, p.game_id, p.space_id, p.user_id AS author_id, u.name AS author, u.avatar AS author_avatar, u.frame AS author_frame, u.ncolor AS author_ncolor, u.title AS author_title, u.bubble AS author_bubble,
       g.title AS game_title, sp.name AS space_name,
       (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS likes,
       (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.user_id = ${me}) AS liked,
@@ -87,7 +89,7 @@ export function mountSocial(c) {
       LEFT JOIN games g ON g.id = p.game_id AND g.status = 'published' AND g.visibility != 'private'
       LEFT JOIN spaces sp ON sp.id = p.space_id
       WHERE ${where.join(' AND ')} ORDER BY p.id DESC LIMIT 50`, ...args);
-    res.json({ posts: rows.map(r => ({ ...r, liked: !!r.liked, following: !!r.following })) });
+    res.json({ posts: rows.map(r => withSkin({ ...r, liked: !!r.liked, following: !!r.following })) });
   }));
   app.post('/api/posts', auth, wrap((req, res) => {
     const text = str(req.body.text, 'Texto', 1, 500);
@@ -107,7 +109,7 @@ export function mountSocial(c) {
     const p = get('SELECT * FROM posts WHERE id = ?', int(req.params.id, 'id'));
     if (!p) bad('Post não encontrado', 404);
     if (p.space_id) loadSpace(p.space_id, req.user);
-    res.json({ comments: all('SELECT k.id, k.text, k.created_at, k.user_id, u.name AS author, u.avatar AS author_avatar FROM comments k JOIN users u ON u.id = k.user_id WHERE k.post_id = ? ORDER BY k.id LIMIT 200', p.id) });
+    res.json({ comments: all('SELECT k.id, k.text, k.created_at, k.user_id, u.name AS author, u.avatar AS author_avatar, u.frame AS author_frame, u.ncolor AS author_ncolor, u.title AS author_title, u.bubble AS author_bubble FROM comments k JOIN users u ON u.id = k.user_id WHERE k.post_id = ? ORDER BY k.id LIMIT 200', p.id).map(withSkin) });
   }));
   app.post('/api/posts/:id/comments', auth, wrap((req, res) => {
     const p = get('SELECT * FROM posts WHERE id = ?', int(req.params.id, 'id'));
@@ -176,12 +178,12 @@ export function mountSocial(c) {
   /* ---------- lista de conversas (diretas + grupos + comunidades) ---------- */
   app.get('/api/conversations', auth, (req, res) => {
     const me = req.user.id, out = [];
-    const friends = all(`SELECT u.id, u.name, u.avatar FROM friends f JOIN users u ON u.id = CASE WHEN f.requester_id = ? THEN f.addressee_id ELSE f.requester_id END
+    const friends = all(`SELECT u.id, u.name, u.avatar, u.frame, u.ncolor, u.title, u.bubble FROM friends f JOIN users u ON u.id = CASE WHEN f.requester_id = ? THEN f.addressee_id ELSE f.requester_id END
       WHERE f.status = 'accepted' AND (f.requester_id = ? OR f.addressee_id = ?)`, me, me, me);
     for (const f of friends) {
       const last = get('SELECT id, from_id, text, image, game_id, created_at FROM messages WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?) ORDER BY id DESC LIMIT 1', me, f.id, f.id, me);
       const unread = get('SELECT COUNT(*) AS n FROM messages WHERE to_id = ? AND from_id = ? AND read_at IS NULL', me, f.id).n;
-      out.push({ type: 'direct', id: f.id, name: f.name, avatar: f.avatar, online: isOnline(f.id), unread, last: last ? preview(last) : '', at: last ? last.created_at : '', lastId: last ? last.id : 0 });
+      out.push({ type: 'direct', id: f.id, name: f.name, avatar: f.avatar, frame: f.frame || null, ncolor: f.ncolor || null, titleName: itemName(f.title), bubble: f.bubble || null, online: isOnline(f.id), unread, last: last ? preview(last) : '', at: last ? last.created_at : '', lastId: last ? last.id : 0 });
     }
     const spaces = all("SELECT s.id, s.kind, s.name, s.cover FROM spaces s JOIN space_members m ON m.space_id = s.id WHERE m.user_id = ? AND m.status = 'active'", me);
     for (const s of spaces) {
@@ -238,9 +240,9 @@ export function mountSocial(c) {
   app.get('/api/spaces/:id', softAuth, wrap((req, res) => {
     const s = loadSpace(int(req.params.id, 'id'), req.user);
     const full = get(`SELECT ${spaceCols} FROM spaces s WHERE s.id = ?`, s.id);
-    const members = all(`SELECT u.id, u.name, u.avatar, m.role, m.status FROM space_members m JOIN users u ON u.id = m.user_id
+    const members = all(`SELECT u.id, u.name, u.avatar, u.frame, u.ncolor, u.title, u.bubble, m.role, m.status FROM space_members m JOIN users u ON u.id = m.user_id
       WHERE m.space_id = ? AND m.status IN ('active','pending') ORDER BY CASE m.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, u.name LIMIT 200`, s.id)
-      .map(m => ({ ...m, online: m.status === 'active' && isOnline(m.id) }));
+      .map(m => ({ ...m, titleName: itemName(m.title), online: m.status === 'active' && isOnline(m.id) }));
     const mine = shapeSpace(full, req.user);
     const staff = !!req.user && isStaff(s, req.user);
     const events = all('SELECT e.id, e.title, e.description, e.starts_at, e.user_id, u.name AS author FROM space_events e JOIN users u ON u.id = e.user_id WHERE e.space_id = ? ORDER BY e.starts_at LIMIT 50', s.id);
@@ -342,15 +344,15 @@ export function mountSocial(c) {
   }));
 
   /* ---------- chat de grupo e de comunidade ---------- */
-  const roomRow = id => get('SELECT m.id, m.space_id, m.user_id, m.text, m.image, m.game_id, m.created_at, u.name AS author, u.avatar AS author_avatar, g.title AS game_title FROM room_msgs m JOIN users u ON u.id = m.user_id LEFT JOIN games g ON g.id = m.game_id WHERE m.id = ?', id);
+  const roomRow = id => get('SELECT m.id, m.space_id, m.user_id, m.text, m.image, m.game_id, m.created_at, u.name AS author, u.avatar AS author_avatar, u.frame AS author_frame, u.ncolor AS author_ncolor, u.title AS author_title, u.bubble AS author_bubble, g.title AS game_title FROM room_msgs m JOIN users u ON u.id = m.user_id LEFT JOIN games g ON g.id = m.game_id WHERE m.id = ?', id);
   app.get('/api/spaces/:id/messages', auth, wrap((req, res) => {
     const s = loadSpace(int(req.params.id, 'id'), req.user);
     if (!member(s.id, req.user.id)) bad('Entre para ver o chat', 403);
-    const rows = all(`SELECT m.id, m.space_id, m.user_id, m.text, m.image, m.game_id, m.created_at, u.name AS author, u.avatar AS author_avatar, g.title AS game_title
+    const rows = all(`SELECT m.id, m.space_id, m.user_id, m.text, m.image, m.game_id, m.created_at, u.name AS author, u.avatar AS author_avatar, u.frame AS author_frame, u.ncolor AS author_ncolor, u.title AS author_title, u.bubble AS author_bubble, g.title AS game_title
       FROM room_msgs m JOIN users u ON u.id = m.user_id LEFT JOIN games g ON g.id = m.game_id WHERE m.space_id = ? ORDER BY m.id DESC LIMIT 100`, s.id).reverse();
     const lastId = rows.length ? rows[rows.length - 1].id : 0;
     run('INSERT INTO room_reads (user_id, space_id, last_id) VALUES (?,?,?) ON CONFLICT(user_id, space_id) DO UPDATE SET last_id = MAX(last_id, excluded.last_id)', req.user.id, s.id, lastId);
-    res.json({ messages: rows });
+    res.json({ messages: rows.map(withSkin) });
   }));
   app.post('/api/spaces/:id/messages', auth, wrap((req, res) => {
     const s = loadSpace(int(req.params.id, 'id'), req.user);
@@ -361,7 +363,7 @@ export function mountSocial(c) {
     if (req.body.gameId) gid = loadGame(int(req.body.gameId, 'gameId'), req.user).id;
     if (!text && !img && !gid) bad('Escreva uma mensagem');
     const r = run('INSERT INTO room_msgs (space_id, user_id, text, image, game_id) VALUES (?,?,?,?,?)', s.id, req.user.id, text, img, gid);
-    const msg = roomRow(r.lastInsertRowid);
+    const msg = withSkin(roomRow(r.lastInsertRowid));
     run('INSERT INTO room_reads (user_id, space_id, last_id) VALUES (?,?,?) ON CONFLICT(user_id, space_id) DO UPDATE SET last_id = MAX(last_id, excluded.last_id)', req.user.id, s.id, msg.id);
     for (const m of all("SELECT user_id FROM space_members WHERE space_id=? AND status='active' AND user_id != ?", s.id, req.user.id)) pushTo(m.user_id, { type: 'room', message: msg, space: { id: s.id, name: s.name, kind: s.kind } });
     mentions(text, req.user, 'space:' + s.id, 'em ' + s.name);
