@@ -89,8 +89,8 @@ async function main() {
   await until(() => B.$('#aMail')); B.click('[data-a="authtab"][data-v="reg"]');
   B.set('aName', 'Beto'); B.set('aMail', 'beto@x.com'); B.set('aPass', 'senha12345'); B.click('[data-a="authgo"]');
   await until(() => /ID #[0-9]{3}/.test(B.text()));
-  B.click('[data-a="go"][data-v="store"]');
-  ok('Beto vê o jogo da Ana na Loja', await until(() => /Meu Jogo/.test(B.text())));
+  B.click('[data-a="go"][data-v="home"]');
+  ok('Beto vê o jogo da Ana na Início', await until(() => /Meu Jogo/.test(B.text())));
   const gcard = [...B.d.querySelectorAll('[data-a="open"]')].find(e => /Meu Jogo/.test(e.textContent)); gcard.click();
   await until(() => B.$('[data-a="play"]'));
   B.click('[data-a="play"]');
@@ -119,7 +119,7 @@ async function main() {
 
   // Denúncia e moderação
   const gb = [...B.d.querySelectorAll('[data-a="open"]')];
-  B.click('[data-a="go"][data-v="store"]');
+  B.click('[data-a="go"][data-v="home"]');
   [...B.d.querySelectorAll('[data-a="open"]')].find(e => /Meu Jogo/.test(e.textContent)).click();
   await until(() => B.$('[data-a="report"]'));
   B.click('[data-a="report"]');
@@ -222,7 +222,7 @@ async function main() {
   ok('jogo completo é publicado', await until(() => /Completo/.test(A.text()) && /Meus jogos publicados/.test(A.text())), A.toast());
   const mineSaved = JSON.parse(A.w.localStorage.getItem('gp_mine')).find(g => g.title === 'Completo');
   ok('o jogo guarda tags, versão, visibilidade e configurações', mineSaved && mineSaved.ver === '1.2.0' && mineSaved.vis === 'private' && mineSaved.cfg.fullscreen === 0 && mineSaved.cfg.saveProgress === 1 && mineSaved.cfg.monetization === 'ads' && mineSaved.cfg.controls.includes('gamepad') && mineSaved.cfg.ext.length === 1 && mineSaved.tags.join() === 'puzzle');
-  A.click('[data-a="go"][data-v="store"]');
+  A.click('[data-a="go"][data-v="home"]');
   ok('jogo privado não aparece na Loja', !/Completo/.test(A.text()));
   A.click('[data-a="go"][data-v="studio"]'); await until(() => A.$('[data-a="gst"]'));
   const gs = [...A.d.querySelectorAll('[data-a="gst"]')].find(b => /Completo/.test(b.closest('.mg').textContent)); gs.click();

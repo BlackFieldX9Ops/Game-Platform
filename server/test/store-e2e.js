@@ -78,6 +78,45 @@ async function main() {
   A.click('[data-a="go"][data-v="profile"]');
   ok('moldura aparece no perfil', !!A.$('.pf-av.fr-gold'));
 
+
+  // Início, busca recolhida, loja de jogos pagos e acesso antecipado
+  const G = { category: 'Ação', dim: '2D', code: '<h1>x</h1>' };
+  const gFree = await api('POST', '/games', { ...G, title: 'Jogo Livre' }, ana.token);
+  const gPaid = await api('POST', '/games', { ...G, title: 'Jogo Caro', settings: { monetization: 'paid', price: 100 } }, ana.token);
+  const gEarly = await api('POST', '/games', { ...G, title: 'Jogo Beta', settings: { monetization: 'paid', price: 60, early: 1 } }, ana.token);
+  const cara = await api('POST', '/auth/register', { name: 'Cara', email: 'cara@x.com', password: 'senha12345' });
+  const C = open({ gp_clean: 2, gp_token: cara.token, gp_user: cara.user });
+  await wait(1200);
+  ok('Início não tem mais os atalhos de Comunidade, Mensagens, Grupos e Amigos', !C.$('.social') && !C.$('#view [data-a="ctab"]'));
+  ok('Início lista jogo grátis em Lançados e o antecipado na seção própria', /Jogo Livre/.test(C.text()) && /Acesso antecipado/.test(C.text()) && /Jogo Beta/.test(C.text()) && !/Jogo Caro/.test(C.d.getElementById('lancados').nextElementSibling.textContent));
+  C.click('[data-a="playnow"]'); await wait(500);
+  ok('Jogar agora abre um jogo gratuito', await until(() => /Jogo Livre/.test(C.d.getElementById('player')?.textContent || '') || !C.d.getElementById('player').hidden, 3000));
+  C.click('#pClose'); await wait(300);
+  C.click('#sbtn');
+  ok('a busca abre ao tocar na lupa', C.d.querySelector('header.top').classList.contains('srch'));
+  C.set('q', 'Caro'); C.$('#q').dispatchEvent(new C.w.Event('input', { bubbles: true }));
+  ok('a busca acha jogos pagos também', await until(() => /Jogo Caro/.test(C.text())));
+  C.$('#q').value = ''; C.$('#q').dispatchEvent(new C.w.Event('input', { bubbles: true })); C.$('#q').dispatchEvent(new C.w.Event('blur'));
+  ok('a busca recolhe sozinha quando vazia', !C.d.querySelector('header.top').classList.contains('srch'));
+  C.click('[data-a="go"][data-v="store"]');
+  ok('Loja: só jogos pagos (sem os grátis nem os antecipados)', await until(() => /Jogo Caro/.test(C.text())) && !/Jogo Livre|Jogo Beta/.test(C.d.getElementById('view').textContent.replace(/Jogos pagos/g, '')));
+  C.click('[data-a="sttab"][data-v="early"]');
+  ok('Loja: aba Antecipado vende o acesso antecipado', await until(() => /Jogo Beta/.test(C.text()) && !/Jogo Caro/.test(C.text())));
+  C.click('[data-a="sttab"][data-v="games"]'); await until(() => /Jogo Caro/.test(C.text()));
+  C.click('[data-a="open"]');
+  ok('detalhe de jogo pago mostra Comprar com o preço e esconde Jogar', await until(() => /Comprar · 100 moedas/.test(C.text())) && !C.$('[data-a="play"]'));
+  C.click('[data-a="buygame"]');
+  ok('sem moedas leva direto para comprar moedas', await until(() => /Pacotes de moedas/.test(C.text())), C.toast());
+  C.click('[data-a="daily"]');
+  ok('bônus diário cai no saldo', await until(() => /Coletado/.test(C.text()) && /10/.test(C.$('.idc.coin').textContent)), C.toast());
+  C.click('[data-a="buy"][data-v="coins100"]'); await until(() => /110/.test(C.$('.idc.coin')?.textContent || ''));
+  C.click('[data-a="go"][data-v="store"]'); C.click('[data-a="sttab"][data-v="games"]'); await until(() => /Jogo Caro/.test(C.text()));
+  C.click('[data-a="open"]'); await until(() => /Comprar · 100 moedas/.test(C.text()));
+  C.click('[data-a="buygame"]');
+  ok('comprar o jogo troca o botão por Jogar agora', await until(() => C.$('[data-a="play"]') && !C.$('[data-a="buygame"]')), C.toast());
+  C.click('[data-a="go"][data-v="profile"]');
+  ok('moedas do perfil descontadas', /\b10\b/.test(C.$('.idc.coin').textContent));
+
   // Administrador: ID 000, ícone no topo, libera o Studio de outra pessoa
   const bia = await api('POST', '/auth/register', { name: 'Bia', email: 'bia@x.com', password: 'senha12345' });
   const D = open({ gp_clean: 2, gp_token: adm.token, gp_user: adm.user });
@@ -91,7 +130,7 @@ async function main() {
   ok('administrador libera o Studio para Bia', await until(async () => (await api('GET', '/me', null, bia.token)).user.studio === true, 5000) || (await api('GET', '/me', null, bia.token)).user.studio === true);
 
   console.log(`\n${pass} passaram, ${fail} falharam`);
-  const errs = [...A.errs, ...D.errs];
+  const errs = [...A.errs, ...D.errs, ...C.errs];
   if (errs.length) { console.log('Erros no app:', errs); fail++; }
   srv.kill(); rmSync(dir, { recursive: true, force: true }); process.exit(fail ? 1 : 0);
 }

@@ -580,6 +580,51 @@ button.idc{cursor:pointer}
 
 .lg{width:62px;font-size:8px;letter-spacing:.02em}
 .legacy{gap:6px}
+
+/* ---------- busca recolhida, topo, chat fixo embaixo, novas skins ---------- */
+header.top .logo{margin-right:auto}
+header.top .search{display:none}
+header.top.srch .search{display:flex;flex:1}
+header.top.srch .logo,header.top.srch .ib{display:none}
+header.top.srch #sbtn{display:none}
+.vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+#view.cm{display:flex;flex-direction:column;padding-bottom:6px}
+#view.cm .chatpg{flex:1;min-height:0;display:flex;flex-direction:column}
+#view.cm .chatpg .chat{flex:1;min-height:0;overflow-y:auto;justify-content:flex-start}
+#view.cm .chatpg .chat>.empty{margin:auto 0}
+#view.cm .cbar{flex:none;margin-top:6px;border-top:1px solid var(--line);padding:8px 0 2px}
+.cbar .btn{width:40px;height:40px;padding:0;display:grid;place-items:center;border-radius:12px;min-height:0}
+.cbar .btn svg{width:18px;height:18px}
+.pf-av label.cam{cursor:pointer}
+.seg.five button{font-size:11.5px;padding:0 2px}
+.ptag{display:inline-flex;align-items:center;gap:3px;color:#fbbf24;font-weight:800;font-size:12px}
+.ptag svg{width:13px;height:13px}
+.tag.early{background:#f59e0b;color:#1a1204;top:auto;bottom:8px;left:8px;right:auto}
+.upl{width:100%;text-align:left}
+.upl .cover{width:52px;height:52px;flex:none;border-radius:12px}
+.ttl{display:inline-block;margin:2px 0 0;padding:1px 9px;border-radius:99px;font-size:11px;font-weight:700;color:#c4b5fd;border:1px solid var(--accent2);background:#8b5cf61a}
+.idc.prem{border-color:#fbbf24;color:#fbbf24}
+.idc.prem svg{color:#fbbf24}
+.pm{font-style:normal;font-size:9px;font-weight:800;color:#fbbf24;border:1px solid #fbbf2466;border-radius:99px;padding:0 5px;margin-left:3px;vertical-align:1px}
+.nc-gold{color:#fbbf24}.nc-cyan{color:#22d3ee}.nc-pink{color:#f472b6}.nc-green{color:#4ade80}
+.nc-rainbow{background:linear-gradient(90deg,#f87171,#fbbf24,#4ade80,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+.skin .sw.ti{font-size:12px;font-weight:700;color:#c4b5fd;border:1px solid var(--accent2);border-radius:99px;padding:3px 10px;background:#8b5cf61a}
+.skin .sw.nc{font-size:18px;font-weight:800}
+.skin .sw.bb{padding:6px 12px;border-radius:14px;font-size:12px;color:#fff}
+.skin .sw.th{width:46px;height:46px;border-radius:50%}
+.sw.th-ocean{background:linear-gradient(135deg,#22d3ee,#0ea5e9)}.sw.th-forest{background:linear-gradient(135deg,#4ade80,#16a34a)}.sw.th-rose{background:linear-gradient(135deg,#f472b6,#db2777)}.sw.th-sun{background:linear-gradient(135deg,#fbbf24,#ea580c)}.sw.th-gold{background:linear-gradient(135deg,#fcd34d,#d97706)}
+.sw.bb-cyan,.bub.me.bb-cyan{background:#0891b2}.sw.bb-pink,.bub.me.bb-pink{background:#be185d}.sw.bb-green,.bub.me.bb-green{background:#15803d}.sw.bb-orange,.bub.me.bb-orange{background:#c2410c}
+.sw.fr-ice{border-color:#bae6fd;box-shadow:0 0 14px #7dd3fcaa}
+.sw.fr-royal{border-color:#a78bfa;box-shadow:0 0 0 2px #fbbf24,0 0 14px #a78bfaaa}
+.sw.fr-gem{border-color:#34d399;box-shadow:0 0 0 2px #22d3ee,0 0 16px #34d399bb}
+.sw.bn-forest,.pbanner.bn-forest{background:linear-gradient(120deg,#052e16,#15803d 60%,#86efac)}
+.sw.bn-candy,.pbanner.bn-candy{background:linear-gradient(120deg,#be185d,#a855f7 55%,#38bdf8)}
+.sw.bn-gold,.pbanner.bn-gold{background:linear-gradient(120deg,#78350f,#d97706 55%,#fde68a)}
+.pf-av.fr-ice .avatar.xl{border-color:#bae6fd;box-shadow:0 0 0 3px #7dd3fc33,0 0 20px #7dd3fcaa}
+.pf-av.fr-royal .avatar.xl{border-color:#a78bfa;box-shadow:0 0 0 3px #fbbf24,0 0 22px #a78bfaaa}
+.pf-av.fr-gem .avatar.xl{border-color:#34d399;box-shadow:0 0 0 3px #22d3ee,0 0 24px #34d399bb}
+.daily{margin-bottom:6px}
+.btn[disabled]{opacity:.55;pointer-events:none}
 </style>
 
 </head>
@@ -595,10 +640,11 @@ s.classList.add("out");setTimeout(function(){s.parentNode&&s.parentNode.removeCh
 tick()})()</script>
   <header class="top">
     <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-3.9 3.2l-1.3 6A3 3 0 0 0 4.4 18c1 0 1.6-.5 2.1-1.2L8 15h8l1.5 1.8c.5.7 1.1 1.2 2.1 1.2a3 3 0 0 0 2.9-3.8l-1.3-6A4 4 0 0 0 17.3 5z"/></svg><span class="lt">GAME<b>PLATFORM</b></span></div>
-    <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="q" type="search" placeholder="Buscar jogos ou categorias" aria-label="Buscar"></label>
+    <button class="ib sb" id="sbtn" aria-label="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg></button>
+    <label class="search" id="sbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="q" type="search" placeholder="Buscar jogos" aria-label="Buscar"></label>
     <button class="ib" id="admb" data-a="sub" data-v="admin" aria-label="Administração" hidden></button>
-    <button class="ib" id="cfgb" data-a="sub" data-v="settings" aria-label="Configurações"></button>
     <button class="ib" id="bell" data-a="sub" data-v="upd" aria-label="Notificações"></button>
+    <button class="ib" id="cfgb" data-a="sub" data-v="settings" aria-label="Configurações"></button>
   </header>
   <main id="view"></main>
   <nav class="bar" id="nav" aria-label="Navegação principal"></nav>
@@ -667,6 +713,7 @@ Object.assign(P,{
  chat:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
  trophy:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 4 6"/>',
+ sliders:'<path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2.2"/><circle cx="10" cy="12" r="2.2"/><circle cx="18" cy="18" r="2.2"/>',
  cog:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
  shield:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
@@ -847,7 +894,7 @@ async function probe(){
  try{var c=new AbortController(),t=setTimeout(function(){c.abort()},3500);var r=await fetch(base()+'/api/health',{signal:c.signal});clearTimeout(t);var j=await r.json();S.srvOk=!!(j&&j.ok)}catch(e){S.srvOk=false}
  return S.srvOk;
 }
-function mapGame(g){var st=g.settings||{};return{ai:!!g.ai,tags:g.tags||[],ver:g.version||'1.0.0',vis:g.visibility||'public',status:g.status||'published',cfg:st,created:g.created_at||'',rc:g.review_count||0,ori:g.orientation||'auto',cover:g.cover||'',featured:!!g.featured,id:'r'+g.id,rid:g.id,remote:1,title:g.title,genre:g.category,cat:g.category,dim:g.dim,age:g.age,desc:g.description,rating:g.rating,dl:String(g.plays),color:PAL[g.id%PAL.length],icon:g.dim==='3D'?'cube':'pad',dev:g.developer,owner:g.owner_id}}
+function mapGame(g){var st=g.settings||{};return{ai:!!g.ai,tags:g.tags||[],ver:g.version||'1.0.0',vis:g.visibility||'public',status:g.status||'published',cfg:st,created:g.created_at||'',upd:g.updated_at||'',rc:g.review_count||0,ori:g.orientation||'auto',cover:g.cover||'',featured:!!g.featured,id:'r'+g.id,rid:g.id,remote:1,title:g.title,genre:g.category,cat:g.category,dim:g.dim,age:g.age,desc:g.description,rating:g.rating,dl:String(g.plays),color:PAL[g.id%PAL.length],icon:g.dim==='3D'?'cube':'pad',dev:g.developer,owner:g.owner_id}}
 function mapNotif(n){return{id:'n'+n.id,t:n.title,d:n.body,a:rel(n.created_at),k:n.kind||'sys',ref:n.ref||'',imp:!!n.important}}
 function libsMap(a){var o={};(a||[]).forEach(function(k){o[k]=true});return o}
 async function refreshAll(){
@@ -948,8 +995,8 @@ function catIcon(n){for(var i=0;i<CATS.length;i++)if(CATS[i][0]===n)return CATS[
 function CATL(){return catNames().map(function(n){return[n,catIcon(n)]})}
 function isFeat(g){return on()?!!g.featured:!!S.feat[g.id]}
 function featFirst(a){return a.filter(isFeat).concat(a.filter(function(g){return !isFeat(g)}))}
-function cover(g,cls){return '<div class="cover '+(cls||'')+'" style="background:linear-gradient(135deg,'+g.color[0]+','+g.color[1]+')">'+(g.cover?'<img src="'+g.cover+'" alt="" loading="lazy">':ic(g.icon||'pad'))+(isFeat(g)?'<span class="tag star">'+ic('star')+'Destaque</span>':'')+'<span class="tag">'+g.dim+'</span></div>'}
-function card(g){var a=avg(g.id);return '<button class="card" data-a="open" data-v="'+g.id+'" aria-label="Abrir '+esc(g.title)+'">'+cover(g)+'<div class="meta"><div class="t">'+esc(g.title)+(g.status==='removed'?' <span class="badge warn">Removido da Loja</span>':'')+'</div><div class="row"><span class="g">'+esc(g.genre)+'</span><span class="stars">'+(a?'★ '+a:'Novo')+'</span></div></div></button>'}
+function cover(g,cls){return '<div class="cover '+(cls||'')+'" style="background:linear-gradient(135deg,'+g.color[0]+','+g.color[1]+')">'+(g.cover?'<img src="'+g.cover+'" alt="" loading="lazy">':ic(g.icon||'pad'))+(isFeat(g)?'<span class="tag star">'+ic('star')+'Destaque</span>':'')+(gEarly(g)?'<span class="tag early">Antecipado</span>':'')+'<span class="tag">'+g.dim+'</span></div>'}
+function card(g){var a=avg(g.id);return '<button class="card" data-a="open" data-v="'+g.id+'" aria-label="Abrir '+esc(g.title)+'">'+cover(g)+'<div class="meta"><div class="t">'+esc(g.title)+(g.status==='removed'?' <span class="badge warn">Removido da Loja</span>':'')+'</div><div class="row"><span class="g">'+esc(g.genre)+'</span>'+(gPrice(g)&&!gOwned(g)?'<span class="ptag">'+ic('coin')+gPrice(g)+'</span>':'<span class="stars">'+(a?'★ '+a:'Novo')+'</span>')+'</div></div></button>'}
 function subhead(t){return '<div class="row" style="margin:4px 0 12px;justify-content:flex-start;gap:10px"><button class="ib" data-a="back" aria-label="Voltar">'+ic('back')+'</button><h1 style="margin:0">'+t+'</h1></div>'}
 function mrow(i,l,a,v,b){return '<button class="mrow" data-a="'+a+'"'+(v?' data-v="'+v+'"':'')+'>'+ic(i)+'<span>'+l+'</span>'+(b!==undefined&&b!==''?'<em>'+b+'</em>':'')+ic('chev','chv')+'</button>'}
 function starRow(n){var s='';for(var i=1;i<=5;i++)s+='<svg viewBox="0 0 24 24" width="13" height="13" fill="'+(i<=n?'#fbbf24':'none')+'" stroke="#fbbf24" stroke-width="2" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px">'+P.star+'</svg>';return s}
@@ -970,57 +1017,85 @@ function updRow(u){
 
 /* ---------- telas ---------- */
 function home(){
- return updBanner()+'<div class="hero"><canvas id="hc"></canvas><h1>Jogue. Crie. Compartilhe.</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="go" data-v="store">'+ic('play')+'Jogar agora</button>'+(studioOn()?'<button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button>':'<button class="btn ghost" data-a="plans">Ver planos</button>')+'</div></div>'
- +'<div class="social"><button data-a="ctab" data-v="feed">'+ic('users')+'<span>Comunidade</span></button><button data-a="ctab" data-v="msgs">'+ic('chat')+'<span>Mensagens</span>'+(S.cun?'<i class="dot">'+S.cun+'</i>':'')+'</button><button data-a="ctab" data-v="groups">'+ic('users')+'<span>Grupos</span></button><button data-a="ctab" data-v="friends">'+ic('user')+'<span>Amigos</span></button></div>'
+ if(S.q||S.hcat){var q=(S.q||'').toLowerCase(),rs=featFirst(all()).filter(function(g){return (!q||(g.title+' '+g.genre+' '+(g.cat||'')).toLowerCase().indexOf(q)>-1)&&(!S.hcat||g.cat===S.hcat)});
+  return '<div class="row" style="margin:2px 0 10px"><h1 class="h1s" style="margin:0">'+(S.hcat&&!q?esc(S.hcat):'Resultados')+'</h1>'+(S.hcat?'<button class="chip" data-a="hcatx" aria-pressed="true">'+esc(S.hcat)+' ×</button>':'')+'</div>'+(rs.length?'<div class="grid">'+rs.map(card).join('')+'</div>':'<div class="empty">Nenhum jogo encontrado para “'+esc(S.q)+'”.</div>')}
+ var rel_=released(),free=rel_.filter(function(g){return !gPrice(g)&&!gEarly(g)}),early=rel_.filter(gEarly),upd=updatedGames();
+ return updBanner()+'<div class="hero"><canvas id="hc"></canvas><h1>Jogue. Crie. Compartilhe.</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="playnow">'+ic('play')+'Jogar agora</button>'+(studioOn()?'<button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button>':'<button class="btn ghost" data-a="plans">Ver planos</button>')+'</div></div>'
+ +(upd.length?'<div class="sec"><h2>Atualizações de jogos</h2></div><div class="list">'+upd.map(function(g){return '<button class="li upl" data-a="open" data-v="'+g.id+'">'+cover(g)+'<div class="body"><b>'+esc(g.title)+'</b><span class="note">Versão '+esc(g.ver||'')+' · '+esc(rel(g.upd))+'</span></div>'+ic('chev','chv')+'</button>'}).join('')+'</div>':'')
  +'<div class="sec"><h2>Categorias</h2></div><div class="cats">'+CATL().map(function(c){return '<button class="cat" data-a="cat" data-v="'+c[0]+'">'+ic(c[1])+c[0]+'</button>'}).join('')+'</div>'
- +'<div class="sec"><h2>Jogos lançados</h2><button data-a="go" data-v="store">Ver todos</button></div>'+(released().length?'<div class="grid sm">'+featFirst(released()).slice(0,8).map(card).join('')+'</div>':'<div class="empty">Ainda não há jogos publicados.<br>Seja o primeiro: crie e publique o seu no Game Studio.'+(studioOn()?'<div style="margin-top:12px"><button class="btn sm" data-a="go" data-v="studio">'+ic('studio')+'Criar um jogo</button></div>':'<div style="margin-top:12px"><button class="btn sm" data-a="plans">Ver planos do Studio</button></div>')+'</div>')
+ +'<div class="sec" id="lancados"><h2>Jogos lançados</h2></div>'+(free.length?'<div class="grid sm">'+featFirst(free).slice(0,8).map(card).join('')+'</div>':rel_.length?'<div class="empty">Os jogos gratuitos aparecem aqui. Os pagos ficam na Loja.</div>':'<div class="empty">Ainda não há jogos publicados.<br>Seja o primeiro: crie e publique o seu no Game Studio.'+(studioOn()?'<div style="margin-top:12px"><button class="btn sm" data-a="go" data-v="studio">'+ic('studio')+'Criar um jogo</button></div>':'<div style="margin-top:12px"><button class="btn sm" data-a="plans">Ver planos do Studio</button></div>')+'</div>')
+ +(early.length?'<div class="sec"><h2>Acesso antecipado</h2><button data-a="sttab" data-v="early">Na Loja</button></div><div class="grid sm">'+featFirst(early).slice(0,8).map(card).join('')+'</div>':'')
+}
+function gPrice(g){return Math.round(Number(g&&g.cfg&&g.cfg.price))||0}
+function gEarly(g){return !!(g&&g.cfg&&g.cfg.early)}
+function gOwned(g){return !gPrice(g)||!!S.lib[g.id]||(on()&&S.user.role==='admin')||(on()&&g.remote&&g.owner===S.user.id)||!g.remote}
+var THEMES={th_ocean:['#22d3ee','#0ea5e9'],th_forest:['#4ade80','#16a34a'],th_rose:['#f472b6','#db2777'],th_sun:['#fbbf24','#ea580c'],th_gold:['#fcd34d','#d97706']};
+function applyTheme(){var t=on()&&THEMES[S.user.theme],r=document.documentElement.style;if(t){r.setProperty('--accent',t[0]);r.setProperty('--accent2',t[1])}else{r.removeProperty('--accent');r.removeProperty('--accent2')}}
+function updatedGames(){
+ var lim=Date.now()-30*864e5,T=function(x){return Date.parse(String(x).replace(' ','T')+'Z')};
+ return all().filter(function(g){if(!g.remote||!g.upd||!g.created)return false;return T(g.upd)-T(g.created)>120000&&T(g.upd)>lim}).sort(function(a,b){return T(b.upd)-T(a.upd)}).slice(0,4);
 }
 function priceBR(c){return 'R$ '+(c/100).toFixed(2).replace('.',',')}
-function storeGames(){
+function storeGames(kind){
  var cats=['Todos'].concat(CATL().map(function(c){return c[0]}));
- var list=featFirst(all()).filter(function(g){return (S.cat==='Todos'||g.cat===S.cat)&&(S.dim==='Todos'||g.dim===S.dim)&&(!S.q||(g.title+g.genre).toLowerCase().indexOf(S.q.toLowerCase())>-1)});
- return '<div class="seg" style="margin-bottom:10px">'+['Todos','2D','3D'].map(function(d){return '<button data-a="dim" data-v="'+d+'" aria-pressed="'+(S.dim===d)+'">'+d+'</button>'}).join('')+'</div>'
- +'<div class="chips">'+cats.map(function(c){return '<button class="chip" data-a="cat" data-v="'+c+'" aria-pressed="'+(S.cat===c)+'">'+c+'</button>'}).join('')+'</div>'
- +'<div class="sec"><h2>Disponíveis</h2></div>'+(list.length?'<div class="grid">'+list.map(card).join('')+'</div>':'<div class="empty">Nenhum jogo encontrado.'+(studioOn()?' Publique o seu no Game Studio.':'')+'</div>')
+ var list=featFirst(all()).filter(function(g){return (kind==='early'?gEarly(g)&&gPrice(g):gPrice(g)&&!gEarly(g))&&(S.cat==='Todos'||g.cat===S.cat)&&(S.dim==='Todos'||g.dim===S.dim)});
+ return '<p class="note" style="margin:0 0 10px">'+(kind==='early'?'Jogos ainda em desenvolvimento. Compre o acesso antecipado e jogue antes de todo mundo.':'Jogos pagos: compre uma vez com moedas e o jogo é seu para sempre.')+'</p>'
+ +'<div class="seg" style="margin-bottom:10px">'+['Todos','2D','3D'].map(function(d){return '<button data-a="dim" data-v="'+d+'" aria-pressed="'+(S.dim===d)+'">'+d+'</button>'}).join('')+'</div>'
+ +'<div class="chips">'+cats.map(function(c){return '<button class="chip" data-a="cat2" data-v="'+c+'" aria-pressed="'+(S.cat===c)+'">'+c+'</button>'}).join('')+'</div>'
+ +'<div class="sec"><h2>'+(kind==='early'?'Acesso antecipado':'Jogos pagos')+'</h2></div>'+(list.length?'<div class="grid">'+list.map(card).join('')+'</div>':'<div class="empty">'+(kind==='early'?'Nenhum jogo em acesso antecipado à venda.':'Nenhum jogo pago ainda.')+(studioOn()?'<br>Publique um no Studio com preço em moedas.':'')+'</div>')
 }
 function needLogin(){return on()?'':'<div class="panel mini" style="margin-bottom:10px"><div class="row"><div><b>Entre para comprar</b><div class="note" style="margin:2px 0 0">Planos, moedas e skins ficam na sua conta.</div></div><button class="btn sm" data-a="sub" data-v="auth">Entrar</button></div></div>'}
 function testNote(){return '<p class="note" style="margin:0 0 10px">Compras de teste: liberam na hora e <b>não cobram nada</b> por enquanto. O pagamento de verdade entra depois.</p>'}
+function planUntil(a){return !a||!a.active?'':a.until==='sempre'?'sem prazo':a.until?'até '+new Date(a.until).toLocaleDateString('pt-BR'):''}
 function storePlans(){
- var st=S.store,u=on()?S.user:null,act=u&&(u.studio||u.role==='admin');
- var cur=act?'<div class="panel mini plan-on"><b>'+ic('shield')+' Seu Studio está ativo</b><div class="note" style="margin:2px 0 0">'+(u.role==='admin'?'Administradores têm o Studio sempre liberado.':st&&st.studio&&st.studio.until==='sempre'?'Liberado pela administração, sem prazo.':st&&st.studio&&st.studio.until?'Vale até '+new Date(st.studio.until).toLocaleDateString('pt-BR')+'.':'')+'</div></div>':'';
- var plans=st?st.plans:[{id:'studio30',name:'Studio 30 dias',price:1990,perks:['Publicar jogos na Loja','Missões próprias por jogo','Painel de estatísticas','Modo avançado do Studio']},{id:'studio365',name:'Studio 1 ano',price:17990,perks:['Tudo do plano de 30 dias','Economia de cerca de 25%']}];
- return needLogin()+cur+testNote()+'<div class="sec tight"><h2>Plano Studio</h2></div><p class="note" style="margin:0 0 10px">O Studio é onde você cria e publica jogos. Sem o plano, ele fica escondido.</p>'
-  +plans.map(function(p){return '<div class="plan"><div class="row"><div><b>'+esc(p.name)+'</b></div><span class="price">'+priceBR(p.price)+'</span></div><ul>'+p.perks.map(function(x){return '<li>'+ic('shield')+esc(x)+'</li>'}).join('')+'</ul><button class="btn full" data-a="buy" data-v="'+p.id+'">'+(act?'Renovar':'Assinar')+'</button></div>'}).join('');
+ var st=S.store,u=on()?S.user:null,stu=u&&(u.studio||u.role==='admin'),pre=u&&u.premium;
+ var cur=(stu?'<div class="panel mini plan-on"><b>'+ic('shield')+' Studio ativo</b><div class="note" style="margin:2px 0 0">'+(u.role==='admin'?'Administradores têm o Studio sempre liberado.':planUntil(st&&st.studio)?'Vale '+planUntil(st.studio)+'.':'')+'</div></div>':'')+(pre?'<div class="panel mini plan-on"><b>'+ic('star')+' Premium ativo</b><div class="note" style="margin:2px 0 0">'+(planUntil(st&&st.premium)?'Vale '+planUntil(st.premium)+'.':'')+'</div></div>':'');
+ var plans=st?st.plans:[];
+ function grp(kind,title,sub){return '<div class="sec tight"><h2>'+title+'</h2></div><p class="note" style="margin:0 0 10px">'+sub+'</p>'+plans.filter(function(p){return p.kind===kind}).map(function(p){var act=kind==='studio'?stu:pre;return '<div class="plan"><div class="row"><div><b>'+esc(p.name)+'</b></div><span class="price">'+priceBR(p.price)+'</span></div><ul>'+p.perks.map(function(x){return '<li>'+ic('shield')+esc(x)+'</li>'}).join('')+'</ul><button class="btn full" data-a="buy" data-v="'+p.id+'">'+(act?'Renovar':'Assinar')+'</button></div>'}).join('')}
+ return needLogin()+cur+testNote()+(st?grp('studio','Plano Studio','Onde você cria e publica jogos. Sem o plano, o Studio fica escondido.')+grp('premium','Premium','Bônus, itens exclusivos e mais moedas.'):'<div class="empty">'+(on()?'Carregando…':'Entre para ver os planos.')+'</div>');
+}
+function dailyBox(){
+ var d=S.store&&S.store.daily;if(!on()||!d)return '';
+ var w=d.waitMs-(Date.now()-(S.store._t||Date.now())),h=Math.ceil(Math.max(0,w)/36e5);
+ return '<div class="panel mini daily"><div class="row"><div><b>Bônus diário</b><div class="note" style="margin:2px 0 0">+'+d.reward+' moedas por dia'+(S.user.premium?' (Premium)':'')+'. '+(w>0?'Volte em cerca de '+h+' h.':'Disponível agora.')+'</div></div><button class="btn sm" data-a="daily"'+(w>0?' disabled':'')+'>'+ic('coin')+(w>0?'Coletado':'Coletar')+'</button></div></div>'
 }
 function storeCoins(){
- var st=S.store,packs=st?st.packs:[{id:'coins100',name:'100 moedas',price:490},{id:'coins500',name:'500 moedas',price:1990},{id:'coins1200',name:'1.200 moedas',price:3990}];
- return needLogin()+testNote()+'<div class="panel mini"><div class="row"><div><b>Seu saldo</b><div class="note" style="margin:2px 0 0">Moedas compram skins e itens do perfil.</div></div><span class="idc coin">'+ic('coin')+'<b>'+(on()?S.user.coins||0:0)+'</b></span></div></div>'
-  +'<div class="sec tight"><h2>Pacotes de moedas</h2></div><div class="list">'+packs.map(function(p){return '<div class="li">'+'<div class="avatar" style="width:38px;height:38px">'+ic('coin')+'</div><div class="body"><b>'+esc(p.name)+'</b></div><button class="btn sm" data-a="buy" data-v="'+p.id+'">'+priceBR(p.price)+'</button></div>'}).join('')+'</div>';
+ var st=S.store,packs=st?st.packs:[];
+ return needLogin()+testNote()+'<div class="panel mini"><div class="row"><div><b>Seu saldo</b><div class="note" style="margin:2px 0 0">Moedas compram jogos, acesso antecipado e skins.</div></div><span class="idc coin">'+ic('coin')+'<b>'+(on()?S.user.coins||0:0)+'</b></span></div></div>'+dailyBox()
+  +'<div class="sec tight"><h2>Pacotes de moedas</h2></div>'+(S.user&&S.user.premium?'<p class="note" style="margin:0 0 8px">Premium: +10% de moedas em todos os pacotes.</p>':'')+'<div class="list">'+packs.map(function(p){return '<div class="li">'+'<div class="avatar" style="width:38px;height:38px">'+ic('coin')+'</div><div class="body"><b>'+esc(p.name)+'</b></div><button class="btn sm" data-a="buy" data-v="'+p.id+'">'+priceBR(p.price)+'</button></div>'}).join('')+'</div>';
 }
+var SLOTN={frame:'Molduras de perfil',banner:'Fundos do perfil',title:'Títulos',ncolor:'Cor do nome',theme:'Temas do app',bubble:'Balões do chat'};
 function storeSkins(){
  var st=S.store;if(!st)return needLogin()+'<div class="empty">'+(on()?'Carregando…':'Entre para ver as skins.')+'</div>';
  var own=st.owned||[],eq=st.equipped||{};
- function grp(slot,title){
-  return '<div class="sec tight"><h2>'+title+'</h2></div><div class="skins">'+st.items.filter(function(i){return i.slot===slot}).map(function(i){
-   var has=own.indexOf(i.id)>=0,on_=eq[slot]===i.id;
-   return '<div class="skin"><div class="sw '+(slot==='frame'?'fr':'bn')+' '+i.id.replace('_','-')+'"></div><b>'+esc(i.name)+'</b>'
-    +(has?'<button class="btn '+(on_?'ghost ':'')+'sm" data-a="equip" data-v="'+slot+'" data-id="'+(on_?'':i.id)+'">'+(on_?'Remover':'Usar')+'</button>':'<button class="btn sm" data-a="buy" data-v="'+i.id+'">'+ic('coin')+i.coins+'</button>')+'</div>'}).join('')+'</div>';
+ function grp(slot){
+  return '<div class="sec tight"><h2>'+SLOTN[slot]+'</h2></div><div class="skins">'+st.items.filter(function(i){return i.slot===slot}).map(function(i){
+   var has=own.indexOf(i.id)>=0,on_=eq[slot]===i.id,cls=i.id.replace('_','-'),lock=i.premium&&!(S.user&&S.user.premium)&&!has;
+   var sw=slot==='title'?'<div class="sw ti">'+esc(i.name)+'</div>':slot==='ncolor'?'<div class="sw nc '+cls+'">Nome</div>':slot==='bubble'?'<div class="sw bb '+cls+'">Olá!</div>':'<div class="sw '+(slot==='frame'?'fr':slot==='banner'?'bn':'th')+' '+cls+'"></div>';
+   return '<div class="skin">'+sw+'<b>'+esc(i.name)+(i.premium?' <i class="pm">Premium</i>':'')+'</b>'
+    +(has?'<button class="btn '+(on_?'ghost ':'')+'sm" data-a="equip" data-v="'+slot+'" data-id="'+(on_?'':i.id)+'">'+(on_?'Remover':'Usar')+'</button>':lock?'<button class="btn ghost sm" data-a="plans">Só Premium</button>':'<button class="btn sm" data-a="buy" data-v="'+i.id+'">'+(i.coins?ic('coin')+i.coins:'Grátis')+'</button>')+'</div>'}).join('')+'</div>';
  }
- return needLogin()+'<div class="panel mini"><div class="row"><div><b>Seu saldo</b></div><button class="idc coin" data-a="sttab" data-v="coins">'+ic('coin')+'<b>'+(S.user?S.user.coins||0:0)+'</b></button></div></div>'+grp('frame','Molduras de perfil')+grp('banner','Fundos do perfil')
-  +'<p class="note">Molduras e fundos aparecem no seu perfil.</p>';
+ return needLogin()+'<div class="panel mini"><div class="row"><div><b>Seu saldo</b></div><button class="idc coin" data-a="sttab" data-v="coins">'+ic('coin')+'<b>'+(S.user?S.user.coins||0:0)+'</b></button></div></div>'+['frame','banner','title','ncolor','theme','bubble'].map(grp).join('')
+  +'<p class="note">Molduras, fundos, títulos e cores aparecem no seu perfil. Temas mudam as cores do app. Balões mudam as suas mensagens no chat.</p>';
 }
 function store(){
- var t=S.shop||'games',tabs=[['games','Jogos'],['plans','Planos'],['coins','Moedas'],['skins','Skins']];
+ var t=S.shop||'games',tabs=[['games','Jogos'],['early','Antecipado'],['plans','Planos'],['coins','Moedas'],['skins','Skins']];
  return '<h1 class="h1s">Loja</h1>'
- +'<div class="seg" style="margin-bottom:12px">'+tabs.map(function(x){return '<button data-a="sttab" data-v="'+x[0]+'" aria-pressed="'+(t===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>'
- +({games:storeGames,plans:storePlans,coins:storeCoins,skins:storeSkins}[t]||storeGames)();
+ +'<div class="seg five" style="margin-bottom:12px">'+tabs.map(function(x){return '<button data-a="sttab" data-v="'+x[0]+'" aria-pressed="'+(t===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>'
+ +({games:function(){return storeGames('games')},early:function(){return storeGames('early')},plans:storePlans,coins:storeCoins,skins:storeSkins}[t]||function(){return storeGames('games')})();
 }
-function syncMe(r){if(!on()||!r)return;S.user.coins=r.coins;S.user.studio=!!(r.studio&&r.studio.active);S.user.frame=r.equipped?r.equipped.frame:null;S.user.banner=r.equipped?r.equipped.banner:null;sv('gp_user',S.user)}
-function loadStore(){if(!on())return;api('GET','/store').then(function(r){S.store=r;syncMe(r);if(S.tab==='store'&&!S.sub&&!S.detail)render(true)}).catch(function(){})}
+function syncMe(r){if(!on()||!r)return;S.user.coins=r.coins;S.user.studio=!!(r.studio&&r.studio.active);S.user.premium=!!(r.premium&&r.premium.active);var e=r.equipped||{};['frame','banner','title','ncolor','theme','bubble'].forEach(function(k){S.user[k]=e[k]||null});if(r.equipped&&r.equipped.title){var it=((S.store||{}).items||[]).filter(function(x){return x.id===r.equipped.title})[0];S.user.titleName=it?it.name:S.user.titleName}else S.user.titleName=null;sv('gp_user',S.user);applyTheme()}
+function loadStore(){if(!on())return;api('GET','/store').then(function(r){r._t=Date.now();S.store=r;syncMe(r);if(S.tab==='store'&&!S.sub&&!S.detail)render(true)}).catch(function(){})}
 function buyItem(id){
  if(!on()){toast('Entre numa conta para comprar');S.sub='auth';render();return}
- api('POST','/store/buy',{id:id}).then(function(r){var st=S.store||{};S.store=Object.assign({},st,r);syncMe(r);toast(/^studio/.test(id)?'Studio liberado!':/^coins/.test(id)?'Moedas adicionadas':'Skin comprada e em uso');render(true);loadStore()}).catch(function(e){toast(e.message)});
+ api('POST','/store/buy',{id:id}).then(function(r){var st=S.store||{};S.store=Object.assign({},st,r);syncMe(r);toast(/^studio/.test(id)?'Studio liberado!':/^premium/.test(id)?'Premium ativo!':/^coins/.test(id)?'Moedas adicionadas':'Item comprado e em uso');render(true);loadStore()}).catch(function(e){toast(e.message)});
 }
+function buyGame(id){
+ var g=find(id);if(!g||!g.remote)return;
+ if(!on()){toast('Entre numa conta para comprar');S.sub='auth';render();return}
+ api('POST','/games/'+g.rid+'/buy',{}).then(function(r){S.store=Object.assign({},S.store||{},r);syncMe(r);S.lib[id]=1;sv('gp_lib',S.lib);toast('Compra confirmada. O jogo é seu!');render(true)}).catch(function(e){toast(e.message);if(/insuficientes/.test(e.message)){S.tab='store';S.shop='coins';S.detail=null;S.sub=null;render();loadStore()}});
+}
+function dailyGo(){api('POST','/store/daily',{}).then(function(r){r._t=Date.now();S.store=Object.assign({},S.store||{},r);syncMe(r);toast('+'+r.reward+' moedas');render(true)}).catch(function(e){toast(e.message)})}
 function equipItem(slot,id){api('POST','/store/equip',{slot:slot,id:id||null}).then(function(r){S.store=Object.assign({},S.store||{},r);syncMe(r);render(true)}).catch(function(e){toast(e.message)})}
 function detail(g){
  var inLib=!!S.lib[g.id],wl=!!S.wish[g.id],a=avg(g.id),n=reviewsOf(g.id).length,tab=S.dtab,body='';
@@ -1037,9 +1112,9 @@ function detail(g){
  var mineG=on()&&g.remote&&g.owner===S.user.id;
  return '<div class="row" style="margin:4px 0 12px"><button class="ib" data-a="back" aria-label="Voltar">'+ic('back')+'</button><span class="badge">'+esc(g.cat)+'</span></div>'
  +'<div class="detail-hero">'+cover(g)+'</div><h1 style="margin-top:14px">'+esc(g.title)+'</h1>'
- +'<div class="pills"><span class="badge">'+esc(g.genre)+'</span><span class="badge">'+g.dim+'</span><span class="badge">'+(g.age||'Livre')+'</span>'+(a?'<span class="badge">★ '+a+' ('+n+')</span>':'')+(g.dl&&g.dl!=='0'?'<span class="badge">'+g.dl+(g.remote?' partidas':' downloads')+'</span>':'')+((g.id[0]==='u'||mineG)?'<span class="badge ok">Publicado por você</span>':'')+'</div>'
+ +'<div class="pills"><span class="badge">'+esc(g.genre)+'</span><span class="badge">'+g.dim+'</span><span class="badge">'+(g.age||'Livre')+'</span>'+(gEarly(g)?'<span class="badge warn">Acesso antecipado</span>':'')+(gPrice(g)?'<span class="badge">'+gPrice(g)+' moedas</span>':'')+(a?'<span class="badge">★ '+a+' ('+n+')</span>':'')+(g.dl&&g.dl!=='0'?'<span class="badge">'+g.dl+(g.remote?' partidas':' downloads')+'</span>':'')+((g.id[0]==='u'||mineG)?'<span class="badge ok">Publicado por você</span>':'')+'</div>'
  +'<p style="color:var(--muted)">'+esc(g.desc||'')+'</p>'
- +'<div class="dev"><button class="btn" style="flex:2" data-a="play" data-v="'+g.id+'">'+ic('play')+'Jogar agora</button><button class="btn ghost" style="flex:1.3" data-a="add" data-v="'+g.id+'">'+(inLib?ic('check')+'Na biblioteca':ic('plus')+'Biblioteca')+'</button><button class="ib" style="width:46px;height:auto;'+(wl?'color:#f472b6':'')+'" data-a="wish" data-v="'+g.id+'" aria-pressed="'+wl+'" aria-label="Lista de desejos">'+ic('heart')+'</button></div>'
+ +(gOwned(g)?'<div class="dev"><button class="btn" style="flex:2" data-a="play" data-v="'+g.id+'">'+ic('play')+'Jogar agora</button><button class="btn ghost" style="flex:1.3" data-a="add" data-v="'+g.id+'">'+(inLib?ic('check')+'Na biblioteca':ic('plus')+'Biblioteca')+'</button>':'<div class="dev"><button class="btn" style="flex:3" data-a="buygame" data-v="'+g.id+'">'+ic('coin')+(gEarly(g)?'Comprar acesso antecipado · ':'Comprar · ')+gPrice(g)+' moedas</button>')+'<button class="ib" style="width:46px;height:auto;'+(wl?'color:#f472b6':'')+'" data-a="wish" data-v="'+g.id+'" aria-pressed="'+wl+'" aria-label="Lista de desejos">'+ic('heart')+'</button></div>'
  +'<div class="seg" style="margin:16px 0 12px">'+[['rev','Avaliações'],['req','Requisitos'],['sim','Semelhantes']].map(function(t){return '<button data-a="dtab" data-v="'+t[0]+'" aria-pressed="'+(tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>'+body
  +'<dl class="panel kv" style="margin-top:12px"><dt>Desenvolvedor</dt><dd>'+esc(g.dev||'Você')+'</dd><dt>Plataforma</dt><dd>Navegador (HTML5)</dd><dt>Classificação</dt><dd>'+(g.age||'Livre')+'</dd></dl>'
  +(on()&&g.remote&&!mineG?'<div style="text-align:center;margin-top:10px"><button class="del" data-a="report" data-v="game:'+g.rid+'">Denunciar este jogo</button></div>':'');
@@ -1064,12 +1139,12 @@ function draftsHtml(){
  return '<div class="sec"><h2>Rascunhos</h2><span class="note" style="margin:0">'+S.drafts.length+'</span></div><div class="list">'+S.drafts.map(function(d){
   return '<div class="draft"><div class="body"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.title||'Sem nome')+'</b><div class="note" style="margin:2px 0 0">'+d.dim+' · '+fmtSize(d.code.length)+' · há '+(rel(d.at)||'pouco')+'</div></div><button class="btn ghost sm" data-a="draftopen" data-v="'+d.id+'">Continuar</button><button class="del" data-a="draftdel" data-v="'+d.id+'">Excluir</button></div>'}).join('')+'</div>';
 }
-function newStudio(){return{ori:'auto',title:'',dim:'2D',mode:'file',code:'',libs:{},desc:'',cat:catNames()[0]||'Ação',age:'Livre',editId:null,editRid:null,cover:'',src:null,zip:'',draftId:null,sect:'info',tags:[],tagIn:'',ver:'1.0.0',vis:'public',fs:1,ctl:{touch:1,keyboard:1},save:0,mon:'free',ext:[],mis:[],ai:0,prev:0,fromAdmin:0,ownerName:''}}
+function newStudio(){return{ori:'auto',title:'',dim:'2D',mode:'file',code:'',libs:{},desc:'',cat:catNames()[0]||'Ação',age:'Livre',editId:null,editRid:null,cover:'',src:null,zip:'',draftId:null,sect:'info',tags:[],tagIn:'',ver:'1.0.0',vis:'public',fs:1,ctl:{touch:1,keyboard:1},save:0,mon:'free',price:'',early:0,ext:[],mis:[],ai:0,prev:0,fromAdmin:0,ownerName:''}}
 function studioFrom(g,code,libs){
  var c=g.cfg||{},ctl={};(c.controls||['touch','keyboard']).forEach(function(k){ctl[k]=1});
- return{ori:g.ori||'auto',title:g.title,dim:g.dim,mode:'code',code:code,libs:JSON.parse(JSON.stringify(libs||{})),desc:g.desc||'',cat:g.cat||'Ação',age:g.age||'Livre',editId:g.id,editRid:g.rid||null,cover:g.cover||'',src:null,zip:'',draftId:null,sect:'info',tags:(g.tags||[]).slice(),tagIn:'',ver:g.ver||'1.0.0',vis:g.vis||'public',fs:c.fullscreen===0?0:1,ctl:ctl,save:c.saveProgress?1:0,mon:c.monetization||'free',ext:(c.ext||[]).slice(),mis:JSON.parse(JSON.stringify(c.missions||[])),ai:g.ai?1:0,prev:0,fromAdmin:0,ownerName:''};
+ return{ori:g.ori||'auto',title:g.title,dim:g.dim,mode:'code',code:code,libs:JSON.parse(JSON.stringify(libs||{})),desc:g.desc||'',cat:g.cat||'Ação',age:g.age||'Livre',editId:g.id,editRid:g.rid||null,cover:g.cover||'',src:null,zip:'',draftId:null,sect:'info',tags:(g.tags||[]).slice(),tagIn:'',ver:g.ver||'1.0.0',vis:g.vis||'public',fs:c.fullscreen===0?0:1,ctl:ctl,save:c.saveProgress?1:0,mon:c.monetization||'free',price:c.price||'',early:c.early?1:0,ext:(c.ext||[]).slice(),mis:JSON.parse(JSON.stringify(c.missions||[])),ai:g.ai?1:0,prev:0,fromAdmin:0,ownerName:''};
 }
-function settingsOf(s){return{fullscreen:s.fs?1:0,controls:Object.keys(s.ctl||{}).filter(function(k){return s.ctl[k]}),saveProgress:s.save?1:0,monetization:s.mon||'free',ext:(s.ext||[]).slice(),missions:(s.mis||[]).map(function(m,i){var o={id:m.id||'m'+(i+1),t:String(m.t||'').trim(),d:String(m.d||'').trim(),k:m.k==='minutes'?'minutes':'plays',goal:Math.round(Number(m.goal))||1,xp:Math.round(Number(m.xp))||20};if(m.secret){o.secret=1;o.req=Math.round(Number(m.req))||5}return o})}}
+function settingsOf(s){return{fullscreen:s.fs?1:0,controls:Object.keys(s.ctl||{}).filter(function(k){return s.ctl[k]}),saveProgress:s.save?1:0,monetization:s.mon||'free',price:(s.mon==='paid'?Math.round(Number(s.price))||0:0),early:s.early?1:0,ext:(s.ext||[]).slice(),missions:(s.mis||[]).map(function(m,i){var o={id:m.id||'m'+(i+1),t:String(m.t||'').trim(),d:String(m.d||'').trim(),k:m.k==='minutes'?'minutes':'plays',goal:Math.round(Number(m.goal))||1,xp:Math.round(Number(m.xp))||20};if(m.secret){o.secret=1;o.req=Math.round(Number(m.req))||5}return o})}}
 function bumpVer(v){var m=/^(\d+)\.(\d+)\.(\d+)$/.exec(v||'');return m?m[1]+'.'+m[2]+'.'+(+m[3]+1):v}
 function hl(src){
  var e=src.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1149,6 +1224,8 @@ function publish_form(){
    +'<label class="f">Controles</label><div class="tagl">'+ctl.map(function(c){return '<button class="chip" data-a="sctl" data-v="'+c[0]+'" aria-pressed="'+!!s.ctl[c[0]]+'">'+c[1]+'</button>'}).join('')+'</div>'
    +swS('Salvar o progresso do jogador','save',s.save)+'<p class="note">Quando ligado, o que o jogo guarda em localStorage fica salvo neste aparelho entre as partidas.</p>'
    +'<label class="f">Monetização</label>'+segS([['free','Grátis'],['ads','Anúncios'],['paid','Pago']],s.mon||'free','smon')
+   +(s.mon==='paid'?'<label class="f" for="sPrice">Preço em moedas</label><input class="in" id="sPrice" inputmode="numeric" maxlength="4" value="'+esc(String(s.price||''))+'" placeholder="Ex.: 150"><p class="note">Você recebe 70% de cada venda, em moedas.</p>':'')
+   +'<label class="tg" style="margin-top:6px"><span>Acesso antecipado<small class="note" style="display:block;margin:0">Marca o jogo como em desenvolvimento e o mostra na seção própria.</small></span><input type="checkbox" data-early'+(s.early?' checked':'')+'></label>'
    +'<label class="f">Visibilidade</label>'+segS([['public','Público'],['unlisted','Não listado'],['private','Privado']],s.vis||'public','svis')
    +'<p class="note">Não listado só abre por quem tem o endereço do jogo. Privado só você e a administração veem.</p></div>';
  }
@@ -1184,15 +1261,15 @@ function profile(){
  var leg=al.map(function(a,i){return{ok:a[1]>=a[2],n:a[0].replace(/ \(.*\)/,''),i:icons[i]||'star'}}).sort(function(x,y){return (y.ok?1:0)-(x.ok?1:0)}).slice(0,6);
  var fr=on()&&S.user.frame?' '+S.user.frame.replace('_','-'):'',bn=on()&&S.user.banner?' '+S.user.banner.replace('_','-'):'';
  var plan=on()?(S.user.role==='admin'?'Admin':S.user.studio?'Ativo':'Ver'):'Ver';
- return '<div class="pf-head"><div class="pf-av'+fr+'">'+avatarEl(myAvatar(),nm,'xl')+'<button class="cam" data-a="sub" data-v="editprof" aria-label="Editar foto de perfil">'+ic('camera')+'</button><div class="lvl">NÍVEL<b>'+l.n+'</b></div></div>'
- +'<div class="pf-info"><h1>'+esc(nm)+'</h1><div class="chips2">'+(on()?'<span class="idc" title="Seu ID de jogador">ID <b>#'+esc(S.user.uid||'000')+'</b></span><button class="idc coin" data-a="sttab" data-v="coins" aria-label="Moedas">'+ic('coin')+'<b>'+(S.user.coins||0)+'</b></button>':'<span class="idc">Offline</span>')+(isAdm?'<span class="idc adm">Admin</span>':'')+'</div>'
+ return '<div class="pf-head"><div class="pf-av'+fr+'">'+avatarEl(myAvatar(),nm,'xl')+'<label class="cam" for="pfQuick" aria-label="Trocar foto de perfil">'+ic('camera')+'</label><input type="file" id="pfQuick" class="vh" accept="image/*"><div class="lvl">NÍVEL<b>'+l.n+'</b></div></div>'
+ +'<div class="pf-info"><h1'+(on()&&S.user.ncolor?' class="'+S.user.ncolor.replace('_','-')+'"':'')+'>'+esc(nm)+'</h1>'+(on()&&S.user.titleName?'<div class="ttl">'+esc(S.user.titleName)+'</div>':'')+'<div class="chips2">'+(on()?'<span class="idc" title="Seu ID de jogador">ID <b>#'+esc(S.user.uid||'000')+'</b></span><button class="idc coin" data-a="sttab" data-v="coins" aria-label="Moedas">'+ic('coin')+'<b>'+(S.user.coins||0)+'</b></button>':'<span class="idc">Offline</span>')+(isAdm?'<span class="idc adm">Admin</span>':'')+(on()&&S.user.premium?'<span class="idc prem">'+ic('star')+'Premium</span>':'')+'</div>'
  +(bio?'<div class="st">'+esc(bio)+'</div>':'')
  +'<div class="pf-xp"><span><b>'+l.cur+'</b>/'+l.max+' XP</span><div class="bar-xp"><i style="width:'+(l.cur/l.max*100)+'%"></i></div></div></div></div>'
  +'<div class="pstats"><div class="pstat">'+ic('lib')+'<div><b>'+libCount()+'</b><span>Biblioteca</span></div></div><div class="pstat">'+ic('pad')+'<div><b>'+S.plays+'</b><span>Partidas</span></div></div><div class="pstat">'+ic('studio')+'<div><b>'+myGames().length+'</b><span>Publicados</span></div></div></div>'
  +(on()?'':'<div class="panel mini" style="margin-top:10px"><div class="row"><div><b>Jogue com amigos</b><div class="note" style="margin:2px 0 0">Entre para publicar, fazer amigos e conversar.</div></div><button class="btn sm" data-a="sub" data-v="auth">Entrar</button></div></div>')
  +'<div class="sec tight"><h2>Meu legado</h2><button data-a="sub" data-v="ach">Ver todos</button></div><div class="legacy">'+leg.map(function(x){return '<div class="lg'+(x.ok?' ok':'')+'"><i>'+(x.ok?ic(x.i):ic('lock'))+'</i>'+esc(x.n)+'</div>'}).join('')+'</div>'
  +'<div class="tiles">'+mtile('edit','Editar perfil','sub','editprof','')+mtile('star','Missões','sub','missions',mAll().done.length)+mtile('trophy','Conquistas','sub','ach',done+'/'+al.length)+mtile('heart','Desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mtile('studio','Meu plano','plans','',plan)+'</div>'
- +'<div class="pbanner'+bn+'"><h3>Legado não se herda. Se constrói.</h3><button class="btn ghost" data-a="sub" data-v="editprof">'+ic('edit')+'Personalizar</button></div>'
+ +'<div class="pbanner'+bn+'"><h3>Legado não se herda. Se constrói.</h3><button class="btn ghost" data-a="sttab" data-v="skins">'+ic('star')+'Skins</button></div>'
 }
 function mtile(i,l,a,v,b){return '<button class="mtile" data-a="'+a+'"'+(v?' data-v="'+v+'"':'')+'>'+ic(i)+'<span>'+l+'</span>'+(b!==undefined&&b!==''?'<em>'+b+'</em>':'')+'</button>'}
 function pfInit(){return{name:myName(),bio:myBio(),avatar:myAvatar()}}
@@ -1386,13 +1463,13 @@ function render(keep){
  if(S.tab==='studio'&&!studioOn())S.tab='home';
  var NV=navItems();$('#nav').style.gridTemplateColumns='repeat('+NV.length+',1fr)';
  $('#nav').innerHTML=NV.map(function(n){var b=n[0]==='chat'?chatBadge():0;return '<button data-a="go" data-v="'+n[0]+'"'+(S.tab===n[0]?' aria-current="page"':'')+'>'+ic(n[2])+(b?'<i class="nb">'+(b>9?'9+':b)+'</i>':'')+'<span>'+n[1]+'</span></button>'}).join('');
- var isA=on()?S.user.role==='admin':admLocal(),ab=$('#admb');ab.hidden=!isA;ab.innerHTML=ic('shield');$('#cfgb').innerHTML=ic('cog');
+ var isA=on()?S.user.role==='admin':admLocal(),ab=$('#admb');ab.hidden=!isA;ab.innerHTML=ic('shield');$('#cfgb').innerHTML=ic('sliders');applyTheme();
  var u=unseen();$('#bell').innerHTML=ic('bell')+(u?'<i class="dot">'+u+'</i>':'');
  var y=view.scrollTop,html;
  if(S.detail){var g=find(S.detail);html=g?detail(g):home()}
  else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,editprof:editprof}[S.sub]()}
  else html={home:home,store:store,lib:library,studio:studio,profile:profile,chat:community}[S.tab]();
- view.innerHTML=html;
+ view.innerHTML=html;view.classList.toggle('cm',!!view.querySelector('.chatpg'));
  if(S.sub==='upd'){var ch=false;updList().forEach(function(x){if(S.seen.indexOf(x.id)<0){S.seen.push(x.id);ch=true}});if(ch){save('seen')}}
  view.scrollTop=keep?y:0;
  if(S.tab==='home'&&!S.sub&&!S.detail)spark();
@@ -1529,15 +1606,15 @@ function fmtWhen(s){var d=new Date(s);if(isNaN(d))return s;return ('0'+d.getDate
 /* ----- mensagens ----- */
 function bubble(x,showName){
  var g=x.game_id&&find('r'+x.game_id);
- return '<div class="bub'+(x.me?' me':'')+'">'+(showName&&!x.me?'<b class="who">'+esc(x.author||'')+'</b>':'')+(x.image?'<img class="mimg" src="'+x.image+'" alt="Imagem enviada">':'')+(x.t?'<div>'+mentionHtml(x.t)+'</div>':'')
+ return '<div class="bub'+(x.me?' me':'')+(x.me&&on()&&S.user.bubble?' '+S.user.bubble.replace('_','-'):'')+'">'+(showName&&!x.me?'<b class="who">'+esc(x.author||'')+'</b>':'')+(x.image?'<img class="mimg" src="'+x.image+'" alt="Imagem enviada">':'')+(x.t?'<div>'+mentionHtml(x.t)+'</div>':'')
   +(x.game_id?(g?'<button class="gref" data-a="open" data-v="'+g.id+'">'+ic('pad')+'<span>'+esc(g.title)+'</span></button>':'<div class="gref off">'+ic('pad')+'<span>'+esc(x.game_title||'Jogo')+'</span></div>'):'')+'</div>';
 }
 function roomBox(title,msgs,group){
  var g=S.pgame&&find(S.pgame);
- return '<div class="chat">'+(msgs.length?msgs.map(function(x){return bubble(x,group)}).join(''):'<div class="empty">Nenhuma mensagem ainda. Diga olá.</div>')+'</div>'
+ return '<div class="chatpg"><div class="chat">'+(msgs.length?msgs.map(function(x){return bubble(x,group)}).join(''):'<div class="empty">Nenhuma mensagem ainda. Diga olá.</div>')+'</div>'
   +(S.pimg||g?'<div class="atts">'+(S.pimg?'<span class="att"><img src="'+S.pimg+'" alt="">'+'<button data-a="rmimg" aria-label="Remover imagem">'+ic('x')+'</button></span>':'')+(g?'<span class="att g">'+ic('pad')+esc(g.title)+'<button data-a="rmgame" aria-label="Remover jogo">'+ic('x')+'</button></span>':'')+'</div>':'')
   +'<div class="row cbar" style="gap:6px"><label class="ib" for="chImg" aria-label="Enviar imagem">'+ic('img')+'</label><input type="file" id="chImg" class="vh" accept="image/*"><button class="ib" data-a="pickgame" aria-label="Mencionar um jogo">'+ic('pad')+'</button><input class="in" id="chatIn" placeholder="Escreva uma mensagem" maxlength="300" autocomplete="off" value="'+esc(S.chd||'')+'"><button class="btn sm" data-a="send" style="flex:none" aria-label="Enviar">'+ic('send')+'</button></div>'
-  +(S.gpick?'<div class="panel gpick"><b>'+(S.gpick==='invite'?'Convidar para qual jogo?':'Mencionar qual jogo?')+'</b><div class="chips" style="flex-wrap:wrap;margin-top:8px">'+(all().length?all().slice(0,30).map(function(x){return '<button class="chip" data-a="setgame" data-v="'+x.id+'">'+esc(x.title)+'</button>'}).join(''):'<div class="note">Nenhum jogo publicado para mencionar.</div>')+'</div></div>':'');
+  +(S.gpick?'<div class="panel gpick"><b>'+(S.gpick==='invite'?'Convidar para qual jogo?':'Mencionar qual jogo?')+'</b><div class="chips" style="flex-wrap:wrap;margin-top:8px">'+(all().length?all().slice(0,30).map(function(x){return '<button class="chip" data-a="setgame" data-v="'+x.id+'">'+esc(x.title)+'</button>'}).join(''):'<div class="note">Nenhum jogo publicado para mencionar.</div>')+'</div></div>':'')+'</div>';
 }
 function convRow(c){
  var key=c.type+':'+c.id;
@@ -1983,7 +2060,7 @@ function keepForms(){
  var g=function(i){return document.getElementById(i)},s=S.studio;
  if(g('sTitle'))s.title=g('sTitle').value;if(g('sCode'))s.code=g('sCode').value;if(g('sDesc'))s.desc=g('sDesc').value;
  misKeep();if(g('sVer'))s.ver=g('sVer').value;if(g('sTag'))s.tagIn=g('sTag').value;
- if(g('sCat'))s.cat=g('sCat').value;if(g('sAge'))s.age=g('sAge').value;
+ if(g('sPrice'))s.price=g('sPrice').value;if(g('sCat'))s.cat=g('sCat').value;if(g('sAge'))s.age=g('sAge').value;
  socKeep();if(g('rvText'))S.draft.rev=g('rvText').value;if(g('postText'))S.draft.post=g('postText').value;if(g('postGame'))S.draft.pg=g('postGame').value;
 }
 async function publish(){
@@ -2043,7 +2120,14 @@ function importFile(f){
  r.readAsText(f);
 }
 function pfKeep(){var n=document.getElementById('pfName'),b=document.getElementById('pfBio');if(!S.pf)S.pf=pfInit();if(n)S.pf.name=n.value;if(b)S.pf.bio=b.value}
-function setAvatar(f){
+function playNow(){
+ var best=null,n=0,rel_=released().filter(function(g){return gOwned(g)});
+ rel_.forEach(function(g){var c=+(S.pc||{})[g.id]||0;if(c>n){n=c;best=g}});
+ if(!best)best=rel_.filter(function(g){return !gEarly(g)})[0]||rel_[0];
+ if(!best){toast('Ainda não há jogos para jogar');var l=document.getElementById('lancados');if(l)l.scrollIntoView({behavior:'smooth'});return}
+ act('play',best.id,null);
+}
+function setAvatar(f,quick){
  if(!/^image\//.test(f.type)){toast('Escolha uma imagem (JPG, PNG ou WebP)');return}
  var u=URL.createObjectURL(f),im=new Image();
  im.onload=function(){
@@ -2055,7 +2139,10 @@ function setAvatar(f){
     x.fillStyle='#11152a';x.fillRect(0,0,256,256);x.drawImage(im,(256-w)/2,(256-h)/2,w,h);
     out=c.toDataURL('image/jpeg',q[k]);if(out.length<=60000)break;
    }
-   pfKeep();S.pf.avatar=out;render(true);
+   if(quick){
+    if(on()){api('PATCH','/me',{avatar:out}).then(function(pr){S.user=Object.assign({},S.user,pr.user);save('user');toast('Foto atualizada');render(true)}).catch(function(e){toast(e.message)})}
+    else{S.avatar=out;save('avatar');toast('Foto atualizada');render(true)}
+   }else{pfKeep();S.pf.avatar=out;render(true)}
   }catch(er){toast('Não foi possível usar essa imagem')}
   URL.revokeObjectURL(u);
  };
@@ -2101,6 +2188,10 @@ async function act(a,v,t){
   case 'sttab':S.tab='store';S.sub=null;S.detail=null;S.shop=v;render();if(v!=='games')loadStore();break;
   case 'plans':S.tab='store';S.sub=null;S.detail=null;S.shop='plans';render();loadStore();break;
   case 'buy':buyItem(v);break;
+  case 'buygame':buyGame(v);break;
+  case 'daily':dailyGo();break;
+  case 'cat2':S.cat=v;render(true);break;
+  case 'playnow':playNow();break;
   case 'equip':equipItem(v,t.dataset.id||'');break;
   case 'ustudio':{var us=v.split(':');api('POST','/admin/users/'+us[0]+'/studio',{on:us[1]==='1'}).then(function(){toast(us[1]==='1'?'Studio liberado':'Studio removido');return loadAdmin()}).catch(function(e){toast(e.message)});break}
   case 'sub':if(v==='editprof')S.pf=pfInit();S.sub=v;S.tab=SUBTAB[v]||S.tab;S.detail=null;if(v==='settings')S.confirmReset=false;render();
@@ -2122,7 +2213,8 @@ async function act(a,v,t){
    if(gm&&gm.remote){try{await api(had?'DELETE':'PUT','/'+(a==='add'?'library':'wishlist')+'/'+gm.rid)}catch(e){toast(e.message);return}}
    map[v]=had?0:1;save(key);
    toast(a==='add'?(map[v]?'Adicionado à biblioteca':'Removido da biblioteca'):(map[v]?'Guardado na lista de desejos':'Removido da lista de desejos'));render(true);break;
-  case 'cat':S.cat=v;S.tab='store';S.sub=null;S.detail=null;render();break;
+  case 'cat':S.hcat=v;S.tab='home';S.sub=null;S.detail=null;render();break;
+  case 'hcatx':S.hcat='';render();break;
   case 'dim':S.dim=v;render(true);break;
   case 'dtab':S.dtab=v;render(true);break;
   case 'star':S.stars=+v;render(true);break;
@@ -2339,6 +2431,8 @@ document.addEventListener('change',function(e){
  if(t.id==='sFile'&&t.files[0]){importFile(t.files[0]);t.value=''}
  if(t.id==='sCoverIn'&&t.files[0]){setCover(t.files[0]);t.value=''}
  if(t.id==='pfIn'&&t.files[0]){setAvatar(t.files[0]);t.value=''}
+ if(t.id==='pfQuick'&&t.files[0]){setAvatar(t.files[0],true);t.value=''}
+ if(t.dataset&&t.dataset.early!==undefined){S.studio.early=t.checked?1:0}
  if(t.dataset.lib){S.studio.libs[t.dataset.lib]=t.checked}
  if(t.dataset.ss){S.studio[t.dataset.ss]=t.checked?1:0}
  if(t.id==='xFile'&&t.files[0]){var xf=t.files[0];t.value='';if(xf.size>150000){toast('Arquivo grande demais (máximo 150 KB)');return}var xr=new FileReader();xr.onload=function(){S.studio.ext.push({n:xf.name.slice(0,40),c:String(xr.result)});render(true)};xr.readAsText(xf)}
@@ -2372,7 +2466,11 @@ document.addEventListener('scroll',function(ev){if(ev.target&&ev.target.id==='sC
 document.addEventListener('keydown',function(ev){
  if(ev.target.id==='sCode'&&ev.key==='Tab'){ev.preventDefault();var t=ev.target,s=t.selectionStart;t.value=t.value.slice(0,s)+'  '+t.value.slice(t.selectionEnd);t.selectionStart=t.selectionEnd=s+2;edSync()}
 });
-$('#q').addEventListener('input',function(e){S.q=e.target.value;S.tab='store';S.sub=null;S.detail=null;render(true)});
+function searchOpen(o){var h=document.querySelector('header.top'),b=$('#sbox'),q=$('#q');h.classList.toggle('srch',o);if(o){q.focus()}else{q.value='';if(S.q){S.q='';render(true)}}}
+$('#sbtn').addEventListener('click',function(){searchOpen(true)});
+$('#q').addEventListener('blur',function(){if(!$('#q').value)searchOpen(false)});
+$('#q').addEventListener('keydown',function(e){if(e.key==='Escape')searchOpen(false)});
+$('#q').addEventListener('input',function(e){S.q=e.target.value.trim();S.tab='home';S.sub=null;S.detail=null;render(true)});
 render();
 applyNative();
 setTimeout(applyNative,1200);

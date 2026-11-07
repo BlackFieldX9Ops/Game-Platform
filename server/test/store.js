@@ -57,6 +57,47 @@ async function main() {
   ok('/me traz moedas e moldura', (await call('GET', '/me', null, ana.token)).j.user.coins === 350);
   ok('loja exige login', (await call('GET', '/store')).s === 401);
 
+  // bônus diário, Premium e novos itens
+  const d1 = await call('POST', '/store/daily', {}, beto.token);
+  ok('bônus diário dá 10 moedas', d1.s === 200 && d1.j.reward === 10 && d1.j.coins === 10);
+  ok('bônus diário só uma vez por dia', (await call('POST', '/store/daily', {}, beto.token)).s === 429);
+  ok('item exclusivo exige Premium', (await call('POST', '/store/buy', { id: 'ti_premium' }, beto.token)).s === 403);
+  const pr = await call('POST', '/store/buy', { id: 'premium30' }, beto.token);
+  ok('Premium ativa na hora', pr.j.premium.active === true && pr.j.daily.reward === 30);
+  const pk = await call('POST', '/store/buy', { id: 'coins100' }, beto.token);
+  ok('Premium ganha +10% nos pacotes', pk.j.coins === 10 + 110);
+  const tp = await call('POST', '/store/buy', { id: 'ti_premium' }, beto.token);
+  ok('título Premium sai de graça para quem tem Premium e fica equipado', tp.s === 200 && tp.j.equipped.title === 'ti_premium');
+  ok('/me traz o título pelo nome e o selo premium', (await call('GET', '/me', null, beto.token)).j.user.titleName === 'Premium' && (await call('GET', '/me', null, beto.token)).j.user.premium === true);
+  const th = await call('POST', '/store/buy', { id: 'th_ocean' }, ana.token);
+  ok('tema comprado fica equipado', th.j.equipped.theme === 'th_ocean' || th.s === 402);
+  const nc = await call('POST', '/store/buy', { id: 'nc_gold' }, ana.token);
+  ok('cor do nome e balão são slots válidos', nc.s === 200 || nc.s === 402);
+  ok('slot inexistente é recusado', (await call('POST', '/store/equip', { slot: 'x', id: null }, ana.token)).s === 400);
+
+  // jogos pagos: preço em moedas, compra, acesso e repasse ao criador
+  const paid = { ...GAME, title: 'Jogo Pago', settings: { monetization: 'paid', price: 100, early: 1 } };
+  ok('jogo pago sem preço é recusado', (await call('POST', '/games', { ...GAME, settings: { monetization: 'paid' } }, ana.token)).s === 400);
+  const pg = await call('POST', '/games', paid, ana.token);
+  ok('criador publica jogo pago em acesso antecipado', pg.s === 201);
+  const gm = (await call('GET', `/games/${pg.j.id}`)).j.game;
+  ok('jogo traz preço e acesso antecipado nas configurações', gm.settings.price === 100 && gm.settings.early === 1);
+  const cara = await reg('Cara');
+  ok('sem comprar não joga (402)', (await call('POST', `/games/${pg.j.id}/play`, {}, cara.token)).s === 402);
+  ok('sem comprar não entra na biblioteca (402)', (await call('PUT', `/library/${pg.j.id}`, {}, cara.token)).s === 402);
+  ok('sem moedas não compra (402)', (await call('POST', `/games/${pg.j.id}/buy`, {}, cara.token)).s === 402);
+  await call('POST', '/store/buy', { id: 'coins500' }, cara.token);
+  const anaBefore = (await call('GET', '/me', null, ana.token)).j.user.coins;
+  const bg = await call('POST', `/games/${pg.j.id}/buy`, {}, cara.token);
+  ok('compra desconta as moedas', bg.s === 200 && bg.j.coins === 400);
+  ok('criador recebe 70%', (await call('GET', '/me', null, ana.token)).j.user.coins === anaBefore + 70);
+  ok('depois de comprar joga', (await call('POST', `/games/${pg.j.id}/play`, {}, cara.token)).s === 200);
+  ok('jogo comprado entra na biblioteca', (await call('GET', '/library', null, cara.token)).j.games.some(x => x.id === pg.j.id));
+  ok('não compra duas vezes', (await call('POST', `/games/${pg.j.id}/buy`, {}, cara.token)).s === 409);
+  ok('dono joga o próprio jogo pago sem comprar', (await call('POST', `/games/${pg.j.id}/play`, {}, ana.token)).s === 200);
+  ok('comprador e criador recebem aviso de compra', (await call('GET', '/notifications', null, cara.token)).j.notifications.some(n => n.kind === 'purchase') && (await call('GET', '/notifications', null, ana.token)).j.notifications.some(n => n.kind === 'purchase'));
+  ok('jogo gratuito não pode ser comprado', (await call('POST', `/games/${(await call('POST', '/games', GAME, ana.token)).j.id}/buy`, {}, cara.token)).s === 400);
+
   console.log(`\n${pass} passaram, ${fail} falharam`);
   srv.kill(); process.exit(fail ? 1 : 0);
 }

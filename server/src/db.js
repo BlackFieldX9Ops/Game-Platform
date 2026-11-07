@@ -270,3 +270,10 @@ CREATE TRIGGER IF NOT EXISTS users_uid_ai AFTER INSERT ON users WHEN NEW.uid IS 
   WHERE id = NEW.id;
 END;
 `);
+
+addCol('users', 'title', 'TEXT');
+addCol('users', 'ncolor', 'TEXT');
+addCol('users', 'theme', 'TEXT');
+addCol('users', 'bubble', 'TEXT');
+addCol('users', 'premium_until', 'TEXT');
+addCol('users', 'daily_at', 'TEXT');

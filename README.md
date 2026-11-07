@@ -196,3 +196,12 @@ Sem essas variáveis o botão do Google não aparece e a recuperação de senha 
 - **Loja**: Jogos, Planos (Studio 30 dias e 1 ano), Moedas (pacotes) e Skins (molduras e fundos de perfil, pagos com moedas).
 - **Compras são de teste**: ativam na hora, sem cobrança, até existir um meio de pagamento real (Pix, Google Play etc.).
 - `STUDIO_GATE=off` desliga a exigência de plano e existe só para os testes antigos.
+
+## Jogos pagos, acesso antecipado, Premium e skins
+- **Início** mostra atualizações de jogos, jogos lançados e acesso antecipado (compacto, só jogos). Comunidade, mensagens, grupos e amigos ficam na aba **Chat**.
+- **Loja** vende apenas jogos pagos: o jogador compra o jogo ou compra o **acesso antecipado**. Abas: Jogos, Antecipado, Planos, Moedas, Skins.
+- O criador define `price` (em moedas) e `early` nas configurações do jogo no Studio; ele recebe **70%** de cada venda. Sem comprar, o servidor responde 402 e o jogo não entra na biblioteca.
+- **Plano Premium** (além do Studio): libera skins exclusivas. **Bônus diário** de moedas na Loja.
+- **Skins** em 6 espaços: moldura, fundo do perfil, título, cor do nome, tema do app e balão do chat. Aparecem no próprio perfil e no app do dono.
+- Compras continuam em **modo de teste** (sem cobrança real).
+- Perfil: botão da câmera troca a foto na hora; o banner tem o botão **Skins**; Configuração e Notificação trocaram de lugar; a busca é só um ícone que expande.

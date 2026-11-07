@@ -37,6 +37,7 @@ function open(seed) {
   const toast = () => d.getElementById('toast').textContent;
   return { w, d, $, click, set, text, toast, errs };
 }
+const hub = (W, v) => { W.click('[data-a="go"][data-v="chat"]'); W.click(`[data-a="ctab"][data-v="${v}"]`); };
 async function until(fn, ms = 4000) { const t = Date.now(); while (Date.now() - t < ms) { if (fn()) return true; await wait(60); } return false; }
 async function api(method, url, body, token) {
   const r = await fetch(URL_ + 'api' + url, { method, headers: { 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
@@ -52,12 +53,12 @@ async function main() {
   await wait(1800);
 
   // aba Comunidade
-  A.click('[data-a="ctab"][data-v="feed"]');
-  ok('hub social abre com as 6 abas', await until(() => ['Comunidade','Grupos','Comunidades','Mensagens','Amigos','Avisos'].every(t => A.text().includes(t))));
+  hub(A, 'feed');
+  ok('hub social abre com as 6 abas', await until(() => ['Feed','Grupos','Comunidades','Mensagens','Amigos','Avisos'].every(t => A.text().includes(t))));
   ok('feed vazio no começo', /Ainda não há publicações/.test(A.text()));
   A.set('postText', 'Meu recorde: 9000 pontos, valeu @Beto'); A.click('[data-a="post"]');
   ok('criar publicação', await until(() => /Meu recorde: 9000/.test(A.text())), A.toast());
-  B.click('[data-a="ctab"][data-v="feed"]');
+  hub(B, 'feed');
   ok('outro jogador vê a publicação', await until(() => /Meu recorde: 9000/.test(B.text())));
   ok('menção aparece destacada', !!B.d.querySelector('.mn'));
   B.click('[data-a="follow"]');
@@ -73,18 +74,18 @@ async function main() {
   ok('comentar', await until(() => /Parabéns!/.test(B.text())), B.toast());
 
   // aba Avisos de Ana
-  A.click('[data-a="ctab"][data-v="notif"]');
+  hub(A, 'notif');
   ok('avisos sociais: seguidor, resposta', await until(() => /começou a seguir você/.test(A.text()) && /respondeu sua publicação/.test(A.text())), A.text().slice(0, 200));
 
   // grupo
-  A.click('[data-a="ctab"][data-v="groups"]'); await until(() => A.$('[data-a="cnew"]'));
+  hub(A, 'groups'); await until(() => A.$('[data-a="cnew"]'));
   ok('grupos começam vazios', /Nenhum grupo ainda/.test(A.text()));
   A.click('[data-a="cnew"]'); await until(() => A.$('#cfName'));
   A.set('cfName', 'Esquadrão'); A.set('cfDesc', 'Treino diário'); A.set('cfRules', 'Sem spam'); A.set('cfMem', 'Beto');
   A.click('[data-a="cacc"][data-v="private"]'); await until(() => /Grupo privado/.test(A.text()));
   A.set('cfName', 'Esquadrão'); A.set('cfMem', 'Beto'); A.click('[data-a="csave"]');
   ok('criar grupo privado com membro inicial', await until(() => /Esquadrão/.test(A.text()) && /Privado/.test(A.text()) && A.$('[data-a="sptab"]')), A.toast());
-  B.click('[data-a="ctab"][data-v="groups"]');
+  hub(B, 'groups');
   ok('convidado vê o grupo privado com selo de convite', await until(() => /Convite/.test(B.text()) && /Esquadrão/.test(B.text())));
   B.click('[data-a="spopen"]'); await until(() => B.$('[data-a="spjoin"]'));
   B.click('[data-a="spjoin"]');
@@ -97,13 +98,13 @@ async function main() {
   ok('botão de imagem e jogo no chat', !!B.$('#chImg') && !!B.$('[data-a="pickgame"]'));
   A.click('[data-a="sptab"][data-v="chat"]');
   ok('o outro participante recebe a mensagem', await until(() => /Bora jogar/.test(A.text()) , 5000) || (await (async () => { A.click('[data-a="spopen"]'); return until(() => A.$('#chatIn')); })()));
-  A.click('[data-a="back"]'); A.click('[data-a="ctab"][data-v="msgs"]');
+  A.click('[data-a="back"]'); hub(A, 'msgs');
   ok('lista de conversas traz o grupo com prévia', await until(() => /Esquadrão/.test(A.text()) && /Bora jogar/.test(A.text())), A.text().slice(0, 200));
   A.click('[data-a="convopen"]');
   ok('abrir a conversa do grupo', await until(() => A.$('#chatIn') && /Bora jogar/.test(A.text())));
 
   // comunidade restrita
-  A.click('[data-a="back"]'); A.click('[data-a="ctab"][data-v="comms"]'); await until(() => A.$('[data-a="cnew"]'));
+  A.click('[data-a="back"]'); hub(A, 'comms'); await until(() => A.$('[data-a="cnew"]'));
   A.click('[data-a="cnew"]'); await until(() => A.$('#cfName'));
   A.set('cfName', 'Fãs de corrida'); A.click('[data-a="cacc"][data-v="restricted"]'); await until(() => /Comunidade restrita/.test(A.text()));
   A.set('cfName', 'Fãs de corrida'); A.click('[data-a="csave"]');
@@ -111,33 +112,33 @@ async function main() {
   A.click('[data-a="sptab"][data-v="events"]'); await until(() => A.$('#evT'));
   A.set('evT', 'Campeonato'); A.set('evW', '2030-05-01T20:00'); A.click('[data-a="evadd"]');
   ok('criar evento', await until(() => /Campeonato/.test(A.text()) && /01\/05\/2030/.test(A.text())), A.toast());
-  B.click('[data-a="back"]'); B.click('[data-a="ctab"][data-v="comms"]');
+  B.click('[data-a="back"]'); hub(B, 'comms');
   ok('comunidade aparece para todos', await until(() => /Fãs de corrida/.test(B.text())));
   B.click('[data-a="spopen"]'); await until(() => B.$('[data-a="spjoin"]'));
   B.click('[data-a="spjoin"]');
   ok('pedir para entrar fica pendente', await until(() => /Pedido enviado/.test(B.text())), B.toast());
   A.click('[data-a="sptab"][data-v="members"]');
-  await until(() => A.d.querySelector('[data-a="spappr"]'), 1500) || (A.click('[data-a="back"]'), A.click('[data-a="ctab"][data-v="comms"]'), await until(() => A.$('[data-a="spopen"]')), A.click('[data-a="spopen"]'), await until(() => A.$('[data-a="sptab"]')), A.click('[data-a="sptab"][data-v="members"]'));
+  await until(() => A.d.querySelector('[data-a="spappr"]'), 1500) || (A.click('[data-a="back"]'), hub(A, 'comms'), await until(() => A.$('[data-a="spopen"]')), A.click('[data-a="spopen"]'), await until(() => A.$('[data-a="sptab"]')), A.click('[data-a="sptab"][data-v="members"]'));
   ok('criador vê o pedido e aprova', await until(() => A.d.querySelector('[data-a="spappr"]')));
   A.click('[data-a="spappr"]');
   ok('pedido aprovado', await until(() => !A.d.querySelector('[data-a="spappr"]') && /Membros \(2\)/.test(A.text())), A.toast());
 
   // amigos por ID e DM
-  A.click('[data-a="back"]'); A.click('[data-a="ctab"][data-v="friends"]'); await until(() => A.$('#fName'));
+  A.click('[data-a="back"]'); hub(A, 'friends'); await until(() => A.$('#fName'));
   ok('mostra o ID do usuário', new RegExp('#' + ra.user.uid).test(A.text()));
   A.set('fName', '#' + Number(rb.user.uid)); A.click('[data-a="addfriend"]');
   ok('adicionar amigo por ID', await until(() => /Pedido enviado|Pedidos/.test(A.toast() + A.text())), A.toast());
-  B.click('[data-a="back"]'); B.click('[data-a="ctab"][data-v="friends"]');
+  B.click('[data-a="back"]'); hub(B, 'friends');
   ok('pedido de amizade chega', await until(() => B.$('[data-a="accept"]')), B.text().slice(0,300) + ' | ' + JSON.stringify(B.errs));
   B.click('[data-a="accept"]');
   ok('aceitar amizade', await until(() => B.$('[data-a="chatopen"]') && B.$('[data-a="invgame"]')), B.toast());
-  A.click('[data-a="ctab"][data-v="friends"]'); await until(() => A.$('[data-a="chatopen"]'), 6000) || (await api('GET','/friends',null,ra.token));
-  A.click('[data-a="ctab"][data-v="msgs"]'); A.click('[data-a="ctab"][data-v="friends"]'); await until(() => A.$('[data-a="chatopen"]'));
+  hub(A, 'friends'); await until(() => A.$('[data-a="chatopen"]'), 6000) || (await api('GET','/friends',null,ra.token));
+  hub(A, 'msgs'); hub(A, 'friends'); await until(() => A.$('[data-a="chatopen"]'));
   A.click('[data-a="chatopen"]'); await until(() => A.$('#chatIn'));
   A.set('chatIn', 'Oi Beto'); A.click('[data-a="send"]');
   ok('mensagem direta enviada', await until(() => /Oi Beto/.test(A.text())), A.toast());
   ok('destinatário é avisado em tempo real', await until(() => /Mensagem de Ana/.test(B.toast()) || B.d.querySelector('.social .dot'), 4000));
-  B.click('[data-a="ctab"][data-v="msgs"]');
+  hub(B, 'msgs');
   ok('conversa direta com não lida na lista', await until(() => /Oi Beto/.test(B.text()) && B.d.querySelector('.dot2')), B.text().slice(0, 200));
   B.click('[data-a="convopen"][data-v^="direct"]');
   ok('abrir a DM mostra a mensagem', await until(() => /Oi Beto/.test(B.text())));

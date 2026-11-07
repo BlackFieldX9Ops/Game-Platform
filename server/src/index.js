@@ -12,7 +12,7 @@ import { WebSocketServer } from 'ws';
 import { all, get, run } from './db.js';
 import { mountSocial } from './social.js';
 import { mountAccounts } from './accounts.js';
-import { mountStore, hasStudio, fmtUid } from './store.js';
+import { mountStore, hasStudio, hasPremium, fmtUid, itemName } from './store.js';
 
 const PORT = Number(process.env.PORT || 3000);
 const PROD = process.env.NODE_ENV === 'production';
@@ -44,7 +44,7 @@ function str(v, name, min, max) {
   return t;
 }
 const int = (v, name) => { const n = Number(v); if (!Number.isInteger(n) || n < 1) bad(`${name} inválido`); return n; };
-const publicUser = u => ({ id: u.id, uid: fmtUid(u), name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '', studio: hasStudio(u), coins: u.coins || 0, frame: u.frame || null, banner: u.banner || null });
+const publicUser = u => ({ id: u.id, uid: fmtUid(u), name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '', studio: hasStudio(u), premium: hasPremium(u), coins: u.coins || 0, frame: u.frame || null, banner: u.banner || null, title: u.title || null, titleName: itemName(u.title), ncolor: u.ncolor || null, theme: u.theme || null, bubble: u.bubble || null });
 const sign = u => jwt.sign({ id: u.id }, SECRET, { expiresIn: '30d' });
 
 function userFromToken(token) {
@@ -88,6 +88,9 @@ function loadGame(id, user) {
   if (!g || !(staff || (g.status === 'published' && g.visibility !== 'private'))) bad('Jogo não encontrado', 404);
   return g;
 }
+// Jogo com preço: só dono, administração e quem comprou.
+const priceOf = g => Math.round(Number(parseJ(g.settings, {}).price)) || 0;
+const needsBuy = (g, user) => priceOf(g) > 0 && g.owner_id !== user.id && user.role !== 'admin' && !get('SELECT 1 FROM purchases WHERE user_id = ? AND game_id = ?', user.id, g.id);
 const canEdit = (g, user) => g.owner_id === user.id || user.role === 'admin';
 function gameInput(b) {
   const title = str(b.title, 'Nome', 2, 40);
@@ -115,6 +118,12 @@ function gameInput(b) {
   const st = b.settings && typeof b.settings === 'object' ? b.settings : {};
   const settings = { fullscreen: st.fullscreen === 0 || st.fullscreen === false ? 0 : 1, saveProgress: st.saveProgress ? 1 : 0, monetization: ['free', 'ads', 'paid'].includes(st.monetization) ? st.monetization : 'free',
     controls: (Array.isArray(st.controls) ? st.controls : ['touch', 'keyboard']).filter(c => ['touch', 'keyboard', 'gamepad'].includes(c)), ext: [] };
+  if (settings.monetization === 'paid') {
+    const price = Math.round(Number(st.price));
+    if (!(price >= 1 && price <= 9999)) bad('Jogo pago: informe o preço em moedas (1 a 9999)');
+    settings.price = price;
+  } else settings.price = 0;
+  settings.early = st.early ? 1 : 0;
   let extBytes = 0;
   for (const x of (Array.isArray(st.ext) ? st.ext : []).slice(0, 6)) {
     const n = typeof x?.n === 'string' ? x.n.trim().slice(0, 40) : ''; if (!n) bad('Biblioteca externa sem nome');
@@ -210,6 +219,7 @@ app.get('/api/games/:id/source', auth, wrap((req, res) => {
 app.post('/api/games/:id/play', auth, wrap((req, res) => {
   const g = loadGame(int(req.params.id, 'id'), req.user);
   if (g.status === 'unpublished') bad('Jogo despublicado', 404);
+  if (needsBuy(g, req.user)) bad('Compre o jogo para jogar', 402);
   run('UPDATE games SET plays = plays + 1 WHERE id = ?', g.id);
   run('UPDATE users SET xp = xp + 25 WHERE id = ?', req.user.id);
   res.json({ title: g.title, code: g.code, libs: JSON.parse(g.libs), ext: parseJ(g.settings, {}).ext || [], settings: parseJ(g.settings, {}), xp: req.user.xp + 25 });
@@ -290,6 +300,7 @@ for (const [route, table] of [['library', 'library'], ['wishlist', 'wishlist']])
   });
   app.put(`/api/${route}/:gameId`, auth, wrap((req, res) => {
     const g = loadGame(int(req.params.gameId, 'id'), req.user);
+    if (table === 'library' && needsBuy(g, req.user)) bad('Compre o jogo para colocar na biblioteca', 402);
     run(`INSERT OR IGNORE INTO ${table} (user_id, game_id) VALUES (?,?)`, req.user.id, g.id);
     res.json({ ok: true });
   }));
@@ -443,7 +454,7 @@ app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
 });
 
 /* ---------- contas: Google, recuperar senha, verificar e-mail, progresso ---------- */
-mountStore({ app, auth, wrap, bad, get, all, run, notify, logAct, adminOnly, int });
+mountStore({ app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
 mountAccounts({ app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 
 /* ---------- chat e comunidade ---------- */
