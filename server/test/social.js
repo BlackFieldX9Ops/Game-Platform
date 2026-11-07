@@ -130,6 +130,14 @@ async function main() {
   ok('ler a DM zera as não lidas', (await call('GET', '/conversations', null, B)).j.conversations.find(x => x.type === 'direct').unread === 0);
   ok('convidar amigo para jogo', (await call('POST', `/friends/${bid}/invite-game`, { gameId: gm.j.id }, A)).s === 201 && (await call('GET', '/notifications', null, B)).j.notifications.some(n => n.kind === 'gameinvite'));
   ok('não convida não-amigo', (await call('POST', `/friends/${cid}/invite-game`, { gameId: gm.j.id }, A)).s === 403);
+  // missões do criador
+  const ms = [{ id: 'a1', t: 'Chefão', d: 'Derrote', k: 'plays', goal: 3, xp: 50 }, { id: 'a2', t: 'Segredo', k: 'minutes', goal: 20, xp: 120, secret: 1, req: 4 }];
+  const gm2 = await call('POST', '/games', { title: 'Com missões', category: 'Ação', dim: '2D', code: '<h1>m</h1>', settings: { missions: ms } }, B);
+  const got = (await call('GET', `/games/${gm2.j.id}`, null, B)).j.game.settings.missions;
+  ok('servidor guarda as missões do criador', gm2.s === 201 && got.length === 2 && got[0].t === 'Chefão' && got[1].secret === 1 && got[1].req === 4 && got[1].k === 'minutes');
+  ok('missão com XP fora do limite é recusada', (await call('POST', '/games', { title: 'XP alto', category: 'Ação', dim: '2D', code: '<h1>m</h1>', settings: { missions: [{ t: 'Muito XP', k: 'plays', goal: 1, xp: 9999 }] } }, B)).s === 400);
+  ok('missão sem nome é recusada', (await call('POST', '/games', { title: 'Sem nome', category: 'Ação', dim: '2D', code: '<h1>m</h1>', settings: { missions: [{ t: '', k: 'plays', goal: 1, xp: 20 }] } }, B)).s === 400);
+  ok('no máximo 8 missões', (await call('POST', '/games', { title: 'Muitas', category: 'Ação', dim: '2D', code: '<h1>m</h1>', settings: { missions: Array.from({ length: 12 }, (_, i) => ({ t: 'Missão ' + i, k: 'plays', goal: 1, xp: 10 })) } }, B)).j.id > 0 && (await call('GET', '/my/games', null, B)).j.games.find(g => g.title === 'Muitas').settings.missions.length === 8);
   // validade e exclusão de notificações
   const dbx = new DatabaseSync(path.join(dir, 't.db'));
   const nid = k => Number(dbx.prepare("INSERT INTO notifications (user_id, title, body, kind, created_at) VALUES (?,?,?,?,datetime('now','-30 hours'))").run(aid, 'Velho ' + k, 'x', k).lastInsertRowid);

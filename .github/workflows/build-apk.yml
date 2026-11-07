@@ -57,6 +57,20 @@ jobs:
           M=android/app/src/main/AndroidManifest.xml
           sed -i 's#</manifest>#    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />\n</manifest>#' "$M"
           grep -q UPDATE_PACKAGES_WITHOUT_USER_ACTION "$M" || { echo "Permissão de atualização silenciosa não entrou no manifesto"; exit 1; }
+          # Volta do login com o Google (gameplatform://auth?code=...)
+          python3 - "$M" <<'PY'
+          import sys
+          p = sys.argv[1]; s = open(p).read()
+          flt = '''<intent-filter>
+                      <action android:name="android.intent.action.VIEW" />
+                      <category android:name="android.intent.category.DEFAULT" />
+                      <category android:name="android.intent.category.BROWSABLE" />
+                      <data android:scheme="gameplatform" android:host="auth" />
+                  </intent-filter>'''
+          i = s.index('</intent-filter>') + len('</intent-filter>')
+          open(p, 'w').write(s[:i] + '\n                ' + flt + s[i:])
+          PY
+          grep -q 'android:scheme="gameplatform"' "$M" || { echo "Link de retorno do login não entrou no manifesto"; exit 1; }
           grep -q REQUEST_INSTALL_PACKAGES "$M" || { echo "Permissão de instalação não entrou no manifesto"; exit 1; }
 
       - name: Compilar para o Android 16 (API 36)

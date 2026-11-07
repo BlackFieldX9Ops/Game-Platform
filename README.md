@@ -166,3 +166,24 @@ Sem conta, essas telas pedem login e não mostram nada inventado. No servidor: r
 - **Durante o jogo:** menu compacto com **Sair** e um **cadeado**. Com o cadeado fechado (roxo) a tela fica travada: nem o Sair nem o botão voltar do celular tiram você do jogo. Com ele aberto, os dois saem normalmente. No Android o botão voltar é travado de verdade pelo app (`GPNative.setBackLock`); no navegador, pelo histórico.
 - **Progresso e missões** (Perfil): XP total com barra do nível, histórico por jogo (partidas, tempo e missões feitas) e as missões, que o app gera **para cada jogo** (ex.: "5 corridas em Corrida Neon", "Meia hora de ...", "Jogo favorito"). Você decide quais **aceitar**; as aceitas mostram o progresso e se concluem sozinhas, com o XP ganho. **Missões secretas** (Veterano, Sem pressa) só aparecem depois de cumprir o requisito.
 - O XP das missões é guardado no aparelho; quando o servidor passar a validar partidas, ele poderá ser conferido lá.
+
+## Missões criadas no Studio
+
+Na aba **Missões** do Studio o criador define até 8 missões exclusivas do jogo (nome, descrição, meta em partidas ou minutos, XP de 5 a 500, e missões secretas que só aparecem depois de N partidas). Jogos sem missões próprias continuam com as missões automáticas. O XP das missões é calculado no aparelho; o servidor valida apenas o formato.
+
+## Contas de verdade
+
+- **Google**: fluxo web com callback no servidor. No app, o navegador volta por `gameplatform://auth?code=…` (intent-filter inserido pelo CI) e o app troca o código de uso único (2 min) por um token.
+- **Recuperar senha**: código de 6 dígitos por e-mail, vale 15 minutos, 5 tentativas. Trocar a senha também confirma o e-mail.
+- **Confirmar e-mail**: painel em Configurações enquanto o e-mail não estiver confirmado.
+- **Progresso entre aparelhos**: missões, tempo de jogo, partidas, saves e XP sobem para a conta alguns segundos após cada mudança e são trazidos ao entrar em outro aparelho. No primeiro login vale o lado com mais progresso; depois vale o mais recente.
+
+Variáveis do servidor (produção):
+
+| Variável | Para quê |
+|---|---|
+| `PUBLIC_URL` | endereço público HTTPS do servidor |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | cliente OAuth "Aplicativo da Web"; redirecionamento autorizado `PUBLIC_URL/api/auth/google/callback` |
+| `RESEND_API_KEY`, `MAIL_FROM` | envio de e-mails (resend.com); sem a chave, em desenvolvimento, os e-mails ficam na tabela `dev_outbox` |
+
+Sem essas variáveis o botão do Google não aparece e a recuperação de senha só funciona em desenvolvimento.

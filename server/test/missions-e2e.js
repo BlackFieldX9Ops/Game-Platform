@@ -94,6 +94,27 @@ async function main() {
   await wait(500);
   B.click('[data-a="go"][data-v="profile"]'); B.click('[data-a="sub"][data-v="missions"]');
   ok('missão secreta aparece depois de 10 partidas', await until(() => /Veterano de Corrida Neon/.test(B.text()) && /Secreta/.test(B.text())));
+  // missões do criador: definidas no Studio, valem só para o jogo dele
+  const D = open({ gp_clean: 2 });
+  await wait(500);
+  D.click('[data-a="go"][data-v="studio"]'); D.click('[data-a="stab"][data-v="pub"]');
+  D.set('sTitle', 'Torre Sombria'); D.set('sDesc', 'Suba a torre');
+  D.click('[data-a="ssect"][data-v="mis"]');
+  ok('Studio tem a aba Missões', await until(() => D.$('[data-a="miadd"]')) && /Missões do jogo/.test(D.text()));
+  D.click('[data-a="miadd"]'); D.click('[data-a="miadd"]');
+  const setMi = (i, f, v) => { const e = D.d.querySelector(`[data-mi="${i}:${f}"]`); e.value = v; };
+  setMi(0, 't', 'Derrotar o chefão'); setMi(0, 'd', 'Vença o chefe do andar 3'); setMi(0, 'goal', '2'); setMi(0, 'xp', '70');
+  setMi(1, 't', 'Segredo da torre'); setMi(1, 'k', 'minutes'); setMi(1, 'goal', '10'); setMi(1, 'xp', '90');
+  D.d.querySelector('[data-mi="1:secret"]').checked = true; D.d.querySelector('[data-mi="1:secret"]').dispatchEvent(new D.w.Event('change', { bubbles: true }));
+  ok('missão secreta pede o número de partidas', await until(() => D.d.querySelector('[data-mi="1:req"]')));
+  setMi(1, 'req', '3');
+  D.click('[data-a="ssect"][data-v="code"]'); D.click('[data-a="smode"][data-v="code"]'); D.click('[data-a="tpl"]');
+  D.click('[data-a="spub"]');
+  await wait(600);
+  D.click('[data-a="go"][data-v="profile"]'); D.click('[data-a="sub"][data-v="missions"]');
+  ok('as missões do criador aparecem no lugar das padrão', await until(() => /Derrotar o chefão/.test(D.text()) && /Vença o chefe do andar 3/.test(D.text()) && !/Primeira partida|Meia hora de/.test(D.text())), D.text().slice(0, 300));
+  ok('missão secreta do criador fica escondida até o requisito', !/Segredo da torre/.test(D.text()));
+  ok('XP da missão do criador é o definido por ele', /\+70 XP/.test(D.text()));
   const C = open({ gp_clean: 2 });
   await wait(400);
   C.click('[data-a="go"][data-v="profile"]'); C.click('[data-a="sub"][data-v="missions"]');

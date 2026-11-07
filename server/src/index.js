@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { all, get, run } from './db.js';
 import { mountSocial } from './social.js';
+import { mountAccounts } from './accounts.js';
 
 const PORT = Number(process.env.PORT || 3000);
 const PROD = process.env.NODE_ENV === 'production';
@@ -119,6 +120,18 @@ function gameInput(b) {
     if (typeof x.u === 'string' && x.u) { if (!/^https:\/\/[^\s"'<>]{4,300}$/.test(x.u)) bad('Biblioteca externa: use um endereço https'); settings.ext.push({ n, u: x.u }); }
     else if (typeof x.c === 'string' && x.c) { extBytes += x.c.length; if (extBytes > 300_000) bad('Bibliotecas externas passam de 300 KB'); settings.ext.push({ n, c: x.c }); }
   }
+  // Missões do criador: exclusivas deste jogo (o app só gera as padrão quando não há nenhuma).
+  settings.missions = [];
+  for (const [i, x] of (Array.isArray(st.missions) ? st.missions : []).slice(0, 8).entries()) {
+    const t = typeof x?.t === 'string' ? x.t.trim().slice(0, 40) : ''; if (t.length < 3) bad('Missão ' + (i + 1) + ': dê um nome com pelo menos 3 letras');
+    const k = ['plays', 'minutes'].includes(x.k) ? x.k : 'plays';
+    const goal = Math.round(Number(x.goal)); if (!(goal >= 1 && goal <= (k === 'plays' ? 9999 : 6000))) bad('Missão ' + (i + 1) + ': meta inválida');
+    const xp = Math.round(Number(x.xp)); if (!(xp >= 5 && xp <= 500)) bad('Missão ' + (i + 1) + ': o XP vai de 5 a 500');
+    const m = { id: /^[a-z0-9]{1,8}$/.test(x.id) ? x.id : 'm' + (i + 1), t, d: typeof x.d === 'string' ? x.d.trim().slice(0, 120) : '', k, goal, xp };
+    if (x.secret) { m.secret = 1; m.req = Math.min(999, Math.max(1, Math.round(Number(x.req)) || 5)); }
+    if (settings.missions.some(o => o.id === m.id)) m.id = 'm' + (i + 1) + 'x';
+    settings.missions.push(m);
+  }
   return { title, description, category: b.category, age, dim: b.dim, libs: JSON.stringify([...new Set(libs)]), code: b.code, cover, orientation, tags: JSON.stringify(tags), version, visibility, settings: JSON.stringify(settings), ai: b.ai ? 1 : 0 };
 }
 
@@ -148,7 +161,7 @@ app.post('/api/auth/login', authLimiter, wrap((req, res) => {
   if (u.status !== 'active') bad('Conta suspensa', 403);
   res.json({ token: sign(u), user: publicUser(u) });
 }));
-app.get('/api/me', auth, (req, res) => res.json({ user: { ...publicUser(req.user), email: req.user.email } }));
+app.get('/api/me', auth, (req, res) => res.json({ user: { ...publicUser(req.user), email: req.user.email, emailVerified: !!req.user.email_verified, google: !!req.user.google_id } }));
 app.patch('/api/me', auth, wrap((req, res) => {
   const b = req.body || {}, cur = req.user;
   let name = cur.name, bio = cur.bio || '', avatar = cur.avatar || null;
@@ -426,6 +439,9 @@ app.post('/api/admin/games/:id/feature', auth, adminOnly, wrap((req, res) => {
 app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
   res.json({ logs: all('SELECT id, actor, action, detail, created_at FROM logs ORDER BY id DESC LIMIT 60') });
 });
+
+/* ---------- contas: Google, recuperar senha, verificar e-mail, progresso ---------- */
+mountAccounts({ app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 
 /* ---------- chat e comunidade ---------- */
 mountSocial({ app, auth, softAuth, wrap, bad, str, int, get, all, run, areFriends, pushTo, isOnline, publicUser, loadGame, COVER_RE, userFromToken, categories });

@@ -500,6 +500,13 @@ button.card:active{transform:scale(.985);border-color:var(--accent)}
 .mprog span{flex:none;white-space:nowrap}
 .mfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
 .mfoot .badge svg{width:12px;height:12px;margin-right:4px}
+
+/* ---------- missões do criador (Studio) ---------- */
+.mform{background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
+.mgrid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;margin-top:8px}
+.mgrid label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:700;color:var(--muted);min-width:0}
+.mgrid .in{min-width:0}
+@media (max-width:360px){.mgrid{grid-template-columns:1fr 1fr}}
 </style>
 
 </head>
@@ -574,7 +581,7 @@ var CATS=[['Aventura','map'],['RPG','sword'],['Corrida','flag'],['Ação','bolt'
  localStorage.setItem('gp_clean','2');
 }catch(e){}})();
 function ld(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
-function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}if(typeof SYNCK!=='undefined'&&SYNCK[k])syncSoon()}
 function rmk(k){try{localStorage.removeItem(k)}catch(e){}}
 function D(x){return JSON.parse(JSON.stringify(x))}
 Object.assign(P,{
@@ -770,6 +777,7 @@ function mapNotif(n){return{id:'n'+n.id,t:n.title,d:n.body,a:rel(n.created_at),k
 function libsMap(a){var o={};(a||[]).forEach(function(k){o[k]=true});return o}
 async function refreshAll(){
  if(!on())return;
+ syncPull();
  try{
   var r=await Promise.all([api('GET','/games?limit=60'),api('GET','/my/games'),api('GET','/library'),api('GET','/wishlist'),api('GET','/posts?filter='+S.cf),api('GET','/friends'),api('GET','/notifications'),api('GET','/me'),api('GET','/categories')]);
   var seen={},list=[];r[0].games.concat(r[1].games,r[2].games).forEach(function(g){if(!seen[g.id]){seen[g.id]=1;list.push(mapGame(g))}});
@@ -817,7 +825,7 @@ function onRoom(e){
 function logout(silent){
  closeWs();S.token='';S.user=null;S.rgames=[];S.rposts=[];S.rfriends=[];S.rupd=[];S.rvc={};S.rmsgs={};S.rstats=null;S.radmin=null;S.rconv=[];S.cun=0;S.rooms={};S.spc=null;S.room=null;S.rsp={group:[],community:[]};
  [S.lib,S.wish].forEach(function(o){Object.keys(o).forEach(function(k){if(k[0]==='r')delete o[k]})});
- rmk('gp_token');rmk('gp_user');
+ rmk('gp_token');rmk('gp_user');rmk('gp_syncts');S.vf=null;S.fg=null;
  if(S.sub==='chat'||S.sub==='admin'||S.sub==='space'||S.sub==='cform'){S.sub=null}
  if(!silent)toast('Você saiu da conta');
  render();
@@ -942,12 +950,12 @@ function draftsHtml(){
  return '<div class="sec"><h2>Rascunhos</h2><span class="note" style="margin:0">'+S.drafts.length+'</span></div><div class="list">'+S.drafts.map(function(d){
   return '<div class="draft"><div class="body"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.title||'Sem nome')+'</b><div class="note" style="margin:2px 0 0">'+d.dim+' · '+fmtSize(d.code.length)+' · há '+(rel(d.at)||'pouco')+'</div></div><button class="btn ghost sm" data-a="draftopen" data-v="'+d.id+'">Continuar</button><button class="del" data-a="draftdel" data-v="'+d.id+'">Excluir</button></div>'}).join('')+'</div>';
 }
-function newStudio(){return{ori:'auto',title:'',dim:'2D',mode:'file',code:'',libs:{},desc:'',cat:catNames()[0]||'Ação',age:'Livre',editId:null,editRid:null,cover:'',src:null,zip:'',draftId:null,sect:'info',tags:[],tagIn:'',ver:'1.0.0',vis:'public',fs:1,ctl:{touch:1,keyboard:1},save:0,mon:'free',ext:[],ai:0,prev:0,fromAdmin:0,ownerName:''}}
+function newStudio(){return{ori:'auto',title:'',dim:'2D',mode:'file',code:'',libs:{},desc:'',cat:catNames()[0]||'Ação',age:'Livre',editId:null,editRid:null,cover:'',src:null,zip:'',draftId:null,sect:'info',tags:[],tagIn:'',ver:'1.0.0',vis:'public',fs:1,ctl:{touch:1,keyboard:1},save:0,mon:'free',ext:[],mis:[],ai:0,prev:0,fromAdmin:0,ownerName:''}}
 function studioFrom(g,code,libs){
  var c=g.cfg||{},ctl={};(c.controls||['touch','keyboard']).forEach(function(k){ctl[k]=1});
- return{ori:g.ori||'auto',title:g.title,dim:g.dim,mode:'code',code:code,libs:JSON.parse(JSON.stringify(libs||{})),desc:g.desc||'',cat:g.cat||'Ação',age:g.age||'Livre',editId:g.id,editRid:g.rid||null,cover:g.cover||'',src:null,zip:'',draftId:null,sect:'info',tags:(g.tags||[]).slice(),tagIn:'',ver:g.ver||'1.0.0',vis:g.vis||'public',fs:c.fullscreen===0?0:1,ctl:ctl,save:c.saveProgress?1:0,mon:c.monetization||'free',ext:(c.ext||[]).slice(),ai:g.ai?1:0,prev:0,fromAdmin:0,ownerName:''};
+ return{ori:g.ori||'auto',title:g.title,dim:g.dim,mode:'code',code:code,libs:JSON.parse(JSON.stringify(libs||{})),desc:g.desc||'',cat:g.cat||'Ação',age:g.age||'Livre',editId:g.id,editRid:g.rid||null,cover:g.cover||'',src:null,zip:'',draftId:null,sect:'info',tags:(g.tags||[]).slice(),tagIn:'',ver:g.ver||'1.0.0',vis:g.vis||'public',fs:c.fullscreen===0?0:1,ctl:ctl,save:c.saveProgress?1:0,mon:c.monetization||'free',ext:(c.ext||[]).slice(),mis:JSON.parse(JSON.stringify(c.missions||[])),ai:g.ai?1:0,prev:0,fromAdmin:0,ownerName:''};
 }
-function settingsOf(s){return{fullscreen:s.fs?1:0,controls:Object.keys(s.ctl||{}).filter(function(k){return s.ctl[k]}),saveProgress:s.save?1:0,monetization:s.mon||'free',ext:(s.ext||[]).slice()}}
+function settingsOf(s){return{fullscreen:s.fs?1:0,controls:Object.keys(s.ctl||{}).filter(function(k){return s.ctl[k]}),saveProgress:s.save?1:0,monetization:s.mon||'free',ext:(s.ext||[]).slice(),missions:(s.mis||[]).map(function(m,i){var o={id:m.id||'m'+(i+1),t:String(m.t||'').trim(),d:String(m.d||'').trim(),k:m.k==='minutes'?'minutes':'plays',goal:Math.round(Number(m.goal))||1,xp:Math.round(Number(m.xp))||20};if(m.secret){o.secret=1;o.req=Math.round(Number(m.req))||5}return o})}}
 function bumpVer(v){var m=/^(\d+)\.(\d+)\.(\d+)$/.exec(v||'');return m?m[1]+'.'+m[2]+'.'+(+m[3]+1):v}
 function hl(src){
  var e=src.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -978,7 +986,7 @@ function publish_form(){
  var big=s.code.length>3e5,lines=big?0:lineCount(s.code),sec=s.sect||'info';
  var warn=on()?'':'<div class="warnbar">'+ic('alert')+'<div><b>Modo offline</b>Seus jogos ficam só neste aparelho. Entre para publicar na Loja.</div><button class="btn sm" data-a="sub" data-v="auth">Entrar</button></div>';
  var edit=s.editId?'<div class="editbar">'+ic('edit')+'<span>'+(s.fromAdmin?'Editando como administrador'+(s.ownerName?' o jogo de '+esc(s.ownerName):'')+'. ':'Editando um jogo publicado. ')+'Ao salvar, a versão atual é substituída.</span></div>':(s.fromAdmin?'<div class="editbar">'+ic('shield')+'<span>Novo jogo criado como administrador.</span></div>':'');
- var tabs=[['info','Informações','tag'],['code','Código','code'],['libs','Bibliotecas','cube'],['adv','Avançado','cog']];
+ var tabs=[['info','Informações','tag'],['code','Código','code'],['libs','Bibliotecas','cube'],['mis','Missões','star'],['adv','Avançado','cog']];
  var tb='<div class="tabs stabs">'+tabs.map(function(t){return '<button data-a="ssect" data-v="'+t[0]+'" aria-pressed="'+(sec===t[0])+'">'+ic(t[2])+t[1]+'</button>'}).join('')+'</div>';
  var body='';
  if(sec==='info'){
@@ -1009,6 +1017,8 @@ function publish_form(){
   }
   body='<div class="sc"><h3><i>'+ic('code')+'</i>Origem do código</h3><div class="seg" style="margin-bottom:12px"><button data-a="smode" data-v="file" aria-pressed="'+(s.mode==='file')+'">Enviar arquivo</button><button data-a="smode" data-v="code" aria-pressed="'+(s.mode==='code')+'">Colar código</button><button data-a="tplmode">Modelo</button></div>'+cb
    +'<p class="note">Roda tudo que o navegador executa: HTML, CSS, JavaScript, WebGL, Canvas e WebAssembly. Jogos de Unity, Godot ou Emscripten entram depois de exportados para a web (envie o ZIP).</p></div>';
+ }else if(sec==='mis'){
+  body=misForm(s);
  }else if(sec==='libs'){
   body='<div class="sc"><h3><i>'+ic('cube')+'</i>Bibliotecas<small>opcional</small></h3><div class="lchips">'+LIBS.map(function(l){return '<button class="lchip" data-a="lib" data-v="'+l[0]+'" aria-pressed="'+!!s.libs[l[0]]+'"><i>'+ic('check')+'</i>'+l[1]+'</button>'}).join('')+'</div><p class="note">O app carrega a biblioteca marcada. Se o seu HTML já traz a dele, deixe desmarcado.</p></div>'
    +'<div class="sc"><h3><i>'+ic('link')+'</i>Bibliotecas externas<small>URL ou arquivo</small></h3>'
@@ -1087,7 +1097,67 @@ function wish(){
 }
 var NHINT='<p class="note" style="text-align:center">Deslize para a esquerda para apagar. Avisos comuns somem sozinhos depois de 24 h; os importantes ficam até você apagar.</p>';
 function upd(){return subhead('Notificações')+'<div class="list">'+(updList().map(function(u){return isSoc(u)?notifRow(u):updRow(u)}).join('')||'<div class="empty">Nenhuma notificação.</div>')+'</div>'+(updList().length?NHINT:'')}
+
+/* ---------- contas: Google, recuperar senha, verificar e-mail, progresso entre aparelhos ---------- */
+var SYNCK={gp_mis:1,gp_tm:1,gp_pc:1,gp_saves:1,gp_xp:1,gp_plays:1};
+var syncT=0;
+window.gpSyncNow=function(){return syncPush()};
+function syncSoon(){if(!S||!S.token)return;clearTimeout(syncT);syncT=setTimeout(syncPush,4000)}
+function progLocal(){var o={};Object.keys(SYNCK).forEach(function(k){var v=localStorage.getItem(k);if(v!==null)o[k]=v});return o}
+function progScore(o){var n=0;try{n+=(+JSON.parse(o.gp_xp||'0')||0)+(+JSON.parse(o.gp_plays||'0')||0)}catch(e){}try{n+=Object.keys(JSON.parse(o.gp_pc||'{}')).length}catch(e){}return n}
+async function syncPush(){
+ if(!on())return;
+ try{var r=await api('PUT','/me/progress',{data:progLocal()});if(r&&r.updated_at)sv('gp_syncts',r.updated_at)}catch(e){}
+}
+async function syncPull(){
+ if(!on())return;
+ try{
+  var r=await api('GET','/me/progress'),ts=ld('gp_syncts','');
+  if(!r.data){await syncPush();return}
+  var loc=progLocal(),useServer=ts?r.updated_at>ts:progScore(r.data)>=progScore(loc);
+  if(useServer){
+   var diff=Object.keys(r.data).some(function(k){return SYNCK[k]&&localStorage.getItem(k)!==r.data[k]});
+   sv('gp_syncts',r.updated_at);
+   if(diff){Object.keys(r.data).forEach(function(k){if(SYNCK[k])try{localStorage.setItem(k,r.data[k])}catch(e){}});toast('Progresso trazido da sua conta');setTimeout(function(){location.reload()},600)}
+  }else await syncPush();
+ }catch(e){}
+}
+async function loadAuthCfg(){
+ S.acfg=S.acfg||{google:false,mail:false};
+ try{var c=await api('GET','/auth/config');S.acfg=c;if(S.sub==='auth'||S.sub==='settings')render(true)}catch(e){}
+}
+function googleGo(){
+ var u=base()+'/api/auth/google/start'+(native()?'?app=1':'');
+ if(native()&&window.GPNative.openUrl){openUrl(u)}else{location.href=u}
+}
+async function authCode(code){
+ try{await probe();var r=await api('POST','/auth/exchange',{code:code});await enter(r);toast('Você entrou com o Google')}
+ catch(e){toast(e.message)}
+}
+window.GPAuth=function(c){if(c)authCode(String(c))};
+function authBoot(){
+ var m=/[#&]gpcode=([a-f0-9]+)/.exec(location.hash||'');
+ if(m){try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}authCode(m[1]);return}
+ if(native()&&window.GPNative.takeAuth){try{var c=window.GPNative.takeAuth();if(c)authCode(c)}catch(e){}}
+}
+function forgotView(){
+ var f=S.fg||{step:0,email:''};
+ return subhead('Recuperar senha')
+ +(f.step===0
+  ?'<p class="note" style="margin-top:0">Informe o e-mail da conta. Enviaremos um código de 6 dígitos.</p><label class="f" for="fMail">E-mail</label><input class="in" id="fMail" type="email" autocomplete="email" autocapitalize="off" value="'+esc(f.email)+'"><button class="btn full" style="margin-top:16px" data-a="fsend">Enviar código</button>'
+  :'<p class="note" style="margin-top:0">Se existir uma conta com <b>'+esc(f.email)+'</b>, o código chegou por e-mail. Ele vale 15 minutos.</p><label class="f" for="fCode">Código</label><input class="in" id="fCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"><label class="f" for="fPass">Nova senha</label><input class="in" id="fPass" type="password" autocomplete="new-password" placeholder="Mínimo de 8 caracteres"><button class="btn full" style="margin-top:16px" data-a="freset">Trocar senha e entrar</button><button class="btn ghost full" style="margin-top:8px" data-a="fback">Usar outro e-mail</button>')
+ +'<button class="btn ghost full" style="margin-top:8px" data-a="authtab" data-v="login">Voltar para entrar</button>'
+}
+function verifyPanel(){
+ if(!on()||S.user.emailVerified!==false)return '';
+ var v=S.vf||{};
+ return '<div class="panel" style="margin-top:14px"><b>Confirme seu e-mail</b><div class="note">'+(v.sent?'Digite o código de 6 dígitos enviado para '+esc(S.user.email||'o seu e-mail')+'.':'Sua conta ainda não tem o e-mail confirmado. Ele é usado para recuperar a senha.')+'</div>'
+  +(v.sent?'<input class="in" id="vCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000" style="margin-top:8px"><div class="dev" style="margin-top:10px"><button class="btn ghost sm" data-a="vsend">Reenviar</button><button class="btn sm" data-a="vgo">Confirmar</button></div>'
+   :'<button class="btn sm" style="margin-top:8px" data-a="vsend">Enviar código</button>')+'</div>'
+}
 function authView(){
+ if(S.authTab==='forgot')return forgotView();
+ if(S.acfg===undefined)loadAuthCfg();
  var reg=S.authTab==='reg';
  return subhead(reg?'Criar conta':'Entrar')
  +(S.srvOk?'':'<div class="panel" style="margin-bottom:12px"><b>Servidor não encontrado</b><div class="note">Informe o endereço do servidor nas configurações para entrar.</div><button class="btn sm" style="margin-top:8px" data-a="sub" data-v="settings">Abrir configurações</button></div>')
@@ -1096,6 +1166,8 @@ function authView(){
  +'<label class="f" for="aMail">E-mail</label><input class="in" id="aMail" type="email" autocomplete="email" autocapitalize="off">'
  +'<label class="f" for="aPass">Senha</label><input class="in" id="aPass" type="password" autocomplete="'+(reg?'new-password':'current-password')+'" placeholder="Mínimo de 8 caracteres">'
  +'<button class="btn full" style="margin-top:16px" data-a="authgo">'+(reg?'Criar conta':'Entrar')+'</button>'
+ +(reg?'':'<button class="btn ghost full" style="margin-top:8px" data-a="authtab" data-v="forgot">Esqueci minha senha</button>')
+ +(S.acfg&&S.acfg.google?'<div class="note" style="text-align:center;margin:14px 0 6px">ou</div><button class="btn ghost full" data-a="ggo">Continuar com o Google</button>':'')
  +'<p class="note">Os jogos e listas salvos neste aparelho continuam aqui, no modo offline.</p>'
 }
 function settings(){
@@ -1103,7 +1175,7 @@ function settings(){
  +'<div class="panel" style="margin-top:4px"><div class="f" style="margin-top:0;font-weight:700">Conta e servidor</div>'
  +'<label class="f" for="srvUrl" style="margin-top:8px">Endereço do servidor</label><input class="in" id="srvUrl" value="'+esc(S.server)+'" placeholder="https://seu-servidor.com (vazio usa este site)" autocapitalize="off" autocomplete="off" inputmode="url">'
  +'<div class="row" style="margin-top:10px"><span class="note" style="margin:0"><span class="sd '+(S.srvOk?'on':'')+'"></span> '+(S.srvOk?'Servidor conectado':'Sem conexão')+'</span><button class="btn ghost sm" data-a="srvsave">Salvar e testar</button></div>'
- +(on()?'<div class="row" style="margin-top:14px"><span>Conectado como <b>'+esc(S.user.name)+'</b></span><button class="btn ghost sm" data-a="logout">Sair</button></div>':'<button class="btn sm" style="margin-top:14px" data-a="sub" data-v="auth">Entrar ou criar conta</button>')+'</div>'
+ +(on()?'<div class="row" style="margin-top:14px"><span>Conectado como <b>'+esc(S.user.name)+'</b></span><button class="btn ghost sm" data-a="logout">Sair</button></div>':'<button class="btn sm" style="margin-top:14px" data-a="sub" data-v="auth">Entrar ou criar conta</button>')+'</div>'+verifyPanel()
  +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação nos jogos</div><div class="seg">'+[['auto','O jogo decide'],['portrait','Sempre em pé'],['landscape','Sempre deitado']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">Fora dos jogos o app fica sempre em pé. Ao abrir um jogo, ele gira sozinho para a posição que o jogo pede (retrato ou paisagem). '+(native()?'Recursos do Android ativos.':'Neste navegador a rotação depende do aparelho.')+'</p></div>'
  +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (local)','admin'))+'</div>'+admBox()
  +updBanner()+updPanel()
@@ -1213,6 +1285,31 @@ function spark(){
  x.fillStyle='#fff';pts.forEach(function(p){x.globalAlpha=.35+p[2]/3;x.beginPath();x.arc(p[0],p[1],p[2],0,7);x.fill()});
 }
 
+
+/* ----- missões do criador (aba do Studio) ----- */
+function misForm(s){
+ var l=s.mis||[];
+ return '<div class="sc"><h3><i>'+ic('star')+'</i>Missões do jogo<small>'+l.length+'/8</small></h3><p class="note" style="margin-top:0">Missões exclusivas deste jogo. Quem joga escolhe aceitar e ganha o XP ao cumprir a meta. Sem nenhuma missão sua, o app gera missões padrão.</p>'
+  +(l.length?l.map(function(m,i){
+   return '<div class="mform"><div class="row" style="gap:8px"><input class="in" data-mi="'+i+':t" maxlength="40" placeholder="Nome da missão" value="'+esc(m.t||'')+'"><button class="ib sm" data-a="midel" data-v="'+i+'" aria-label="Remover missão">'+ic('trash')+'</button></div>'
+   +'<input class="in" data-mi="'+i+':d" maxlength="120" placeholder="Descrição (opcional)" value="'+esc(m.d||'')+'" style="margin-top:8px">'
+   +'<div class="mgrid"><label>Tipo<select class="in" data-mi="'+i+':k"><option value="plays"'+(m.k!=='minutes'?' selected':'')+'>Partidas</option><option value="minutes"'+(m.k==='minutes'?' selected':'')+'>Minutos jogados</option></select></label>'
+   +'<label>Meta<input class="in" type="number" min="1" max="9999" inputmode="numeric" data-mi="'+i+':goal" value="'+esc(m.goal||'')+'"></label>'
+   +'<label>XP<input class="in" type="number" min="5" max="500" inputmode="numeric" data-mi="'+i+':xp" value="'+esc(m.xp||'')+'"></label></div>'
+   +'<label class="tg" style="margin-top:8px"><span>Missão secreta</span><input type="checkbox" data-mi="'+i+':secret"'+(m.secret?' checked':'')+'></label>'
+   +(m.secret?'<label class="f" style="margin-top:6px">Aparece depois de quantas partidas?</label><input class="in" type="number" min="1" max="999" inputmode="numeric" data-mi="'+i+':req" value="'+esc(m.req||5)+'">':'')
+   +'</div>'}).join(''):'<div class="empty" style="margin:10px 0">Nenhuma missão sua ainda.</div>')
+  +(l.length<8?'<button class="btn ghost full" data-a="miadd" style="margin-top:10px">'+ic('plus')+'Adicionar missão</button>':'')+'</div>';
+}
+function misKeep(){
+ var s=S.studio;if(!s||!s.mis)return;
+ document.querySelectorAll('[data-mi]').forEach(function(e){
+  var p=e.dataset.mi.split(':'),m=s.mis[+p[0]];if(!m)return;
+  if(p[1]==='secret')m.secret=e.checked?1:0;
+  else if(p[1]==='goal'||p[1]==='xp'||p[1]==='req')m[p[1]]=e.value===''?'':Number(e.value);
+  else m[p[1]]=e.value;
+ });
+}
 
 /* ---------- chat e comunidade ---------- */
 P.img='<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/>';
@@ -1436,6 +1533,11 @@ function mSecs(g){return S.tm[g.id]||0}
 function fmtDur(s){var m=Math.round(s/60);return m<60?m+' min':Math.floor(m/60)+' h '+('0'+(m%60)).slice(-2)+' min'}
 // Missões geradas para o jogo: cada uma só existe para ele.
 function missionsFor(g){
+ var cm=g.cfg&&g.cfg.missions;
+ if(cm&&cm.length)return cm.map(function(m){
+  var secs=m.k==='minutes';
+  return {id:g.id+'|'+m.id,g:g.id,k:secs?'secs':'plays',goal:secs?m.goal*60:m.goal,xp:m.xp,t:m.t,d:m.d||(secs?'Jogue '+m.goal+' minutos.':'Complete '+m.goal+' partida'+(m.goal===1?'':'s')+'.'),hid:m.secret?1:0,own:1,req:function(g){return mPlays(g)>=(m.req||5)}};
+ });
  var nn=MNOUN[g.cat||g.genre]||['partida','partidas'],id=g.id,t=g.title;
  return [
   {id:id+'|p1',g:id,k:'plays',goal:1,xp:20,t:'Primeira '+nn[0],d:'Jogue '+t+' pela primeira vez.'},
@@ -1612,7 +1714,7 @@ async function sendMsg(){
  }catch(e){toast(e.message);return}
  S.pimg='';S.pgame='';S.gpick=false;S.chd='';render(true);var n=document.getElementById('chatIn');if(n)n.focus();view.scrollTop=view.scrollHeight;loadConvs();
 }
-var SOCA={nrm:1,sub:1,ctab:1,back:1,cfilter:1,follow:1,post:1,like:1,delpost:1,cmt:1,cmsend:1,delcm:1,spsearch:1,spopen:1,sptab:1,spjoin:1,spdecline:1,spleave:1,spdel:1,spdelno:1,spinv:1,spinvgo:1,spappr:1,spkick:1,evadd:1,evdel:1,cnew:1,cacc:1,csave:1,convopen:1,chatopen:1,invgame:1,pickgame:1,setgame:1,rmimg:1,rmgame:1,addfriend:1};
+var SOCA={miadd:1,midel:1,nrm:1,sub:1,ctab:1,back:1,cfilter:1,follow:1,post:1,like:1,delpost:1,cmt:1,cmsend:1,delcm:1,spsearch:1,spopen:1,sptab:1,spjoin:1,spdecline:1,spleave:1,spdel:1,spdelno:1,spinv:1,spinvgo:1,spappr:1,spkick:1,evadd:1,evdel:1,cnew:1,cacc:1,csave:1,convopen:1,chatopen:1,invgame:1,pickgame:1,setgame:1,rmimg:1,rmgame:1,addfriend:1};
 function socHandles(a,v){
  if(!SOCA[a])return false;
  if(a==='sub')return v==='friends'||v==='community';
@@ -1627,6 +1729,8 @@ async function socAct(a,v,t){
   case 'sub':
    if(v==='friends'||v==='community'){S.ctab=v==='friends'?'friends':'feed';S.sub='community';S.tab='home';S.detail=null;render();socLoad();return true}
    return false;
+  case 'miadd':S.studio.mis=S.studio.mis||[];if(S.studio.mis.length<8)S.studio.mis.push({id:'m'+Date.now().toString(36).slice(-6),t:'',d:'',k:'plays',goal:3,xp:30});render(true);return true;
+  case 'midel':S.studio.mis.splice(+v,1);render(true);return true;
   case 'nrm':
    var lo=S.upd.filter(function(x){return x.id===v})[0];
    if(lo){S.upd=S.upd.filter(function(x){return x.id!==v});save('upd')}
@@ -1722,6 +1826,7 @@ function socLoad(){
 }
 document.addEventListener('change',function(e){
  var t=e.target;
+ if(t.dataset&&t.dataset.mi&&/:secret$/.test(t.dataset.mi)){misKeep();render(true)}
  if(t.id==='cfIn'&&t.files[0]){setCformCover(t.files[0]);t.value=''}
  if(t.id==='chImg'&&t.files[0]){var f=t.files[0];t.value='';socKeep();shrinkImg(f,900,900,[[1,.75],[.7,.65],[.5,.55]],250000,function(o){S.pimg=o;render(true)})}
 });
@@ -1756,7 +1861,7 @@ document.addEventListener('keydown',function(e){
 function keepForms(){
  var g=function(i){return document.getElementById(i)},s=S.studio;
  if(g('sTitle'))s.title=g('sTitle').value;if(g('sCode'))s.code=g('sCode').value;if(g('sDesc'))s.desc=g('sDesc').value;
- if(g('sVer'))s.ver=g('sVer').value;if(g('sTag'))s.tagIn=g('sTag').value;
+ misKeep();if(g('sVer'))s.ver=g('sVer').value;if(g('sTag'))s.tagIn=g('sTag').value;
  if(g('sCat'))s.cat=g('sCat').value;if(g('sAge'))s.age=g('sAge').value;
  socKeep();if(g('rvText'))S.draft.rev=g('rvText').value;if(g('postText'))S.draft.post=g('postText').value;if(g('postGame'))S.draft.pg=g('postGame').value;
 }
@@ -2073,6 +2178,15 @@ async function act(a,v,t){
   case 'authtab':S.authTab=v;render(true);break;
   case 'authgo':await authGo();break;
   case 'logout':logout();break;
+  case 'ggo':googleGo();break;
+  case 'fsend':{var fe=((document.getElementById('fMail')||{}).value||'').trim();if(!fe){toast('Informe o e-mail');break}
+   probe().then(function(){return api('POST','/auth/forgot',{email:fe})}).then(function(){S.fg={step:1,email:fe};render(true)}).catch(function(e){toast(e.message)});break}
+  case 'fback':S.fg={step:0,email:(S.fg||{}).email||''};render(true);break;
+  case 'freset':{var fc=((document.getElementById('fCode')||{}).value||'').trim(),fp=(document.getElementById('fPass')||{}).value||'';if(!fc||!fp){toast('Preencha o código e a nova senha');break}
+   api('POST','/auth/reset',{email:(S.fg||{}).email,code:fc,password:fp}).then(function(r){S.fg=null;return enter(r)}).then(function(){toast('Senha trocada. Você entrou.')}).catch(function(e){toast(e.message)});break}
+  case 'vsend':api('POST','/auth/verify/send',{}).then(function(r){if(r.already){S.user.emailVerified=true;sv('gp_user',S.user)}else{S.vf={sent:1};toast('Código enviado para o seu e-mail')}render(true)}).catch(function(e){toast(e.message)});break;
+  case 'vgo':{var vc=((document.getElementById('vCode')||{}).value||'').trim();if(!vc){toast('Digite o código');break}
+   api('POST','/auth/verify',{code:vc}).then(function(){S.user.emailVerified=true;S.vf=null;sv('gp_user',S.user);toast('E-mail confirmado');render(true)}).catch(function(e){toast(e.message)});break}
   case 'srvsave':
    var su=document.getElementById('srvUrl');S.server=su?su.value.trim():S.server;
    if(S.server&&!/^https?:\/\//i.test(S.server))S.server='https://'+S.server;
@@ -2144,6 +2258,7 @@ document.addEventListener('pointerdown',function(){
 setInterval(function(){if(on()&&!document.hidden)refreshFriends()},20000);
 (async function start(){
  await probe();
+ authBoot();
  if(S.token&&S.user){
   if(S.srvOk){connectWs();await refreshAll()}
   else toast('Sem conexão com o servidor. Você está vendo os dados locais.');

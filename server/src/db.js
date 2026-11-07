@@ -210,3 +210,33 @@ CREATE TABLE IF NOT EXISTS purchases (
   PRIMARY KEY (user_id, game_id)
 );
 `);
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS auth_codes (
+  email TEXT NOT NULL COLLATE NOCASE,
+  kind TEXT NOT NULL,
+  code_hash TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (email, kind)
+);
+CREATE TABLE IF NOT EXISTS auth_exchange (
+  code TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS progress (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  data TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS dev_outbox (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  to_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`);
+addCol('users', 'email_verified', 'INTEGER NOT NULL DEFAULT 0');
+addCol('users', 'google_id', 'TEXT');

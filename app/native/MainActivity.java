@@ -49,6 +49,7 @@ import java.net.URL;
  *   setOrientation("portrait" | "landscape" | "auto")  trava a tela em pé, deitada, ou deixa girar
  *   canInstall() / openInstallSettings() / installApk(url)  atualização automática do app
  *   getBuild() / openUrl(url)  usados pela atualização do app
+ *   takeAuth()                 código de login devolvido pelo Google (gameplatform://auth)
  *
  * Fora dos jogos o app fica em pé; ao abrir um jogo o app web pede a orientação do jogo.
  * Este arquivo substitui o MainActivity gerado pelo Capacitor (veja .github/workflows/build-apk.yml).
@@ -83,9 +84,32 @@ public class MainActivity extends BridgeActivity {
     }
   };
 
+  // Volta do login com o Google: gameplatform://auth?code=...
+  private String pendingAuth = null;
+
+  private void readAuthIntent(Intent it) {
+    if (it == null || it.getData() == null) return;
+    Uri u = it.getData();
+    if (!"gameplatform".equals(u.getScheme()) || !"auth".equals(u.getHost())) return;
+    String c = u.getQueryParameter("code");
+    if (c == null || !c.matches("[a-f0-9]{16,80}")) return;
+    pendingAuth = c;
+    it.setData(null);
+    WebView w = getBridge() != null ? getBridge().getWebView() : null;
+    if (w != null) w.post(() -> w.evaluateJavascript("window.GPAuth&&GPAuth(" + JSONObject.quote(c) + ")", null));
+  }
+
+  @Override
+  protected void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    setIntent(intent);
+    readAuthIntent(intent);
+  }
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    readAuthIntent(getIntent());
 
     SharedPreferences prefs = getSharedPreferences("gp", MODE_PRIVATE);
     fullscreen = prefs.getBoolean("fullscreen", true);
@@ -246,6 +270,13 @@ public class MainActivity extends BridgeActivity {
 
   /** Ponte chamada pelo app web (window.GPNative). */
   private class Native {
+    @JavascriptInterface
+    public String takeAuth() {
+      String c = pendingAuth;
+      pendingAuth = null;
+      return c == null ? "" : c;
+    }
+
     @JavascriptInterface
     public String getBuild() {
       return String.valueOf(versionCode());
