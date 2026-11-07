@@ -631,6 +631,20 @@ header.top.srch #sbtn{display:none}
 html.kb #nav{display:none}
 html.kb #app:has(#view.cm) header.top{display:none}
 html.kb #view.cm{padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+
+/* ---------- Studio: cada aba com a sua função ---------- */
+.actbar.flat{position:static;margin:12px 0;padding:0;background:none}
+.nextb{margin:4px 0 8px}
+.scan{display:flex;flex-direction:column;gap:6px}
+.scan .ck{font-size:13px}
+.ck.warn svg{color:#fbbf24}
+.ck.warn span{color:var(--fg)}
+button.ck.rv{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;border-radius:12px;background:var(--surface2);border:1px solid var(--line)}
+button.ck.rv.ok svg{color:#34d399}
+.sumr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sumr div{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
+.sumr span{display:block;font-size:11px;color:var(--muted)}
+.sumr b{font-size:13px;overflow-wrap:anywhere}
 </style>
 
 </head>
@@ -1133,8 +1147,8 @@ function library(){
  +'<div style="margin-top:16px"><button class="btn full" data-a="go" data-v="store">Ver catálogo completo</button></div>'
 }
 function studio(){
- var tabs='<div class="seg" style="margin-bottom:14px"><button data-a="stab" data-v="pub" aria-pressed="'+(S.stab==='pub')+'">Publicar</button><button data-a="stab" data-v="painel" aria-pressed="'+(S.stab==='painel')+'">Painel do criador</button></div>';
- return '<h1>Game Studio</h1><p class="sub">Publique jogos 2D e 3D em HTML, CSS e JavaScript.</p>'+tabs+(S.stab==='pub'?publish_form():creator());
+ var tabs='<div class="seg" style="margin-bottom:14px"><button data-a="stab" data-v="pub" aria-pressed="'+(S.stab==='pub')+'">Criar</button><button data-a="stab" data-v="jogos" aria-pressed="'+(S.stab==='jogos')+'">Meus jogos</button><button data-a="stab" data-v="painel" aria-pressed="'+(S.stab==='painel')+'">Painel</button></div>';
+ return '<h1>Game Studio</h1><p class="sub">Publique jogos 2D e 3D em HTML, CSS e JavaScript.</p>'+tabs+(S.stab==='pub'?publish_form():S.stab==='jogos'?gamesView():creator());
 }
 function fmtSize(n){return n>=1e6?(n/1e6).toFixed(1).replace('.',',')+' MB':n>=1e3?Math.round(n/1e3)+' KB':n+' B'}
 function lineCount(t){var n=1,i=-1;while((i=t.indexOf('\n',i+1))>-1)n++;return n}
@@ -1181,7 +1195,7 @@ function publish_form(){
  var big=s.code.length>3e5,lines=big?0:lineCount(s.code),sec=s.sect||'info';
  var warn=on()?'':'<div class="warnbar">'+ic('alert')+'<div><b>Modo offline</b>Seus jogos ficam só neste aparelho. Entre para publicar na Loja.</div><button class="btn sm" data-a="sub" data-v="auth">Entrar</button></div>';
  var edit=s.editId?'<div class="editbar">'+ic('edit')+'<span>'+(s.fromAdmin?'Editando como administrador'+(s.ownerName?' o jogo de '+esc(s.ownerName):'')+'. ':'Editando um jogo publicado. ')+'Ao salvar, a versão atual é substituída.</span></div>':(s.fromAdmin?'<div class="editbar">'+ic('shield')+'<span>Novo jogo criado como administrador.</span></div>':'');
- var tabs=[['info','Informações','tag'],['code','Código','code'],['libs','Bibliotecas','cube'],['mis','Missões','star'],['adv','Avançado','cog']];
+ var tabs=[['info','Informações','tag'],['code','Código','code'],['libs','Bibliotecas','cube'],['mis','Missões','star'],['adv','Avançado','cog'],['rev','Revisar','check']];
  var tb='<div class="tabs stabs">'+tabs.map(function(t){return '<button data-a="ssect" data-v="'+t[0]+'" aria-pressed="'+(sec===t[0])+'">'+ic(t[2])+t[1]+'</button>'}).join('')+'</div>';
  var body='';
  if(sec==='info'){
@@ -1198,7 +1212,8 @@ function publish_form(){
    +'<label class="f">Tipo</label>'+segS([['2D','2D'],['3D','3D']],s.dim,'sdim')
    +'<label class="f" for="sTag">Tags</label><div class="catrow"><input class="in" id="sTag" value="'+esc(s.tagIn||'')+'" placeholder="Ex.: puzzle, relaxante" maxlength="20" autocomplete="off" autocapitalize="off"><button class="btn sm" data-a="tagadd">'+ic('plus')+'Adicionar</button></div>'
    +(s.tags.length?'<div class="tagl">'+s.tags.map(function(t){return '<button class="chip" data-a="tagrm" data-v="'+esc(t)+'" aria-label="Remover tag '+esc(t)+'">#'+esc(t)+' ×</button>'}).join('')+'</div>':'')
-   +'<div style="margin-top:8px">'+swS('Criado com ajuda de IA','ai',s.ai)+'</div></div>';
+   +'<div style="margin-top:8px">'+swS('Criado com ajuda de IA','ai',s.ai)+'</div></div>'
+   +'<button class="btn ghost full" data-a="spreview">'+ic('eye')+(s.prev?'Fechar pré-visualização':'Pré-visualizar capa e informações')+'</button>';
  }else if(sec==='code'){
   var fileOk=s.code?'<div class="fileok">'+ic('check')+'<div><b>'+esc(s.src&&s.src.name?s.src.name:'Código colado')+'</b><small>'+fmtSize(s.code.length)+(s.zip?' · '+s.zip:'')+'</small></div>'+(big?'':'<button class="btn ghost sm" data-a="smode" data-v="code">Ver código</button>')+'<button class="del" data-a="sclear">Remover</button></div>':'';
   var cb;
@@ -1211,7 +1226,9 @@ function publish_form(){
     +'<div class="ed-body"><pre id="gut" aria-hidden="true">'+gutText(lines)+'</pre><div class="hlw"><pre id="hl" aria-hidden="true">'+(s.code.length<8e4?hl(s.code):esc(s.code))+'</pre><textarea id="sCode" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Código do jogo" placeholder="Cole aqui o HTML completo ou só o JavaScript do jogo">'+esc(s.code)+'</textarea></div></div></div>';
   }
   body='<div class="sc"><h3><i>'+ic('code')+'</i>Origem do código</h3><div class="seg" style="margin-bottom:12px"><button data-a="smode" data-v="file" aria-pressed="'+(s.mode==='file')+'">Enviar arquivo</button><button data-a="smode" data-v="code" aria-pressed="'+(s.mode==='code')+'">Colar código</button><button data-a="tplmode">Modelo</button></div>'+cb
-   +'<p class="note">Roda tudo que o navegador executa: HTML, CSS, JavaScript, WebGL, Canvas e WebAssembly. Jogos de Unity, Godot ou Emscripten entram depois de exportados para a web (envie o ZIP).</p></div>';
+   +'<p class="note">Roda tudo que o navegador executa: HTML, CSS, JavaScript, WebGL, Canvas e WebAssembly. Jogos de Unity, Godot ou Emscripten entram depois de exportados para a web (envie o ZIP).</p></div>'
+   +codeScanHtml(s)
+   +'<button class="btn full" data-a="stest">'+ic('play')+'Testar o jogo agora</button><p class="note">Abre o jogo como o jogador vai ver, sem publicar e sem salvar progresso.</p>';
  }else if(sec==='mis'){
   body=misForm(s);
  }else if(sec==='libs'){
@@ -1221,6 +1238,8 @@ function publish_form(){
    +'<label class="f" for="xUrl">Endereço (https)</label><div class="catrow"><input class="in" id="xUrl" placeholder="https://cdn.exemplo.com/lib.min.js" autocapitalize="off" autocomplete="off" inputmode="url"><button class="btn sm" data-a="extadd">'+ic('plus')+'Adicionar</button></div>'
    +'<label class="btn ghost sm full" for="xFile" style="margin-top:10px">'+ic('upload')+'Enviar arquivo .js</label><input id="xFile" type="file" accept=".js,text/javascript" hidden>'
    +'<p class="note">Só bibliotecas de quem você confia: elas rodam dentro do jogo. Até 6 itens e 300 KB de arquivos.</p></div>';
+ }else if(sec==='rev'){
+  body=revHtml(s);
  }else{
   var ctl=[['touch','Toque'],['keyboard','Teclado'],['gamepad','Gamepad']];
   body='<div class="sc"><h3><i>'+ic('cog')+'</i>Configurações avançadas</h3>'
@@ -1235,11 +1254,44 @@ function publish_form(){
    +'<label class="f">Visibilidade</label>'+segS([['public','Público'],['unlisted','Não listado'],['private','Privado']],s.vis||'public','svis')
    +'<p class="note">Não listado só abre por quem tem o endereço do jogo. Privado só você e a administração veem.</p></div>';
  }
- return warn+edit+tb+(s.prev?previewHtml(s):'')+body
-  +'<button class="btn ghost full" data-a="spreview" style="margin-bottom:4px">'+ic('eye')+(s.prev?'Fechar pré-visualização':'Pré-visualizar capa e informações')+'</button>'
-  +'<div class="actbar"><button class="btn ghost" data-a="stest">'+ic('play')+'Testar</button><button class="btn ghost" data-a="draftsave">'+ic('save')+'Rascunho</button><button class="btn" data-a="spub">'+ic('upload')+(s.editId?'Salvar':'Publicar')+'</button></div>'
-  +draftsHtml()+myGamesHtml();
+ var nx=tabs[Math.min(tabs.map(function(t){return t[0]}).indexOf(sec)+1,tabs.length-1)];
+ return warn+edit+tb+(s.prev&&sec==='info'?previewHtml(s):'')+body
+  +(sec==='rev'?'':'<button class="btn ghost full nextb" data-a="ssect" data-v="'+nx[0]+'">Próximo: '+nx[1]+'</button>');
 }
+function codeScanHtml(s){
+ if(!s.code)return '';
+ var t=s.code.slice(0,3e6),r=[];
+ r.push(['ok',/<html|<!doctype/i.test(t)?'HTML completo':'Só JavaScript: o app monta a página']);
+ var eng=[['Three.js',/THREE\./],['Phaser',/Phaser\./],['Babylon',/BABYLON\./],['PixiJS',/PIXI\./],['WebGL',/getContext\(['"](webgl2?|experimental-webgl)/],['Canvas 2D',/getContext\(['"]2d/],['WebAssembly',/WebAssembly\./]].filter(function(x){return x[1].test(t)}).map(function(x){return x[0]});
+ r.push(['ok',eng.length?'Detectado: '+eng.join(', '):'Nenhum motor gráfico detectado']);
+ if(/\b(alert|confirm|prompt)\s*\(/.test(t))r.push(['warn','Usa alert, confirm ou prompt: podem ser bloqueados no app']);
+ if(/(src|href)=["']https?:\/\//i.test(t)&&!s.ext.length)r.push(['warn','Carrega arquivos de endereços externos: precisa de internet']);
+ if(/<html|<!doctype/i.test(t)&&!/name=["']viewport/i.test(t))r.push(['warn','Sem meta viewport: pode ficar pequeno no celular']);
+ if(!/touchstart|pointerdown|click|mousedown|keydown|gamepad/i.test(t))r.push(['warn','Nenhum controle detectado (toque, clique, teclado ou gamepad)']);
+ if(/localStorage/.test(t)&&!s.save)r.push(['warn','Usa localStorage: ligue "Salvar o progresso" em Avançado']);
+ if(s.code.length>1.5e6)r.push(['warn','Código grande ('+fmtSize(s.code.length)+'): pode demorar para abrir']);
+ return '<div class="sc"><h3><i>'+ic('chart')+'</i>Análise do código<small>automática</small></h3><div class="scan">'+r.map(function(x){return '<div class="ck '+x[0]+'">'+(x[0]==='ok'?ic('check'):ic('alert'))+'<span>'+x[1]+'</span></div>'}).join('')+'</div></div>';
+}
+function revHtml(s){
+ var big=s.code.length;
+ var rows=[
+  ['Nome do jogo',!!s.title.trim(),s.title.trim()||'Falta o nome','info'],
+  ['Descrição',s.desc.trim().length>=10,s.desc.trim().length>=10?s.desc.trim().length+' letras':'Escreva uma frase de como se joga','info'],
+  ['Capa',!!s.cover,s.cover?'Enviada':'Sem capa: o jogo usa uma cor padrão','info'],
+  ['Código',!!s.code.trim(),s.code.trim()?fmtSize(big):'Cole ou envie o código','code'],
+  ['Versão',/^[0-9A-Za-z][0-9A-Za-z.+-]{0,11}$/.test((s.ver||'').trim()),'v'+(s.ver||'?'),'adv'],
+  ['Missões',s.mis.length>0,s.mis.length?s.mis.length+' criada(s)':'Nenhuma (opcional)','mis']
+ ];
+ if(s.mon==='paid')rows.push(['Preço',+s.price>0,+s.price>0?s.price+' moedas':'Defina o preço em moedas','adv']);
+ var need=rows.filter(function(r){return !r[1]&&(r[0]==='Nome do jogo'||r[0]==='Código'||r[0]==='Versão'||r[0]==='Preço')}).length;
+ var monL={free:'Grátis',ads:'Com anúncios',paid:'Pago · '+(s.price||0)+' moedas'}[s.mon||'free'],visL=visLabel(s.vis||'public');
+ return '<div class="sc"><h3><i>'+ic('check')+'</i>Revisão<small>'+(need?need+' pendência(s)':'pronto para publicar')+'</small></h3><div class="scan">'
+  +rows.map(function(r){return '<button class="ck rv '+(r[1]?'ok':'warn')+'" data-a="ssect" data-v="'+r[3]+'">'+(r[1]?ic('check'):ic('alert'))+'<span><b>'+r[0]+'</b> · '+esc(r[2])+'</span></button>'}).join('')+'</div></div>'
+  +'<div class="sc"><h3><i>'+ic('eye')+'</i>Resumo<small>como vai sair</small></h3><div class="sumr"><div><span>Tipo</span><b>'+s.dim+' · '+esc(s.cat)+'</b></div><div><span>Classificação</span><b>'+esc(s.age)+'</b></div><div><span>Visibilidade</span><b>'+visL+'</b></div><div><span>Monetização</span><b>'+monL+(s.early?' · Antecipado':'')+'</b></div><div><span>Orientação</span><b>'+({portrait:'Retrato',landscape:'Paisagem',auto:'Ambas'}[s.ori||'auto'])+'</b></div></div></div>'
+  +'<div class="actbar flat"><button class="btn ghost" data-a="stest">'+ic('play')+'Testar</button><button class="btn ghost" data-a="draftsave">'+ic('save')+'Rascunho</button><button class="btn" data-a="spub">'+ic('upload')+(s.editId?'Salvar':'Publicar')+'</button></div>'
+  +draftsHtml();
+}
+function gamesView(){var h=myGamesHtml();return myGames().length?h:h+'<div style="margin-top:12px"><button class="btn sm" data-a="stab" data-v="pub">Criar um jogo</button></div>'}
 function creator(){
  var gs=myGames();
  if(!gs.length)return '<div class="empty">O painel aparece depois que você publicar o primeiro jogo.<div style="margin-top:12px"><button class="btn sm" data-a="stab" data-v="pub">Publicar um jogo</button></div></div>';
@@ -2094,7 +2146,7 @@ async function publish(){
    else{await api('POST','/games',body);toast('Publicado'+(body.visibility==='public'?' na Loja':''))}
   }catch(er){toast(er.message);return}
   if(did){S.drafts=S.drafts.filter(function(d){return d.id!==did});save('drafts')}
-  S.studio=newStudio();
+  S.studio=newStudio();if(!back)S.stab='jogos';
   await refreshAll();
   if(back){S.tab='profile';S.sub='admin';S.atab='jogos';await loadAdmin()}
   return;
@@ -2110,7 +2162,7 @@ async function publish(){
   pushUpd('Jogo publicado',g.title+' foi publicado.','game:'+g.id);toast('Publicado e adicionado à sua biblioteca');
  }
  if(did){S.drafts=S.drafts.filter(function(d){return d.id!==did});save('drafts')}
- S.studio=newStudio();
+ S.studio=newStudio();if(!back)S.stab='jogos';
  if(back){S.tab='profile';S.sub='admin';S.atab='jogos'}
  render();
 }

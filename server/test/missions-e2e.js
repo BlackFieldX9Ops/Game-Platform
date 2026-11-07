@@ -110,7 +110,7 @@ async function main() {
   ok('missão secreta pede o número de partidas', await until(() => D.d.querySelector('[data-mi="1:req"]')));
   setMi(1, 'req', '3');
   D.click('[data-a="ssect"][data-v="code"]'); D.click('[data-a="smode"][data-v="code"]'); D.click('[data-a="tpl"]');
-  D.click('[data-a="spub"]');
+  D.click('[data-a="ssect"][data-v="rev"]'); D.click('[data-a="spub"]');
   await wait(600);
   D.click('[data-a="go"][data-v="profile"]'); D.click('[data-a="sub"][data-v="missions"]');
   ok('as missões do criador aparecem no lugar das padrão', await until(() => /Derrotar o chefão/.test(D.text()) && /Vença o chefe do andar 3/.test(D.text()) && !/Primeira partida|Meia hora de/.test(D.text())), D.text().slice(0, 300));

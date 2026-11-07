@@ -205,3 +205,8 @@ Sem essas variáveis o botão do Google não aparece e a recuperação de senha 
 - **Skins** em 6 espaços: moldura, fundo do perfil, título, cor do nome, tema do app e balão do chat. Aparecem no próprio perfil e no app do dono.
 - Compras continuam em **modo de teste** (sem cobrança real).
 - Perfil: botão da câmera troca a foto na hora; o banner tem o botão **Skins**; Configuração e Notificação trocaram de lugar; a busca é só um ícone que expande.
+
+## Studio: cada aba com a sua função
+- **Criar** tem 6 abas: Informações (capa, nome, descrição, tags, pré-visualização), Código (envio/edição, análise automática do código e Testar), Bibliotecas, Missões, Avançado (versão, orientação, controles, monetização, visibilidade) e **Revisar** (checklist clicável, resumo, Testar, Rascunho e Publicar, mais a lista de rascunhos).
+- **Meus jogos** lista os jogos publicados (jogar, editar, atualizar, despublicar, estatísticas, excluir). **Painel** mostra os números do criador.
+- Chat: com o teclado aberto a barra de baixo some e a tela não rola sozinha.

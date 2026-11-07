@@ -79,7 +79,7 @@ async function main() {
   // Ana publica um jogo
   A.click('[data-a="go"][data-v="studio"]'); A.click('[data-a="stab"][data-v="pub"]');
   A.set('sTitle', 'Meu Jogo'); A.set('sDesc', 'Um jogo de teste'); A.click('[data-a="ssect"][data-v="code"]'); A.click('[data-a="smode"][data-v="code"]'); A.click('[data-a="tpl"]');
-  A.click('[data-a="spub"]');
+  A.click('[data-a="ssect"][data-v="rev"]'); A.click('[data-a="spub"]');
   ok('jogo publicado na Loja do servidor', await until(() => /Meu Jogo/.test(A.text()) && /Publicado na Loja|Meu Jogo/.test(A.text())), A.toast());
   const direct = await (await fetch(URL_ + 'api/games')).json();
   ok('o servidor lista o jogo sem expor o código', direct.games.length === 1 && direct.games[0].developer === 'Ana' && direct.games[0].code === undefined);
@@ -152,7 +152,7 @@ async function main() {
   AD.click('[data-a="admedit"][data-v$=":code"]');
   ok('admin abre o jogo de outro usuário no Studio', await until(() => AD.$('#sCode') && /como administrador o jogo de Ana/.test(AD.text())));
   AD.click('[data-a="ssect"][data-v="info"]'); await until(() => AD.$('#sTitle'));
-  AD.set('sTitle', 'Meu Jogo Revisado'); AD.click('[data-a="spub"]');
+  AD.set('sTitle', 'Meu Jogo Revisado'); AD.click('[data-a="ssect"][data-v="rev"]'); AD.click('[data-a="spub"]');
   ok('admin salva a edição e volta para a lista de jogos', await until(() => /Meu Jogo Revisado/.test(AD.text()) && !!AD.$('[data-a="admedit"]')), AD.toast());
   ok('o servidor guardou a edição do admin', (await (await fetch(URL_ + 'api/games')).json()).games.some(g => g.title === 'Meu Jogo Revisado'));
   AD.click('[data-a="admpub"]');
@@ -182,7 +182,7 @@ async function main() {
   A.click('[data-a="go"][data-v="profile"]'); A.click('[data-a="sub"][data-v="settings"]'); A.click('[data-a="logout"]');
   ok('sair volta ao modo offline', await until(() => /Entrar ou criar conta/.test(A.text())));
   // Studio offline: rascunho, chips de bibliotecas, publicar; administração de demonstração
-  A.click('[data-a="go"][data-v="studio"]');
+  A.click('[data-a="go"][data-v="studio"]'); A.click('[data-a="stab"][data-v="pub"]');
   ok('Studio mostra o aviso de modo offline', await until(() => /Modo offline/.test(A.text())));
   A.set('sTitle', 'Rascunho Um');
   A.click('[data-a="ssect"][data-v="code"]'); A.click('[data-a="smode"][data-v="code"]'); A.click('[data-a="tpl"]');
@@ -192,14 +192,22 @@ async function main() {
   A.click('[data-a="ssect"][data-v="code"]');
   ok('editor colore o código (syntax highlight)', !!A.$('#hl i.hk') && !!A.$('#hl i.ht') && /<script>/.test(A.$('#sCode').value));
   ok('editor mostra números de linha', /^1\n2\n3/.test(A.d.getElementById('gut').textContent));
-  A.click('[data-a="draftsave"]');
+  A.click('[data-a="ssect"][data-v="rev"]'); A.click('[data-a="draftsave"]');
   ok('rascunho é guardado e listado', await until(() => /Rascunhos/.test(A.text()) && /Rascunho Um/.test(A.text())));
-  A.click('[data-a="spub"]');
+  A.click('[data-a="ssect"][data-v="rev"]'); A.click('[data-a="spub"]');
   ok('publicar offline adiciona o jogo e remove o rascunho', await until(() => /Meus jogos publicados/.test(A.text()) && /Rascunho Um/.test(A.text()) && !/Continuar/.test(A.text())), A.toast());
   // Studio avançado (offline): tags, avançado, bibliotecas externas, visibilidade, meus jogos
-  A.click('[data-a="go"][data-v="studio"]'); await until(() => A.$('#sTitle'));
+  A.click('[data-a="go"][data-v="studio"]'); A.click('[data-a="stab"][data-v="pub"]'); await until(() => A.$('#sTitle'));
   A.set('sTitle', 'Completo'); A.set('sDesc', 'abc'); A.d.getElementById('sDesc').dispatchEvent(new A.w.Event('input', { bubbles: true }));
   ok('descrição tem contador de caracteres', A.$('#dcnt').textContent === '3/200');
+  ok('Studio: aba Informações não repete Testar/Publicar nem Meus jogos', !A.$('[data-a="spub"]') && !A.$('[data-a="stest"]') && !/Meus jogos publicados/.test(A.text()) && !!A.$('[data-a="spreview"]'));
+  A.click('[data-a="ssect"][data-v="code"]');
+  ok('Studio: aba Código tem análise do código e Testar', !!A.$('[data-a="stest"]') && !A.$('[data-a="spub"]'));
+  A.click('[data-a="ssect"][data-v="libs"]');
+  ok('Studio: aba Bibliotecas só tem bibliotecas', !!A.$('[data-a="lib"]') && !A.$('[data-a="stest"]') && !A.$('[data-a="spreview"]'));
+  A.click('[data-a="ssect"][data-v="rev"]');
+  ok('Studio: aba Revisar tem checklist, resumo e Publicar', !!A.$('[data-a="spub"]') && /Revisão/.test(A.text()) && /Resumo/.test(A.text()) && !/Meus jogos publicados/.test(A.text()));
+  A.click('[data-a="ssect"][data-v="info"]');
   A.set('sTag', 'Puzzle, Relaxante, puzzle'); A.click('[data-a="tagadd"]');
   ok('tags: várias de uma vez, sem repetir', await until(() => A.d.querySelectorAll('[data-a="tagrm"]').length === 2));
   A.click('[data-a="tagrm"][data-v="relaxante"]');
@@ -216,9 +224,9 @@ async function main() {
   const sw3 = A.$('input[data-ss="save"]'); sw3.checked = true; sw3.dispatchEvent(new A.w.Event('change', { bubbles: true }));
   const sw4 = A.$('input[data-ss="fs"]'); sw4.checked = false; sw4.dispatchEvent(new A.w.Event('change', { bubbles: true }));
   ok('configurações avançadas ficam marcadas', await until(() => A.$('[data-a="svis"][data-v="private"]').getAttribute('aria-pressed') === 'true' && A.$('[data-a="smon"][data-v="ads"]').getAttribute('aria-pressed') === 'true' && A.$('[data-a="sctl"][data-v="gamepad"]').getAttribute('aria-pressed') === 'true'));
-  A.click('[data-a="spreview"]');
+  A.click('[data-a="ssect"][data-v="info"]'); A.click('[data-a="spreview"]');
   ok('pré-visualização mostra nome, versão, visibilidade e tags', await until(() => /Pré-visualização/.test(A.text()) && /v1\.2\.0/.test(A.text()) && /Privado/.test(A.text()) && /#puzzle/.test(A.text())));
-  A.click('[data-a="spreview"]'); A.click('[data-a="spub"]');
+  A.click('[data-a="spreview"]'); A.click('[data-a="ssect"][data-v="rev"]'); A.click('[data-a="spub"]');
   ok('jogo completo é publicado', await until(() => /Completo/.test(A.text()) && /Meus jogos publicados/.test(A.text())), A.toast());
   const mineSaved = JSON.parse(A.w.localStorage.getItem('gp_mine')).find(g => g.title === 'Completo');
   ok('o jogo guarda tags, versão, visibilidade e configurações', mineSaved && mineSaved.ver === '1.2.0' && mineSaved.vis === 'private' && mineSaved.cfg.fullscreen === 0 && mineSaved.cfg.saveProgress === 1 && mineSaved.cfg.monetization === 'ads' && mineSaved.cfg.controls.includes('gamepad') && mineSaved.cfg.ext.length === 1 && mineSaved.tags.join() === 'puzzle');
@@ -231,7 +239,7 @@ async function main() {
   ok('dono despublica o jogo e vê o estado', await until(() => [...A.d.querySelectorAll('.mg')].find(m => /Completo/.test(m.textContent) && /Despublicado/.test(m.textContent))));
   [...A.d.querySelectorAll('[data-a="supd"]')].find(b => /Completo/.test(b.closest('.mg').textContent)).click();
   ok('Atualizar abre o código com a versão aumentada', await until(() => A.$('#sCode') && /versão 1\.2\.1/.test(A.toast())));
-  A.click('[data-a="ssect"][data-v="info"]'); A.click('[data-a="go"][data-v="home"]'); A.click('[data-a="go"][data-v="studio"]'); await until(() => A.$('[data-a="mdel"]'));
+  A.click('[data-a="ssect"][data-v="info"]'); A.click('[data-a="go"][data-v="home"]'); A.click('[data-a="go"][data-v="studio"]'); A.click('[data-a="stab"][data-v="jogos"]'); await until(() => A.$('[data-a="mdel"]'));
   const dl = [...A.d.querySelectorAll('[data-a="mdel"]')].find(b => /Completo/.test(b.closest('.mg').textContent)); dl.click();
   ok('excluir meu jogo pede confirmação', await until(() => !!A.$('.btn.danger[data-a="mdel"]')) && /Completo/.test(A.text()));
   A.click('.btn.danger[data-a="mdel"]');
@@ -268,12 +276,12 @@ async function main() {
   ok('demo: jogo destacado aparece com a marca na Início', await until(() => /Destaque/.test(A.text())));
   // orientação: fora do jogo em pé; o jogo pede paisagem e o app gira
   const calls = []; A.w.GPNative = { setFullscreen() {}, setOrientation(m) { calls.push(m); }, getBuild() { return '0'; }, openUrl() {} };
-  A.click('[data-a="go"][data-v="studio"]'); await until(() => A.$('#sTitle'));
+  A.click('[data-a="go"][data-v="studio"]'); A.click('[data-a="stab"][data-v="pub"]'); await until(() => A.$('#sTitle'));
   A.set('sTitle', 'Deitado'); A.click('[data-a="ssect"][data-v="code"]'); A.click('[data-a="smode"][data-v="code"]'); A.click('[data-a="tpl"]');
   A.click('[data-a="ssect"][data-v="adv"]');
   A.click('[data-a="sori"][data-v="landscape"]');
   ok('Studio marca a orientação escolhida', await until(() => A.$('[data-a="sori"][data-v="landscape"]').getAttribute('aria-pressed') === 'true'));
-  A.click('[data-a="spub"]'); await until(() => /Deitado/.test(A.text()) && A.d.querySelectorAll('[data-a="play"]').length);
+  A.click('[data-a="ssect"][data-v="rev"]'); A.click('[data-a="spub"]'); await until(() => /Deitado/.test(A.text()) && A.d.querySelectorAll('[data-a="play"]').length);
   const play = [...A.d.querySelectorAll('[data-a="play"]')].find(b => /Deitado/.test(b.closest('.mg').textContent));
   play.click();
   ok('jogo marcado como paisagem gira o app para paisagem', await until(() => calls.includes('landscape')));
