@@ -12,7 +12,7 @@ try { ({ JSDOM } = require('jsdom')); } catch { console.log('jsdom não instalad
 
 const PORT = 3994, URL_ = `http://localhost:${PORT}/`;
 const dir = mkdtempSync(path.join(tmpdir(), 'gp-mis-'));
-const srv = spawn('node', ['--disable-warning=ExperimentalWarning', 'src/index.js'], { env: { ...process.env, PORT, DB_FILE: path.join(dir, 'm.db'), ADMIN_EMAIL: 'adm@x.com', JWT_SECRET: 't' }, stdio: ['ignore', 'ignore', 'inherit'] });
+const srv = spawn('node', ['--disable-warning=ExperimentalWarning', 'src/index.js'], { env: { ...process.env, PORT, DB_FILE: path.join(dir, 'm.db'), ADMIN_EMAIL: 'adm@x.com', STUDIO_GATE: 'off', JWT_SECRET: 't' }, stdio: ['ignore', 'ignore', 'inherit'] });
 const html = readFileSync(existsSync('www/index.html') ? 'www/index.html' : '../app/www/index.html', 'utf8');
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { c ? pass++ : fail++; console.log(`${c ? 'OK   ' : 'FALHA'} ${n}${c ? '' : ' ' + x}`); };
@@ -29,6 +29,7 @@ function open(seed) {
     }
   });
   const w = dom.window, d = w.document, errs = [];
+  w.eval('GPT.forceStudio()');
   w.addEventListener('error', e => errs.push(e.message));
   const $ = s => d.querySelector(s);
   const click = s => { const el = $(s); if (!el) { errs.push('faltou ' + s); return; } el.click(); };
@@ -68,7 +69,7 @@ async function main() {
 
   // missões
   A.click('[data-a="go"][data-v="profile"]');
-  ok('perfil mostra o resumo de progresso e missões', await until(() => /Progresso e missões/.test(A.text()) && A.$('[data-a="sub"][data-v="missions"]')));
+  ok('perfil tem o atalho de missões', await until(() => /Missões/.test(A.text()) && A.$('[data-a="sub"][data-v="missions"]')));
   A.click('[data-a="sub"][data-v="missions"]');
   ok('missões geradas para o jogo, com botão Aceitar', await until(() => /Primeira corrida/.test(A.text()) && /Corrida Neon/.test(A.text()) && A.$('[data-a="macc"]')), A.text().slice(0, 300));
   ok('missões secretas não aparecem antes do requisito', !/Veterano de|Sem pressa/.test(A.text()));

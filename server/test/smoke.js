@@ -9,7 +9,7 @@ const PORT = 3999;
 const BASE = `http://localhost:${PORT}/api`;
 const dir = mkdtempSync(path.join(tmpdir(), 'gp-'));
 const srv = spawn('node', ['src/index.js'], {
-  env: { ...process.env, PORT, DB_FILE: path.join(dir, 't.db'), ADMIN_EMAIL: 'admin@teste.com', JWT_SECRET: 'teste' },
+  env: { ...process.env, PORT, DB_FILE: path.join(dir, 't.db'), ADMIN_EMAIL: 'admin@teste.com', STUDIO_GATE: 'off', JWT_SECRET: 'teste' },
   stdio: ['ignore', 'pipe', 'inherit']
 });
 

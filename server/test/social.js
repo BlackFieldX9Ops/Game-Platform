@@ -7,7 +7,7 @@ import { DatabaseSync } from 'node:sqlite';
 
 const PORT = 3998, BASE = `http://localhost:${PORT}/api`;
 const dir = mkdtempSync(path.join(tmpdir(), 'gps-'));
-const srv = spawn('node', ['src/index.js'], { env: { ...process.env, PORT, DB_FILE: path.join(dir, 't.db'), ADMIN_EMAIL: 'admin@teste.com', JWT_SECRET: 'teste' }, stdio: ['ignore', 'pipe', 'inherit'] });
+const srv = spawn('node', ['src/index.js'], { env: { ...process.env, PORT, DB_FILE: path.join(dir, 't.db'), ADMIN_EMAIL: 'admin@teste.com', STUDIO_GATE: 'off', JWT_SECRET: 'teste' }, stdio: ['ignore', 'pipe', 'inherit'] });
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { c ? pass++ : fail++; console.log(`${c ? 'OK   ' : 'FALHA'} ${n}${c ? '' : ' ' + x}`); };
 async function call(method, url, body, token) {
@@ -29,7 +29,7 @@ async function main() {
 
   // busca e seguidores
   ok('busca por nome', (await call('GET', '/users/search?q=be', null, A)).j.users.some(u => u.name === 'Beto'));
-  ok('busca por ID', (await call('GET', `/users/search?q=%23${bid}`, null, A)).j.users[0]?.name === 'Beto');
+  ok('busca por ID', (await call('GET', `/users/search?q=%23${Number(beto.user.uid)}`, null, A)).j.users[0]?.name === 'Beto');
   ok('seguir um jogador', (await call('POST', `/users/${bid}/follow`, null, A)).j.following === true);
   ok('seguido recebe notificação de seguidor', (await call('GET', '/notifications', null, B)).j.notifications.some(n => n.kind === 'follow'));
   ok('não segue a si mesmo', (await call('POST', `/users/${aid}/follow`, null, A)).s === 400);
@@ -57,7 +57,7 @@ async function main() {
   ok('comentário vazio é recusado', (await call('POST', `/posts/${p1.j.id}/comments`, { text: ' ' }, A)).s === 400);
 
   // grupos
-  const g = await call('POST', '/spaces', { kind: 'group', name: 'Amigos do jogo', description: 'Bate-papo', access: 'private', rules: 'Respeito', members: ['Beto', '#' + cid, 'Fantasma'] }, A);
+  const g = await call('POST', '/spaces', { kind: 'group', name: 'Amigos do jogo', description: 'Bate-papo', access: 'private', rules: 'Respeito', members: ['Beto', '#' + Number(caio.user.uid), 'Fantasma'] }, A);
   ok('criar grupo privado com membros iniciais', g.s === 201);
   ok('convidados recebem convite', (await call('GET', '/notifications', null, B)).j.notifications.some(n => n.kind === 'invite') && (await call('GET', '/notifications', null, C)).j.notifications.some(n => n.kind === 'invite'));
   const outsider = await reg('Dani');

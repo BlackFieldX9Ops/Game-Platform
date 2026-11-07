@@ -187,3 +187,12 @@ Variáveis do servidor (produção):
 | `RESEND_API_KEY`, `MAIL_FROM` | envio de e-mails (resend.com); sem a chave, em desenvolvimento, os e-mails ficam na tabela `dev_outbox` |
 
 Sem essas variáveis o botão do Google não aparece e a recuperação de senha só funciona em desenvolvimento.
+
+## Perfil, Chat, ID, planos e Loja
+
+- **Navegação**: Início, Loja, Biblioteca, **Chat**, Studio (só com plano) e Perfil. Configurações e Administração (só admin) ficam em ícones no topo, ao lado das notificações. O Chat reúne Mensagens, Amigos, Feed, Grupos, Comunidades e Avisos.
+- **ID do jogador**: o administrador é `000`; os demais recebem `001`, `002`… por ordem de cadastro. Serve para buscar e adicionar amigos (`#2`).
+- **Studio só com plano**: o servidor recusa publicar jogo sem plano (403) e o app esconde a aba. O administrador libera ou tira o plano na aba Usuários da Administração, ou a pessoa assina na Loja → Planos.
+- **Loja**: Jogos, Planos (Studio 30 dias e 1 ano), Moedas (pacotes) e Skins (molduras e fundos de perfil, pagos com moedas).
+- **Compras são de teste**: ativam na hora, sem cobrança, até existir um meio de pagamento real (Pix, Google Play etc.).
+- `STUDIO_GATE=off` desliga a exigência de plano e existe só para os testes antigos.

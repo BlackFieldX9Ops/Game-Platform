@@ -12,6 +12,7 @@ import { WebSocketServer } from 'ws';
 import { all, get, run } from './db.js';
 import { mountSocial } from './social.js';
 import { mountAccounts } from './accounts.js';
+import { mountStore, hasStudio, fmtUid } from './store.js';
 
 const PORT = Number(process.env.PORT || 3000);
 const PROD = process.env.NODE_ENV === 'production';
@@ -43,7 +44,7 @@ function str(v, name, min, max) {
   return t;
 }
 const int = (v, name) => { const n = Number(v); if (!Number.isInteger(n) || n < 1) bad(`${name} inválido`); return n; };
-const publicUser = u => ({ id: u.id, name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '' });
+const publicUser = u => ({ id: u.id, uid: fmtUid(u), name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '', studio: hasStudio(u), coins: u.coins || 0, frame: u.frame || null, banner: u.banner || null });
 const sign = u => jwt.sign({ id: u.id }, SECRET, { expiresIn: '30d' });
 
 function userFromToken(token) {
@@ -214,6 +215,7 @@ app.post('/api/games/:id/play', auth, wrap((req, res) => {
   res.json({ title: g.title, code: g.code, libs: JSON.parse(g.libs), ext: parseJ(g.settings, {}).ext || [], settings: parseJ(g.settings, {}), xp: req.user.xp + 25 });
 }));
 app.post('/api/games', auth, wrap((req, res) => {
+  if (process.env.STUDIO_GATE !== 'off' && !hasStudio(req.user)) bad('O Studio é exclusivo de quem tem o plano. Veja os planos na Loja.', 403);
   const d = gameInput(req.body);
   if (get("SELECT COUNT(*) AS n FROM games WHERE owner_id = ? AND status = 'published'", req.user.id).n >= 50) bad('Limite de 50 jogos publicados');
   const r = run('INSERT INTO games (owner_id, title, description, category, age, dim, libs, code, cover, orientation, tags, version, visibility, settings, ai) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', req.user.id, d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.cover ?? null, d.orientation, d.tags, d.version, d.visibility, d.settings, d.ai);
@@ -391,7 +393,7 @@ app.post('/api/admin/reports/:id/resolve', auth, adminOnly, wrap((req, res) => {
   res.json({ ok: true });
 }));
 app.get('/api/admin/users', auth, adminOnly, (_req, res) => {
-  res.json({ users: all('SELECT id, name, email, role, status, xp, created_at, (SELECT COUNT(*) FROM games WHERE owner_id = users.id) AS games FROM users ORDER BY id DESC LIMIT 200') });
+  res.json({ users: all('SELECT id, uid, name, email, role, status, xp, created_at, studio_until, (SELECT COUNT(*) FROM games WHERE owner_id = users.id) AS games FROM users ORDER BY id DESC LIMIT 200') });
 });
 app.post('/api/admin/users/:id/status', auth, adminOnly, wrap((req, res) => {
   const id = int(req.params.id, 'id'), status = req.body.status;
@@ -441,6 +443,7 @@ app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
 });
 
 /* ---------- contas: Google, recuperar senha, verificar e-mail, progresso ---------- */
+mountStore({ app, auth, wrap, bad, get, all, run, notify, logAct, adminOnly, int });
 mountAccounts({ app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 
 /* ---------- chat e comunidade ---------- */

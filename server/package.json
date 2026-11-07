@@ -9,8 +9,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node test/smoke.js && node test/social.js && node test/accounts.js",
-    "test:app": "node test/app-e2e.js && node test/social-e2e.js && node test/missions-e2e.js && node test/accounts-e2e.js",
+    "test": "node test/smoke.js && node test/social.js && node test/accounts.js && node test/store.js",
+    "test:app": "node test/app-e2e.js && node test/social-e2e.js && node test/missions-e2e.js && node test/accounts-e2e.js && node test/store-e2e.js",
     "test:zip": "node test/bundle.js && node test/update-check.js"
   },
   "dependencies": {

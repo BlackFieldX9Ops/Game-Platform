@@ -25,7 +25,7 @@ export function mountSocial(c) {
     }
     if (typeof b.name === 'string' && b.name.trim()) {
       const n = b.name.trim().replace(/^@/, '');
-      if (/^#\d+$/.test(n)) return get("SELECT * FROM users WHERE id = ? AND status = 'active'", Number(n.slice(1)));
+      if (/^#\d+$/.test(n)) return get("SELECT * FROM users WHERE uid = ? AND status = 'active'", Number(n.slice(1)));
       return get("SELECT * FROM users WHERE name = ? AND status = 'active'", n);
     }
     return null;
@@ -36,8 +36,8 @@ export function mountSocial(c) {
     const q = String(req.query.q || '').trim().replace(/^@/, '');
     if (q.length < 1) return res.json({ users: [] });
     const rows = /^#\d+$/.test(q)
-      ? all("SELECT id, name, avatar FROM users WHERE id = ? AND status='active'", Number(q.slice(1)))
-      : all("SELECT id, name, avatar FROM users WHERE name LIKE ? ESCAPE '\\' AND status='active' AND id != ? ORDER BY name LIMIT 20", q.replace(/[\\%_]/g, '\\$&') + '%', req.user.id);
+      ? all("SELECT id, uid, name, avatar FROM users WHERE uid = ? AND status='active'", Number(q.slice(1)))
+      : all("SELECT id, uid, name, avatar FROM users WHERE name LIKE ? ESCAPE '\\' AND status='active' AND id != ? ORDER BY name LIMIT 20", q.replace(/[\\%_]/g, '\\$&') + '%', req.user.id);
     res.json({ users: rows.map(u => ({ ...u, following: !!get('SELECT 1 FROM follows WHERE follower_id=? AND followed_id=?', req.user.id, u.id) })) });
   }));
   app.post('/api/users/:id/follow', auth, wrap((req, res) => {

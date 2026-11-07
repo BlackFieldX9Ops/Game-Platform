@@ -12,7 +12,7 @@ try { ({ JSDOM } = require('jsdom')); } catch { console.log('jsdom não instalad
 
 const PORT = 3996, URL_ = `http://localhost:${PORT}/`;
 const dir = mkdtempSync(path.join(tmpdir(), 'gp-soc-'));
-const srv = spawn('node', ['--disable-warning=ExperimentalWarning', 'src/index.js'], { env: { ...process.env, PORT, DB_FILE: path.join(dir, 's.db'), ADMIN_EMAIL: 'adm@x.com', JWT_SECRET: 't' }, stdio: ['ignore', 'ignore', 'inherit'] });
+const srv = spawn('node', ['--disable-warning=ExperimentalWarning', 'src/index.js'], { env: { ...process.env, PORT, DB_FILE: path.join(dir, 's.db'), ADMIN_EMAIL: 'adm@x.com', STUDIO_GATE: 'off', JWT_SECRET: 't' }, stdio: ['ignore', 'ignore', 'inherit'] });
 const html = readFileSync(existsSync('www/index.html') ? 'www/index.html' : '../app/www/index.html', 'utf8');
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { c ? pass++ : fail++; console.log(`${c ? 'OK   ' : 'FALHA'} ${n}${c ? '' : ' ' + x}`); };
@@ -124,8 +124,8 @@ async function main() {
 
   // amigos por ID e DM
   A.click('[data-a="back"]'); A.click('[data-a="ctab"][data-v="friends"]'); await until(() => A.$('#fName'));
-  ok('mostra o ID do usuário', new RegExp('#' + ra.user.id).test(A.text()));
-  A.set('fName', '#' + rb.user.id); A.click('[data-a="addfriend"]');
+  ok('mostra o ID do usuário', new RegExp('#' + ra.user.uid).test(A.text()));
+  A.set('fName', '#' + Number(rb.user.uid)); A.click('[data-a="addfriend"]');
   ok('adicionar amigo por ID', await until(() => /Pedido enviado|Pedidos/.test(A.toast() + A.text())), A.toast());
   B.click('[data-a="back"]'); B.click('[data-a="ctab"][data-v="friends"]');
   ok('pedido de amizade chega', await until(() => B.$('[data-a="accept"]')), B.text().slice(0,300) + ' | ' + JSON.stringify(B.errs));

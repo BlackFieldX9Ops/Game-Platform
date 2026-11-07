@@ -240,3 +240,33 @@ CREATE TABLE IF NOT EXISTS dev_outbox (
 `);
 addCol('users', 'email_verified', 'INTEGER NOT NULL DEFAULT 0');
 addCol('users', 'google_id', 'TEXT');
+
+/* ---------- ID de jogador (000 = administrador), plano Studio, moedas e itens ---------- */
+addCol('users', 'uid', 'INTEGER');
+addCol('users', 'studio_until', 'TEXT');
+addCol('users', 'coins', 'INTEGER NOT NULL DEFAULT 0');
+addCol('users', 'frame', 'TEXT');
+addCol('users', 'banner', 'TEXT');
+db.exec(`
+CREATE TABLE IF NOT EXISTS user_items (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  item_id TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, item_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS users_uid ON users(uid);
+`);
+// quem já existe recebe ID em ordem de cadastro; o primeiro administrador é o 000
+for (const u of db.prepare('SELECT id, role FROM users WHERE uid IS NULL ORDER BY id').all()) {
+  const zero = db.prepare('SELECT 1 FROM users WHERE uid = 0').get();
+  const next = u.role === 'admin' && !zero ? 0 : db.prepare('SELECT COALESCE(MAX(uid), 0) + 1 AS n FROM users').get().n;
+  db.prepare('UPDATE users SET uid = ? WHERE id = ?').run(next, u.id);
+}
+db.exec(`
+CREATE TRIGGER IF NOT EXISTS users_uid_ai AFTER INSERT ON users WHEN NEW.uid IS NULL BEGIN
+  UPDATE users SET uid = CASE
+    WHEN NEW.role = 'admin' AND NOT EXISTS (SELECT 1 FROM users WHERE uid = 0) THEN 0
+    ELSE (SELECT COALESCE(MAX(uid), 0) + 1 FROM users) END
+  WHERE id = NEW.id;
+END;
+`);

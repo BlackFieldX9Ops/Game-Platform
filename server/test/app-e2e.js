@@ -12,7 +12,7 @@ try { ({ JSDOM } = require('jsdom')); } catch { console.log('jsdom não instalad
 
 const PORT = 3997, URL_ = `http://localhost:${PORT}/`;
 const dir = mkdtempSync(path.join(tmpdir(), 'gp-e2e-'));
-const srv = spawn('node', ['--disable-warning=ExperimentalWarning', 'src/index.js'], { env: { ...process.env, PORT, DB_FILE: path.join(dir, 'e.db'), ADMIN_EMAIL: 'adm@x.com', JWT_SECRET: 't' }, stdio: ['ignore', 'ignore', 'inherit'] });
+const srv = spawn('node', ['--disable-warning=ExperimentalWarning', 'src/index.js'], { env: { ...process.env, PORT, DB_FILE: path.join(dir, 'e.db'), ADMIN_EMAIL: 'adm@x.com', STUDIO_GATE: 'off', JWT_SECRET: 't' }, stdio: ['ignore', 'ignore', 'inherit'] });
 const html = readFileSync(existsSync('www/index.html') ? 'www/index.html' : '../app/www/index.html', 'utf8');
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { c ? pass++ : fail++; console.log(`${c ? 'OK   ' : 'FALHA'} ${n}${c ? '' : ' ' + x}`); };
@@ -29,6 +29,7 @@ function open(seed) {
     }
   });
   const w = dom.window, d = w.document, errs = [];
+  w.eval('GPT.forceStudio()'); // os testes antigos usam o Studio sem comprar o plano
   w.addEventListener('error', e => errs.push(e.message));
   const $ = s => d.querySelector(s);
   const click = s => { const el = $(s); if (!el) { errs.push('faltou ' + s); return; } el.click(); };
@@ -49,16 +50,16 @@ async function main() {
   const C = open();
   await wait(300);
   ok('início vazio, sem jogos de exemplo', /Ainda não há jogos publicados/.test(C.text()) && !FAKE.test(C.text()));
-  for (const [tab, sub] of [['store'], ['lib'], ['profile'], ['profile', 'community'], ['profile', 'friends'], ['profile', 'wish'], ['profile', 'upd'], ['profile', 'ach']]) {
+  for (const [tab, sub] of [['store'], ['lib'], ['profile'], ['chat'], ['profile', 'wish'], ['profile', 'upd'], ['profile', 'ach']]) {
     C.click(`[data-a="go"][data-v="${tab}"]`); if (sub) C.click(`[data-a="sub"][data-v="${sub}"]`);
     if (FAKE.test(C.text())) ok(`sem conteúdo fictício em ${tab}/${sub || ''}`, false, C.text().slice(0, 80));
   }
   ok('sem conteúdo fictício em nenhuma tela', true);
-  C.click('[data-a="go"][data-v="profile"]'); C.click('[data-a="sub"][data-v="community"]');
+  C.click('[data-a="go"][data-v="chat"]'); C.click('[data-a="ctab"][data-v="feed"]');
   ok('comunidade começa sem posts', /Nenhuma publicação ainda/.test(C.text()));
-  C.click('[data-a="back"]'); C.click('[data-a="go"][data-v="profile"]'); C.click('[data-a="sub"][data-v="friends"]');
+  C.click('[data-a="ctab"][data-v="friends"]');
   ok('amigos offline pedem conta e não listam ninguém', /é preciso ter uma conta/.test(C.text()) && !C.$('[data-a="chatopen"]'));
-  C.click('[data-a="back"]'); C.click('[data-a="sub"][data-v="upd"]');
+  C.click('[data-a="sub"][data-v="upd"]');
   ok('notificações começam vazias', /Nenhuma notificação/.test(C.text()));
   // dados de demonstração salvos por versões antigas são apagados uma única vez
   const old = open({ gp_friends: [{ n: 'LunaPixel', st: 'online', g: 'x' }], gp_mod: [{ id: 1, t: 'Relato', m: 'x', a: '1' }], gp_users: [{ n: 'ShadowNinja', e: 'a@b.c', st: 'Ativo' }], gp_upd: [{ id: 'u1', t: 'Túnel Neon', d: 'x', a: '2 h' }], gp_lib: { d1: 1, u9: 1 }, gp_plays: 12, gp_xp: 300, gp_chats: { LunaPixel: [{ me: 1, t: 'oi' }] }, gp_name: 'Eu' });
@@ -73,7 +74,7 @@ async function main() {
   await until(() => A.$('#aMail'));
   A.click('[data-a="authtab"][data-v="reg"]');
   A.set('aName', 'Ana'); A.set('aMail', 'ana@x.com'); A.set('aPass', 'senha12345'); A.click('[data-a="authgo"]');
-  ok('cadastro pelo app', await until(() => /Conta online/.test(A.text())), A.toast());
+  ok('cadastro pelo app', await until(() => /ID #[0-9]{3}/.test(A.text())), A.toast());
 
   // Ana publica um jogo
   A.click('[data-a="go"][data-v="studio"]'); A.click('[data-a="stab"][data-v="pub"]');
@@ -87,7 +88,7 @@ async function main() {
   B.click('[data-a="go"][data-v="profile"]'); B.click('[data-a="sub"][data-v="auth"]');
   await until(() => B.$('#aMail')); B.click('[data-a="authtab"][data-v="reg"]');
   B.set('aName', 'Beto'); B.set('aMail', 'beto@x.com'); B.set('aPass', 'senha12345'); B.click('[data-a="authgo"]');
-  await until(() => /Conta online/.test(B.text()));
+  await until(() => /ID #[0-9]{3}/.test(B.text()));
   B.click('[data-a="go"][data-v="store"]');
   ok('Beto vê o jogo da Ana na Loja', await until(() => /Meu Jogo/.test(B.text())));
   const gcard = [...B.d.querySelectorAll('[data-a="open"]')].find(e => /Meu Jogo/.test(e.textContent)); gcard.click();
@@ -103,10 +104,10 @@ async function main() {
   ok('biblioteca do Beto guarda o jogo', await until(() => /Meu Jogo/.test(B.text())));
 
   // Amizade e chat em tempo real
-  B.click('[data-a="go"][data-v="profile"]'); B.click('[data-a="sub"][data-v="friends"]');
+  B.click('[data-a="go"][data-v="chat"]'); B.click('[data-a="ctab"][data-v="friends"]');
   B.set('fName', 'Ana'); B.click('[data-a="addfriend"]');
   ok('pedido de amizade enviado', await until(() => /Pedido enviado/.test(B.text())), B.toast());
-  A.click('[data-a="go"][data-v="profile"]'); A.click('[data-a="sub"][data-v="friends"]');
+  A.click('[data-a="go"][data-v="chat"]'); A.click('[data-a="ctab"][data-v="friends"]');
   ok('Ana vê o pedido ao abrir a tela de amigos', await until(() => A.$('[data-a="accept"]')));
   A.click('[data-a="accept"]');
   ok('Ana aceita e os dois viram amigos', await until(() => A.$('[data-a="chatopen"]')));
@@ -129,8 +130,8 @@ async function main() {
   AD.click('[data-a="go"][data-v="profile"]'); AD.click('[data-a="sub"][data-v="auth"]');
   await until(() => AD.$('#aMail')); AD.click('[data-a="authtab"][data-v="reg"]');
   AD.set('aName', 'Admin'); AD.set('aMail', 'adm@x.com'); AD.set('aPass', 'senha12345'); AD.click('[data-a="authgo"]');
-  await until(() => /Conta online/.test(AD.text()));
-  ok('menu de administração aparece para admin', !!AD.$('[data-a="sub"][data-v="admin"]'));
+  await until(() => /ID #[0-9]{3}/.test(AD.text()));
+  ok('menu de administração aparece para admin', !!AD.$('#admb:not([hidden])'));
   AD.click('[data-a="sub"][data-v="admin"]');
   ok('painel de administração mostra os números', await until(() => /Usuários/.test(AD.text()) && /Denúncias pendentes/.test(AD.text())));
   // destaques, categorias e logs
@@ -175,7 +176,7 @@ async function main() {
   await wait(700);
   const after = await (await fetch(URL_ + 'api/games')).json();
   ok('conteúdo removido pelo admin some da Loja', after.games.length === 0);
-  ok('Ana (usuária comum) não vê o menu de administração', !A.$('[data-a="sub"][data-v="admin"]'));
+  ok('Ana (usuária comum) não vê o menu de administração', !A.$('#admb:not([hidden])'));
 
   // Sair e voltar ao modo offline
   A.click('[data-a="go"][data-v="profile"]'); A.click('[data-a="sub"][data-v="settings"]'); A.click('[data-a="logout"]');
@@ -238,18 +239,18 @@ async function main() {
   A.click('[data-a="go"][data-v="profile"]'); A.click('[data-a="sub"][data-v="settings"]');
   await until(() => A.$('input[data-cfg="admin"]'));
   const sw = A.$('input[data-cfg="admin"]'); sw.checked = true; sw.dispatchEvent(new A.w.Event('change', { bubbles: true }));
-  ok('sem código o painel de administração continua fechado', await until(() => A.$('#admCode2') && /Crie um código/.test(A.text())) && !A.$('[data-a="sub"][data-v="admin"]'));
+  ok('sem código o painel de administração continua fechado', await until(() => A.$('#admCode2') && /Crie um código/.test(A.text())) && !A.$('#admb:not([hidden])'));
   A.set('admCode', 'abc'); A.set('admCode2', 'abc'); A.click('[data-a="admgo"]');
   ok('código curto é recusado', /pelo menos 6/.test(A.toast()));
   A.set('admCode', 'segredo1'); A.set('admCode2', 'diferente'); A.click('[data-a="admgo"]');
-  ok('códigos diferentes são recusados', /não são iguais/.test(A.toast()) && !A.$('[data-a="sub"][data-v="admin"]'));
+  ok('códigos diferentes são recusados', /não são iguais/.test(A.toast()) && !A.$('#admb:not([hidden])'));
   A.set('admCode', 'segredo1'); A.set('admCode2', 'segredo1'); A.click('[data-a="admgo"]');
   ok('criar o código ativa o administrador local', await until(() => /Ativo/.test(A.text()) && !!A.$('[data-a="admlock"]')));
   ok('o código não fica guardado em texto puro', !/segredo1/.test(A.w.localStorage.getItem('gp_admcode')) && /"h":"[0-9a-f]{64}"/.test(A.w.localStorage.getItem('gp_admcode')));
   ok('sha256 confere com a referência', A.w.eval("GPT.sha256('abc')") === 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
   A.click('[data-a="admlock"]');
   ok('bloquear fecha o menu de administração', await until(() => !A.$('[data-a="admlock"]')));
-  A.click('[data-a="go"][data-v="profile"]'); ok('perfil sem menu de administração quando bloqueado', !A.$('[data-a="sub"][data-v="admin"]'));
+  A.click('[data-a="go"][data-v="profile"]'); ok('perfil sem menu de administração quando bloqueado', !A.$('#admb:not([hidden])'));
   A.click('[data-a="sub"][data-v="settings"]'); await until(() => A.$('input[data-cfg="admin"]'));
   const sw2 = A.$('input[data-cfg="admin"]'); sw2.checked = true; sw2.dispatchEvent(new A.w.Event('change', { bubbles: true }));
   await until(() => A.$('#admCode') && !A.$('#admCode2'));
