@@ -1,0 +1,27 @@
+# Versão GRÁTIS para testar: sem disco, então contas e jogos se perdem quando o serviço reinicia ou dorme muito.
+# No Render, em "Blueprint Path", escreva: render-gratis.yaml
+services:
+  - type: web
+    name: game-platform-teste
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
