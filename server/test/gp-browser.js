@@ -169,23 +169,27 @@ async function main() {
   p = await page(phone, seed(ana));
   await goto(p);
   await p.evaluate(() => document.querySelector('[data-a=sub][data-v=uiprefs]').click()); await p.waitForTimeout(300);
+  await p.evaluate(() => document.querySelector('[data-a=uitab][data-v=tamanho]').click()); await p.waitForTimeout(150);
   await p.evaluate(() => { const r = document.getElementById('ui_btn'); r.value = 130; r.dispatchEvent(new Event('input', { bubbles: true })); const t = document.getElementById('ui_txt'); t.value = 120; t.dispatchEvent(new Event('input', { bubbles: true })); });
   ok('cada botão de tamanho muda só a sua parte', await p.evaluate(() => { const s = getComputedStyle(document.documentElement); return s.getPropertyValue('--zb').trim() === '1.3' && s.getPropertyValue('--ts').trim() === '1.2' && s.getPropertyValue('--zm').trim() === '1' }));
   await p.waitForTimeout(500); await p.reload(); await p.waitForTimeout(1000);
   ok('o tamanho escolhido é lembrado ao reabrir', await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--zb').trim() === '1.3'));
   await p.evaluate(() => document.querySelector('[data-a=sub][data-v=uiprefs]').click()); await p.waitForTimeout(300);
+  await p.evaluate(() => document.querySelector('[data-a=uitab][data-v=tamanho]').click()); await p.waitForTimeout(150);
   await p.evaluate(() => document.querySelector('[data-a=uireset]').click()); await p.waitForTimeout(200);
   ok('restaurar o padrão', await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--zb').trim() === '1'));
   // atalhos
+  await p.evaluate(() => document.querySelector('[data-a=uitab][data-v=inicio]').click()); await p.waitForTimeout(150);
   await p.evaluate(() => document.querySelector('[data-a=shtg][data-v=missions]').click()); await p.waitForTimeout(150);
   await p.evaluate(() => document.querySelector('[data-a=shtg][data-v=notif]').click()); await p.waitForTimeout(150);
   await p.evaluate(() => document.querySelector('[data-a=shmv][data-v="notif:-1"]').click()); await p.waitForTimeout(150);
   await p.evaluate(() => document.querySelector('[data-a=back]').click()); await p.waitForTimeout(250);
   const names = await p.evaluate(() => [...document.querySelectorAll('.shorts .sct span:last-child')].map(e => e.textContent));
   ok('atalhos da tela inicial: remover, adicionar e reordenar', JSON.stringify(names) === JSON.stringify(['Loja', 'Biblioteca', 'Avisos', 'Conquistas']), JSON.stringify(names));
-  ok('jogador comum não tem atalho de Auditoria/Painel', await p.evaluate(() => { document.querySelector('[data-a=sub][data-v=uiprefs]').click(); return true; }) && !/Auditoria|Painel|Versões|Enviar aviso/.test(await txt(p, '#view')));
+  ok('jogador comum não tem atalho de Auditoria/Painel', await p.evaluate(() => { document.querySelector('[data-a=sub][data-v=uiprefs]').click(); document.querySelector('[data-a=uitab][data-v=inicio]').click(); return true; }) && !/Auditoria|Painel|Versões|Enviar aviso/.test(await txt(p, '#view')));
   await p.evaluate(() => document.querySelector('[data-a=back]').click());
   await p.evaluate(() => { document.querySelector('[data-a=sub][data-v=uiprefs]').click(); }); await p.waitForTimeout(250);
+  await p.evaluate(() => document.querySelector('[data-a=uitab][data-v=inicio]').click()); await p.waitForTimeout(150);
   await p.evaluate(() => { const c = document.querySelector('[data-uih=hero]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); });
   await p.evaluate(() => document.querySelector('[data-a=back]').click()); await p.waitForTimeout(250);
   ok('blocos da tela inicial podem ser escondidos', await p.evaluate(() => !document.querySelector('.hero')));
@@ -194,6 +198,7 @@ async function main() {
   p = await page({ ...phone }, seed(adm));
   await goto(p);
   await p.evaluate(() => document.querySelector('[data-a=sub][data-v=uiprefs]').click()); await p.waitForTimeout(250);
+  await p.evaluate(() => document.querySelector('[data-a=uitab][data-v=inicio]').click()); await p.waitForTimeout(150);
   ok('administrador pode ter atalhos de Auditoria, Painel, Versões e Enviar aviso', /Auditoria/.test(await txt(p, '#view')) && /Versões/.test(await txt(p, '#view')) && /Enviar aviso/.test(await txt(p, '#view')));
   await p.evaluate(() => document.querySelector('[data-a=shtg][data-v=audit]').click()); await p.waitForTimeout(150);
   await p.evaluate(() => document.querySelector('[data-a=back]').click()); await p.waitForTimeout(250);

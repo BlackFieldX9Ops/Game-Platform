@@ -294,3 +294,12 @@ Configurações → **Aparência e tamanho**: tamanho geral da tela, e tamanhos 
 - **Central no app**: histórico, não lidas, marcar uma/todas como lidas, apagar, filtrar por categoria e abrir a tela relacionada.
 
 Testes: `npm test` (servidor), `npm run test:app` (telas), `npm run test:browser` (Chromium real: OTA, atualização, offline, toque, tamanhos, push) e `npm run test:zip`.
+
+## Pagamentos, configurações do administrador e lançamento
+
+- **Pagamentos** (painel > Compras > Pagamentos): escolha *Teste*, *InfinitePay* (link com Pix e cartão; informe o InfiniteTag sem o `$`) ou *Pix manual* (chave Pix; você confirma cada pedido em *Pedidos*). Pacotes de moedas são editáveis (nome, moedas, preço) e dá para criar novos. A InfinitePay não assina o aviso de pagamento, então o servidor sempre confere cada aviso na própria API (`payment_check`) antes de entregar.
+- **Configurações** (painel > Configurações, só administrador): Geral (nome, frase, e-mail de suporte, links, aviso na tela inicial), Cadastro e login (abrir/fechar cadastros, senha mínima, e-mails bloqueados, duração do login), Moderação (palavras proibidas, limites de denúncia), Chat e comunidade (tamanho, modo lento, imagens, criação de grupos), Moedas e economia (boas-vindas, bônus diário, bônus do Premium, parte do criador), Notificações (categorias, limite diário, silêncio padrão), Regras e aparelhos e Lançamento e dados. Todas as mudanças vão para a Auditoria com o valor de antes e o de depois, e o servidor respeita cada uma.
+- **Regras e requisitos**: o texto e a tabela de aparelhos são editáveis no painel e aparecem para todos em Configurações > Regras e requisitos (o app mostra também a leitura do aparelho de quem abre).
+- **Formatar compras e atividade**: pede sua senha e a frase `FORMATAR TUDO`, faz um backup antes e é registrado na Auditoria. Depois de **Lançar a plataforma** (senha + `LANÇAR`) a formatação fica desativada para sempre.
+- **Painel no celular**: Configurações > Painel de gestão > *Abrir painel* (equipe). O botão de seta no topo volta ao app.
+- **Aparência**: temas (Meia-noite, Grafite, Preto total, Oceano, Floresta, Vinho, Pôr do sol, Claro, Alto contraste), cor do fundo e de destaque livres, 7 tipos de letra, peso e espaço das linhas, bordas e menos animações. Tudo fica guardado no aparelho.

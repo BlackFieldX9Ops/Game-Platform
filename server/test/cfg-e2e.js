@@ -125,8 +125,41 @@ async function main() {
   M.click('[data-a="back"]');
   ok('voltar leva às Configurações', await until(() => !!M.$('[data-a="sub"][data-v="rules"]')));
 
+  // aparência: temas, cores e letras
+  M.click('[data-a="back"]'); await wait(200);
+  M.click('[data-a="sub"][data-v="uiprefs"]');
+  ok('Aparência abre na aba Cores com os temas', await until(() => !!M.$('[data-a="uitheme"][data-v="wine"]') && !!M.$('[data-a="uitab"][data-v="letras"]')));
+  const root = M.d.documentElement;
+  M.click('[data-a="uitheme"][data-v="wine"]');
+  ok('tema Vinho pinta a tela toda e muda o destaque', await until(() => root.style.getPropertyValue('--bg') === '#170a10' && root.style.getPropertyValue('--accent') === '#f472b6'), root.getAttribute('style'));
+  M.click('[data-a="uiacc"][data-v="#3b82f6"]');
+  ok('cor de destaque escolhida vale mais que a do tema', await until(() => root.style.getPropertyValue('--accent') === '#3b82f6'));
+  M.click('[data-a="uitab"][data-v="letras"]');
+  M.click('[data-a="uifont"][data-v="robo"]');
+  ok('fonte robótica troca a letra do app', await until(() => /monospace/.test(root.style.getPropertyValue('--font'))));
+  M.click('[data-a="uitab"][data-v="cores"]');
+  M.click('[data-a="uitheme"][data-v="light"]');
+  ok('tema Claro liga o modo claro', await until(() => root.classList.contains('lt') && root.style.getPropertyValue('--fg') === '#14172b'));
+  ok('as escolhas ficam guardadas', JSON.parse(M.w.localStorage.getItem('gp_ui')).font === 'robo' && JSON.parse(M.w.localStorage.getItem('gp_ui')).theme === 'light');
+  M.click('[data-a="uiresetall"]');
+  ok('Restaurar tudo volta ao visual original', await until(() => !root.style.getPropertyValue('--bg') && !root.style.getPropertyValue('--font') && !root.classList.contains('lt')), root.getAttribute('style'));
+
+  // painel no celular (opt-in, em Configurações)
+  const N = open({ gp_clean: 2, gp_token: adm.token, gp_user: adm.user }, false);
+  await wait(1200);
+  ok('administrador no celular começa no app', N.ws().hidden === true);
+  N.d.querySelector('[data-a="sub"][data-v="settings"]').click();
+  ok('Configurações oferece abrir o painel no celular', !!N.$('[data-a="w_enter"]'));
+  N.click('[data-a="w_enter"]');
+  ok('o painel abre no celular', await until(() => !N.ws().hidden && N.d.documentElement.classList.contains('ws')));
+  N.click('[data-a="w_sec"][data-v="cfg"]');
+  ok('configurações funcionam no celular', await until(() => /Cadastro e login/.test(N.wtext())));
+  ok('a escolha fica guardada', N.w.localStorage.getItem('gp_ws_m') === '1');
+  N.click('[data-a="w_exit"]');
+  ok('voltar ao app esconde o painel e limpa a escolha', N.ws().hidden === true && N.w.localStorage.getItem('gp_ws_m') === null);
+
   console.log(`\n${pass} passaram, ${fail} falharam`);
-  const errs = [...A.errs, ...M.errs];
+  const errs = [...A.errs, ...M.errs, ...N.errs];
   if (errs.length) { console.log('Erros no app:', errs); fail++; }
   srv.kill(); rmSync(dir, { recursive: true, force: true }); process.exit(fail ? 1 : 0);
 }
