@@ -267,3 +267,30 @@ Depois de atualizar o app, o servidor no Render precisa ser reimplantado para te
 - No **navegador do computador** (tela com 1000 px ou mais) todos os jogadores veem o app com **barra lateral e área larga**, no estilo do painel. O **app Android não muda**.
 - No celular, **puxar para baixo** no topo da tela mostra uma seta redonda que gira e atualiza jogos, Loja, avisos e a checagem de versão.
 - O **app Linux deixou de ser atualizado automaticamente** (o workflow só roda se for disparado à mão): Android para Android, web para computador.
+
+## Servidor central, versões e atualização sem reinstalar
+
+O app Android nasce apontando para o servidor oficial (`https://game-platform-dgvz.onrender.com`, gravado no build; a variável `SERVER_URL` do GitHub só serve para trocar). No Android o endereço não é editável; no navegador ele é o próprio site.
+
+- **Manifesto** (`GET /api/app/manifest?platform&build`): informa a versão mais nova do app, versão mínima, se é obrigatória, a versão da interface (hash SHA-256 e tamanho) e a versão do conteúdo/configuração (atalhos, intervalo de verificação, zoom máximo). O app consulta ao abrir, ao voltar para o primeiro plano e a cada poucos minutos.
+- **Interface remota (OTA)**: o servidor entrega `/app/ui.html`. O app baixa, confere tamanho e SHA-256, guarda e passa a abrir por ela na próxima vez. Se o arquivo não confere, nada é aplicado. Se a nova interface falha ao abrir duas vezes, o app volta sozinho para a interface embutida e avisa o servidor. Perfil, favoritos, conquistas e progresso ficam no servidor e no armazenamento local, e não são tocados. O primeiro APK com esse recurso precisa ser instalado uma vez; depois disso a interface atualiza sozinha.
+- **Atualização nativa**: o APK novo é baixado, tem o SHA-256 conferido e só então é instalado por cima (mesma assinatura). Se o app foi instalado pela Google Play, o botão abre a loja (as atualizações dentro do app da Play só existem para quem distribui pela Play). O link do APK precisa ser https do GitHub ou do próprio servidor.
+- **Tela de atualização**: versão atual e nova, descrição, correções, progresso, "Atualizar agora" e "Depois" (some quando a versão é obrigatória).
+- **Offline**: a última resposta fica em cache; sem internet o app abre com o que tem, mostra uma faixa de "sem conexão" e reconecta sozinho ao voltar a rede.
+- **Painel (Administração → Versões do app)**: publicar versão (número, descrição, correções, link e SHA-256 do APK, obrigatória ou opcional), histórico, ligar/desligar e "Buscar do GitHub". Há registro de auditoria e contagem de verificações, downloads, instalações e falhas.
+
+## Personalização da interface
+
+Configurações → **Aparência e tamanho**: tamanho geral da tela, e tamanhos separados de espaçamento do layout, menus, painéis, botões e textos; área de toque maior; atalhos da Início configuráveis (adicionar, remover e reordenar; Auditoria e Painel só aparecem para quem tem permissão). Tudo é salvo no aparelho e testado de 320 a 1366 px de largura, sem cortes. O puxar-para-atualizar foi refeito (limite menor, funciona com mouse e dedo).
+
+## Notificações externas
+
+- **Categorias**: atualização, novo jogo, atualização de jogo, mensagem, amizade, convite, evento, conquista, aviso da administração, manutenção, segurança (sempre ligada), Studio e Pro.
+- **Preferências** (Configurações → Notificações): tudo ligado/desligado, por categoria, som, vibração, prioridade, horário silencioso.
+- **Web Push**: service worker em `/sw.js` e chaves VAPID (`VAPID_PUBLIC`, `VAPID_PRIVATE`, `VAPID_SUBJECT`; se faltarem, o servidor gera e guarda).
+- **Android (FCM)**: no servidor defina `FCM_SERVICE_ACCOUNT` (JSON da conta de serviço do Firebase, em texto ou base64). No GitHub crie o segredo `GOOGLE_SERVICES_JSON` com o `google-services.json` em base64 (pacote `com.gameplatform.app`). Sem o segredo, o APK sai sem push externo e continua com a central interna.
+- **Servidor**: aparelhos ligados à conta, deduplicação, reenvio (30 s, 2 min, 10 min, 1 h), aparelho inválido é desativado, tokens nunca aparecem nas respostas, tudo auditado. O app só empurra quando a pessoa não está com o app aberto.
+- **Painel (Administração → Notificações)**: enviar para todos, grupo ou pessoa, por categoria, agendar e cancelar, avisos de manutenção, anunciar jogos/atualizações, e ver enviadas, entregues, falhas e abertas.
+- **Central no app**: histórico, não lidas, marcar uma/todas como lidas, apagar, filtrar por categoria e abrir a tela relacionada.
+
+Testes: `npm test` (servidor), `npm run test:app` (telas), `npm run test:browser` (Chromium real: OTA, atualização, offline, toque, tamanhos, push) e `npm run test:zip`.

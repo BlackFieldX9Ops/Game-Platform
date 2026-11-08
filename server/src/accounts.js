@@ -61,6 +61,7 @@ export function mountAccounts(c) {
     if (!u) bad('Código inválido ou vencido', 400);
     checkCode(email, 'reset', req.body.code);
     run('UPDATE users SET pass_hash = ?, email_verified = 1 WHERE id = ?', bcrypt.hashSync(password, 10), u.id);
+    if (c.hub && c.hub.emit) c.hub.emit(u.id, 'Senha alterada', 'A senha da sua conta foi redefinida. Se não foi você, fale com a administração.', { cat: 'security', important: true, kind: 'security' });
     res.json({ token: sign(u), user: userOut(get('SELECT * FROM users WHERE id = ?', u.id)) });
   }));
 

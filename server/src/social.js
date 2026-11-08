@@ -1,11 +1,13 @@
 // Chat e comunidade: feed, comentários, seguidores, grupos, comunidades, conversas e notificações sociais.
 import { itemName } from './store.js';
+import { catOfKind } from './push.js';
 const withSkin = r => ({ ...r, author_titleName: itemName(r.author_title) });
 export function mountSocial(c) {
   const { app, auth, softAuth, wrap, bad, str, int, get, all, run, areFriends, pushTo, isOnline, publicUser, loadGame, COVER_RE } = c;
 
-  const notifyK = (userId, title, body, kind, ref = '') =>
-    run('INSERT INTO notifications (user_id, title, body, kind, ref) VALUES (?,?,?,?,?)', userId, title, body, kind, ref);
+  const notifyK = (userId, title, body, kind, ref = '') => c.hub && c.hub.emit
+    ? c.hub.emit(userId, title, body, { kind, ref })
+    : run('INSERT INTO notifications (user_id, title, body, kind, ref) VALUES (?,?,?,?,?)', userId, title, body, kind, ref);
   const IMG_MAX = 400_000;
   function image(v) {
     if (v === undefined || v === null || v === '') return null;
@@ -171,6 +173,7 @@ export function mountSocial(c) {
     const r = run('INSERT INTO messages (from_id, to_id, text, image, game_id) VALUES (?,?,?,?,?)', req.user.id, to, text, img, gid);
     const msg = dmRow(r.lastInsertRowid);
     pushTo(to, { type: 'message', message: { ...msg, from_name: req.user.name } });
+    if (!isOnline(to) && c.hub && c.hub.emit) c.hub.emit(to, `Mensagem de ${req.user.name}`, (text || (img ? 'Enviou uma imagem' : 'Convidou você para um jogo')).slice(0, 100), { cat: 'message', ref: 'user:' + req.user.id, dedupe: `dm:${req.user.id}:${to}`, window: 10 });
     mentions(text, req.user, 'user:' + req.user.id, 'em uma conversa');
     res.status(201).json({ message: msg });
   }));
@@ -378,9 +381,14 @@ export function mountSocial(c) {
   purge(); setInterval(purge, 3600e3).unref();
   app.get('/api/notifications', auth, (req, res) => {
     purge();
-    const rows = all(`SELECT id, title, body, kind, ref, created_at FROM notifications
-      WHERE (user_id = ? OR user_id IS NULL) AND id NOT IN (SELECT notif_id FROM notif_dismissed WHERE user_id = ?) ORDER BY id DESC LIMIT 50`, req.user.id, req.user.id);
-    res.json({ notifications: rows.map(n => ({ ...n, important: IMPORTANT.includes(n.kind) })) });
+    const cat = typeof req.query.category === 'string' ? req.query.category : '';
+    let rows = all(`SELECT n.id, n.title, n.body, n.kind, n.ref, n.category, n.created_at,
+        CASE WHEN n.user_id IS NULL THEN EXISTS (SELECT 1 FROM notif_reads r WHERE r.notif_id = n.id AND r.user_id = ?) ELSE n.read_at IS NOT NULL END AS read
+      FROM notifications n WHERE (n.user_id = ? OR n.user_id IS NULL) AND n.id NOT IN (SELECT notif_id FROM notif_dismissed WHERE user_id = ?) ORDER BY n.id DESC LIMIT 100`, req.user.id, req.user.id, req.user.id);
+    rows = rows.map(n => ({ ...n, category: n.category || catOfKind(n.kind) }));
+    if (cat) rows = rows.filter(n => n.category === cat);
+    if (req.query.unread === '1') rows = rows.filter(n => !n.read);
+    res.json({ notifications: rows.slice(0, 60).map(n => ({ ...n, read: !!n.read, important: IMPORTANT.includes(n.kind) })) });
   });
   app.delete('/api/notifications/:id', auth, wrap((req, res) => {
     const n = get('SELECT id, user_id FROM notifications WHERE id = ?', int(req.params.id, 'id'));

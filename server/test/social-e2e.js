@@ -150,8 +150,8 @@ async function main() {
   await until(() => A.$('[data-a="sub"][data-v="upd"]'), 500);
   A.click('[data-a="sub"][data-v="upd"]');
   await until(() => /Meu Labirinto/.test(A.text()), 3000) || (A.w.document.getElementById('bell').click(), await wait(1200));
-  ok('notificação de jogo publicado é clicável', await until(() => A.d.querySelector('button.li[data-a="open"]'), 4000), A.text().slice(0, 200));
-  A.click('button.li[data-a="open"]');
+  ok('notificação de jogo publicado é clicável', await until(() => A.d.querySelector('.nrow [data-a="open"]'), 4000), A.text().slice(0, 200));
+  A.click('.nrow [data-a="open"]');
   ok('toque na notificação abre o jogo', await until(() => /Meu Labirinto/.test(A.text()) && A.$('[data-a="back"]')));
   // jogo apagado some da biblioteca de quem o tinha, sem recarregar
   const ef = await api('POST', '/games', { title: 'Jogo Efemero', category: 'Ação', dim: '2D', code: '<h1>e</h1>' }, rb.token);

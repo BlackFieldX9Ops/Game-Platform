@@ -171,6 +171,106 @@ addC('users', 'last_ip', 'TEXT');
 addC('users', 'last_ua', 'TEXT');
 addC('users', 'perms', 'TEXT');
 
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS app_versions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  build INTEGER NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  platform TEXT NOT NULL DEFAULT 'android',
+  notes TEXT NOT NULL DEFAULT '',
+  fixes TEXT NOT NULL DEFAULT '[]',
+  mandatory INTEGER NOT NULL DEFAULT 0,
+  url TEXT NOT NULL DEFAULT '',
+  sha256 TEXT NOT NULL DEFAULT '',
+  size INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  actor TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (platform, build)
+);
+CREATE TABLE IF NOT EXISTS app_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,
+  platform TEXT NOT NULL DEFAULT '',
+  from_build INTEGER NOT NULL DEFAULT 0,
+  to_build INTEGER NOT NULL DEFAULT 0,
+  ui TEXT NOT NULL DEFAULT '',
+  ok INTEGER NOT NULL DEFAULT 1,
+  detail TEXT NOT NULL DEFAULT '',
+  user_id INTEGER,
+  ip TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS app_events_k ON app_events(kind, id);
+`);
+
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS notif_reads (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  notif_id INTEGER NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, notif_id)
+);
+CREATE TABLE IF NOT EXISTS notif_prefs (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  data TEXT NOT NULL DEFAULT '{}',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS push_devices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('web','fcm')),
+  token TEXT NOT NULL UNIQUE,
+  keys TEXT NOT NULL DEFAULT '',
+  platform TEXT NOT NULL DEFAULT '',
+  ua TEXT NOT NULL DEFAULT '',
+  tz INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  failures INTEGER NOT NULL DEFAULT 0,
+  last_ok TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS push_devices_user ON push_devices(user_id, active);
+CREATE TABLE IF NOT EXISTS campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  actor_id INTEGER,
+  actor TEXT NOT NULL DEFAULT '',
+  title TEXT NOT NULL,
+  body TEXT NOT NULL DEFAULT '',
+  category TEXT NOT NULL DEFAULT 'admin',
+  audience TEXT NOT NULL DEFAULT 'all',
+  user_id INTEGER,
+  important INTEGER NOT NULL DEFAULT 0,
+  ref TEXT NOT NULL DEFAULT '',
+  scheduled_at TEXT,
+  status TEXT NOT NULL DEFAULT 'sent',
+  count INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  sent_at TEXT,
+  cancelled_at TEXT
+);
+CREATE INDEX IF NOT EXISTS campaigns_due ON campaigns(status, scheduled_at);
+CREATE TABLE IF NOT EXISTS push_queue (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  notif_id INTEGER NOT NULL,
+  campaign_id INTEGER,
+  device_id INTEGER NOT NULL REFERENCES push_devices(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'queued',
+  attempts INTEGER NOT NULL DEFAULT 0,
+  next_at INTEGER NOT NULL DEFAULT 0,
+  error TEXT NOT NULL DEFAULT '',
+  payload TEXT NOT NULL DEFAULT '{}',
+  sent_at TEXT,
+  opened_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (notif_id, device_id)
+);
+CREATE INDEX IF NOT EXISTS push_queue_due ON push_queue(status, next_at);
+CREATE INDEX IF NOT EXISTS push_queue_camp ON push_queue(campaign_id);
+`);
+
 export const all = (sql, ...p) => db.prepare(sql).all(...p);
 export const get = (sql, ...p) => db.prepare(sql).get(...p);
 export const run = (sql, ...p) => db.prepare(sql).run(...p);
@@ -243,6 +343,10 @@ addCol('messages', 'game_id', 'INTEGER REFERENCES games(id) ON DELETE SET NULL')
 addCol('messages', 'read_at', 'TEXT');
 addCol('notifications', 'kind', "TEXT NOT NULL DEFAULT 'sys'");
 addCol('notifications', 'ref', "TEXT NOT NULL DEFAULT ''");
+addCol('notifications', 'category', "TEXT NOT NULL DEFAULT ''");
+addCol('notifications', 'read_at', 'TEXT');
+addCol('notifications', 'dedupe', "TEXT NOT NULL DEFAULT ''");
+addCol('notifications', 'campaign_id', 'INTEGER');
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS notif_dismissed (

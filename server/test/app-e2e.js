@@ -322,7 +322,7 @@ async function main() {
   await wait(600); N.click('#bell');
   ok('aviso comum com mais de 24 h some sozinho', await until(() => /Aviso recente/.test(N.text())) && !/Aviso comum velho/.test(N.text()));
   ok('aviso importante antigo continua, marcado como Importante', /Atualização disponível/.test(N.text()) && /Importante/.test(N.text()));
-  ok('toque na atualização abre as Configurações', (N.click('button.li[data-a="sub"][data-v="settings"]'), await until(() => /Atualização automática|Configurações/.test(N.text()))));
+  ok('toque na atualização abre a tela de atualização/Configurações', (N.click('.nrow [data-a="sub"]'), await until(() => /Atualização do app|Atualização automática|Configurações|Versão/.test(N.text()))));
   ok('nenhum erro de script', [A, B, AD].every(x => x.errs.length === 0), JSON.stringify([A.errs, B.errs, AD.errs]));
 }
 try { await main(); } catch (e) { fail++; console.error('ERRO', e); }

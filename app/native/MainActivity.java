@@ -39,6 +39,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.MessageDigest;
 
 /**
  * Tela cheia de ponta a ponta e controle de orientação para o Game Platform.
@@ -48,6 +49,8 @@ import java.net.URL;
  *   setBackLock(boolean)    trava o botão voltar do celular durante o jogo
  *   setOrientation("portrait" | "landscape" | "auto")  trava a tela em pé, deitada, ou deixa girar
  *   canInstall() / openInstallSettings() / installApk(url)  atualização automática do app
+ *   installApkVerified(url, sha256, size)  baixa, confere o SHA-256 e só então instala
+ *   getInstaller() / openStore()  detectam instalação pela Play Store e abrem a loja
  *   getBuild() / openUrl(url)  usados pela atualização do app
  *   takeAuth()                 código de login devolvido pelo Google (gameplatform://auth)
  *
@@ -168,6 +171,11 @@ public class MainActivity extends BridgeActivity {
   }
 
   private void downloadAndInstall(String url) throws Exception {
+    downloadAndInstall(url, null, 0);
+  }
+
+  /** Baixa o APK; se vier o SHA-256 esperado, só instala se o arquivo bater (senão avisa 'sha'). */
+  private void downloadAndInstall(String url, String sha, long size) throws Exception {
     File f = new File(getCacheDir(), "update.apk");
     HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
     c.setConnectTimeout(15000);
@@ -191,6 +199,28 @@ public class MainActivity extends BridgeActivity {
       }
     }
     if (f.length() < 1_000_000) throw new IOException("Arquivo incompleto");
+    if (size > 0 && f.length() != size) {
+      f.delete();
+      updating = false;
+      js("sha", "tamanho");
+      return;
+    }
+    if (sha != null && sha.length() > 0) {
+      MessageDigest md = MessageDigest.getInstance("SHA-256");
+      try (InputStream in = new FileInputStream(f)) {
+        byte[] b = new byte[65536];
+        int n;
+        while ((n = in.read(b)) > 0) md.update(b, 0, n);
+      }
+      StringBuilder hex = new StringBuilder();
+      for (byte x : md.digest()) hex.append(String.format("%02x", x));
+      if (!hex.toString().equalsIgnoreCase(sha.trim())) {
+        f.delete();
+        updating = false;
+        js("sha", "hash");
+        return;
+      }
+    }
     js("inst", "");
 
     PackageInstaller pi = getPackageManager().getPackageInstaller();
@@ -312,6 +342,49 @@ public class MainActivity extends BridgeActivity {
           js("err", e.getMessage() == null ? "Falha no download" : e.getMessage());
         }
       }).start();
+    }
+
+    /** Igual a installApk, mas confere tamanho e SHA-256 publicados pelo servidor antes de instalar. */
+    @JavascriptInterface
+    public void installApkVerified(final String url, final String sha, final double size) {
+      if (url == null || !url.startsWith("https://") || updating) return;
+      if (sha != null && sha.length() > 0 && !sha.matches("[A-Fa-f0-9]{64}")) { js("sha", "formato"); return; }
+      updating = true;
+      new Thread(() -> {
+        try {
+          downloadAndInstall(url, sha, (long) size);
+        } catch (Exception e) {
+          updating = false;
+          js("err", e.getMessage() == null ? "Falha no download" : e.getMessage());
+        }
+      }).start();
+    }
+
+    /** Pacote da loja que instalou o app (com.android.vending = Google Play). Vazio se foi por APK. */
+    @JavascriptInterface
+    public String getInstaller() {
+      try {
+        String p;
+        if (Build.VERSION.SDK_INT >= 30) p = getPackageManager().getInstallSourceInfo(getPackageName()).getInstallingPackageName();
+        else p = getPackageManager().getInstallerPackageName(getPackageName());
+        return p == null ? "" : p;
+      } catch (Exception e) {
+        return "";
+      }
+    }
+
+    /** Abre a página do app na Play Store (a atualização acontece pela loja). */
+    @JavascriptInterface
+    public void openStore() {
+      runOnUiThread(() -> {
+        try {
+          startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + getPackageName())).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } catch (Exception e) {
+          try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + getPackageName())));
+          } catch (Exception ignored) { }
+        }
+      });
     }
 
     @JavascriptInterface

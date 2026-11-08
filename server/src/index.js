@@ -14,6 +14,8 @@ import { mountSocial } from './social.js';
 import { mountAccounts } from './accounts.js';
 import { mountAdmin } from './admin.js';
 import { mountSecurity } from './security.js';
+import { mountAppVer } from './appver.js';
+import { mountPush } from './push.js';
 import { mountStore, hasStudio, hasPremium, fmtUid, itemName } from './store.js';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -82,7 +84,11 @@ const permsOf = u => !u ? [] : u.role === 'admin' ? Object.keys(PERMS) : u.role 
 const staffCan = perm => (req, _res, next) => permsOf(req.user).includes(perm) ? next() : next(new HttpError(403, ['admin', 'mod'].includes(req.user.role) ? 'Você não tem esta permissão' : 'Acesso restrito à equipe'));
 const adminOnly = (req, _res, next) => req.user.role === 'admin' ? next() : next(new HttpError(403, 'Acesso restrito a administradores'));
 const staffOnly = (req, _res, next) => ['admin', 'mod'].includes(req.user.role) ? next() : next(new HttpError(403, 'Acesso restrito à equipe'));
-const notify = (userId, title, body = '', ref = '') => run('INSERT INTO notifications (user_id, title, body, kind, ref) VALUES (?,?,?,?,?)', userId, title, body, ref ? 'game' : 'sys', ref);
+// hub: preenchido por mountPush; permite avisos com notificação externa (celular/navegador) sem acoplar os módulos.
+const hub = {};
+const notify = (userId, title, body = '', ref = '', cat = '') => hub.emit
+  ? hub.emit(userId, title, body, { ref, cat, kind: ref ? 'game' : 'sys' })
+  : run('INSERT INTO notifications (user_id, title, body, kind, ref) VALUES (?,?,?,?,?)', userId, title, body, ref ? 'game' : 'sys', ref);
 
 const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.description, g.category, g.age, g.dim, g.libs, g.plays, g.created_at, g.updated_at, g.owner_id, g.status, g.ai, g.tags, g.version, g.visibility, g.settings,
   u.name AS developer,
@@ -172,7 +178,7 @@ const setMaintenance = v => { run("INSERT INTO settings (key, value) VALUES ('ma
 // Modo manutenção: só a equipe usa a API; os demais recebem 503 com o aviso (login, cadastro e verificação continuam abertos).
 app.use('/api', (req, _res, next) => {
   const m = maintenance(); if (!m) return next();
-  if (/^\/(health|maintenance|auth)(\/|$)/.test(req.path)) return next();
+  if (/^\/(health|maintenance|auth|app|push\/config)(\/|$)/.test(req.path)) return next();
   const u = userFromToken(String(req.headers.authorization || '').slice(7));
   if (u && (u.role === 'admin' || u.role === 'mod')) return next();
   next(new HttpError(503, 'Em manutenção: ' + (m.msg || 'voltamos já.')));
@@ -268,6 +274,7 @@ app.post('/api/games', auth, wrap((req, res) => {
   logAct(req, 'Jogo publicado', d.title);
   run('INSERT OR IGNORE INTO library (user_id, game_id) VALUES (?,?)', req.user.id, r.lastInsertRowid);
   notify(req.user.id, 'Jogo publicado', `${d.title} já está na Loja.`, 'game:' + r.lastInsertRowid);
+  hub.newGame && hub.newGame({ id: Number(r.lastInsertRowid), title: d.title }, req.user);
   res.status(201).json({ id: Number(r.lastInsertRowid) });
 }));
 app.put('/api/games/:id', auth, wrap((req, res) => {
@@ -275,6 +282,7 @@ app.put('/api/games/:id', auth, wrap((req, res) => {
   if (!canEdit(g, req.user)) bad('Você só pode editar seus jogos', 403);
   const d = gameInput(req.body);
   run("UPDATE games SET title=?, description=?, category=?, age=?, dim=?, libs=?, code=?, orientation=?, tags=?, version=?, visibility=?, settings=?, ai=?, cover=CASE WHEN ? THEN ? ELSE cover END, updated_at=datetime('now') WHERE id=?", d.title, d.description, d.category, d.age, d.dim, d.libs, d.code, d.orientation, d.tags, d.version, d.visibility, d.settings, d.ai, d.cover === undefined ? 0 : 1, d.cover ?? null, g.id);
+  if (g.status === 'published' && d.version !== g.version && hub.gameUpdated) hub.gameUpdated({ id: g.id, title: d.title, owner_id: g.owner_id }, d.version);
   if (g.owner_id !== req.user.id) { logAct(req, 'Jogo editado pelo admin', g.title); notify(g.owner_id, 'Seu jogo foi atualizado', `${d.title} foi editado pela administração.`, 'game:' + g.id); }
   res.json({ ok: true });
 }));
@@ -498,17 +506,19 @@ app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
 /* ---------- contas: Google, recuperar senha, verificar e-mail, progresso ---------- */
 const sec = mountSecurity({ app, auth, adminOnly, wrap, bad, get, all, run, db, logAct, notify, HttpError, dbFile: process.env.DB_FILE || './data/app.db', PROD });
 const confirmCheck = sec.need;
-mountAdmin({ confirmCheck, alertAdmins, staffCan, permsOf, PERMS, app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance });
+Object.assign(hub, mountPush({ app, auth, adminOnly, staffCan, permsOf, wrap, bad, int, get, all, run, logAct, confirmCheck, parseJ, isOnline, pushTo, PROD }));
+mountAdmin({ hub, confirmCheck, alertAdmins, staffCan, permsOf, PERMS, app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance });
 mountStore({ confirmCheck, alertAdmins, staffCan, app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
-mountAccounts({ app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
+mountAccounts({ hub, app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 
 /* ---------- chat e comunidade ---------- */
-mountSocial({ app, auth, softAuth, wrap, bad, str, int, get, all, run, areFriends, pushTo, isOnline, publicUser, loadGame, COVER_RE, userFromToken, categories });
+mountSocial({ hub, app, auth, softAuth, wrap, bad, str, int, get, all, run, areFriends, pushTo, isOnline, publicUser, loadGame, COVER_RE, userFromToken, categories });
 
 /* ---------- app estático (opcional) e erros ---------- */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const www = [process.env.STATIC_DIR, path.join(here, '../www'), path.join(here, '../../app/www')]
   .filter(Boolean).map(p => path.resolve(p)).find(p => fs.existsSync(path.join(p, 'index.html'))) || '';
+const appver = mountAppVer({ app, auth, softAuth, adminOnly, wrap, bad, int, get, all, run, logAct, confirmCheck, parseJ, wwwDir: www, version: (() => { try { return JSON.parse(fs.readFileSync(path.join(here, '../package.json'), 'utf8')).version; } catch { return '1.0.0'; } })(), notifyUpdate: (n, notes) => hub.notifyUpdate && hub.notifyUpdate(n, notes) });
 if (www) app.use(express.static(www));
 app.use('/api', (_req, _res, next) => next(new HttpError(404, 'Rota não encontrada')));
 app.use((err, _req, res, _next) => {

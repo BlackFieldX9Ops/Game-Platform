@@ -103,7 +103,7 @@ export function mountAdmin(c) {
     if (t.status !== 'active') bad('Reative a conta antes de mudar o perfil');
     run('UPDATE users SET role = ? WHERE id = ?', role, id);
     logAct(req, role === 'mod' ? 'Moderador nomeado' : 'Moderador removido', t.name, id);
-    notify(id, role === 'mod' ? 'Você agora é moderador' : 'Seu perfil de moderador foi removido', role === 'mod' ? 'Você pode moderar comentários e denúncias pelo painel no computador.' : '');
+    notify(id, role === 'mod' ? 'Você agora é moderador' : 'Seu perfil de moderador foi removido', role === 'mod' ? 'Você pode moderar comentários e denúncias pelo painel no computador.' : '', '', 'security');
     res.json({ ok: true, role });
   }));
 
@@ -236,14 +236,15 @@ export function mountAdmin(c) {
     if (aud === 'user') {
       target = get('SELECT id, name, status FROM users WHERE id = ?', int(b.userId, 'userId'));
       if (!target) bad('Usuário não encontrado', 404);
-      run('INSERT INTO notifications (user_id, title, body, kind) VALUES (?,?,?,?)', target.id, title, body, kind); ids = [target.id];
+      const nid = run("INSERT INTO notifications (user_id, title, body, kind, category) VALUES (?,?,?,?, 'admin')", target.id, title, body, kind).lastInsertRowid; ids = [target.id];
+      if (c.hub && c.hub.enqueue) c.hub.enqueue(Number(nid), ids, 'admin', { title, body, important: !!b.important });
     } else {
       if (!isAdmin(req.user)) bad('Só o administrador envia para grupos', 403);
       confirmCheck(req);
       if (!AUD[aud]) bad('Público inválido');
       ids = audIds(aud);
-      if (aud === 'all') run('INSERT INTO notifications (user_id, title, body, kind) VALUES (NULL,?,?,?)', title, body, kind);
-      else for (const id of ids) run('INSERT INTO notifications (user_id, title, body, kind) VALUES (?,?,?,?)', id, title, body, kind);
+      if (aud === 'all') { const nid = run("INSERT INTO notifications (user_id, title, body, kind, category) VALUES (NULL,?,?,?, 'admin')", title, body, kind).lastInsertRowid; if (c.hub && c.hub.enqueue) c.hub.enqueue(Number(nid), ids, 'admin', { title, body, important: !!b.important }); }
+      else for (const id of ids) { const nid = run("INSERT INTO notifications (user_id, title, body, kind, category) VALUES (?,?,?,?, 'admin')", id, title, body, kind).lastInsertRowid; if (c.hub && c.hub.enqueue) c.hub.enqueue(Number(nid), [id], 'admin', { title, body, important: !!b.important }); }
     }
     run('INSERT INTO broadcasts (actor_id, actor, audience, user_id, title, body, important, count) VALUES (?,?,?,?,?,?,?,?)', req.user.id, req.user.name, aud, target ? target.id : null, title, body, b.important ? 1 : 0, ids.length);
     logAct(req, 'Mensagem enviada', `${target ? target.name : AUD[aud].name} (${ids.length}) · ${title}`, target ? target.id : null);
@@ -258,6 +259,7 @@ export function mountAdmin(c) {
     if (on && msg.length < 3) bad('Escreva o aviso que os jogadores vão ver');
     confirmCheck(req);
     setMaintenance({ on, msg });
+    if (c.hub && c.hub.system) c.hub.system(on ? 'Manutenção programada' : 'Servidor de volta', on ? msg : 'A manutenção terminou. Pode voltar a jogar.', 'maintenance', { important: on });
     alertAdmins(on ? 'Manutenção ligada' : 'Manutenção desligada', `${req.user.name}${msg ? ': ' + msg : ''}`);
     logAct(req, on ? 'Manutenção ligada' : 'Manutenção desligada', msg);
     res.json({ ok: true, on, msg });
@@ -295,7 +297,7 @@ export function mountAdmin(c) {
     if (!list) bad('Lista de permissões inválida');
     run('UPDATE users SET perms = ? WHERE id = ?', JSON.stringify(list), id);
     logAct(req, 'Permissões alteradas', `${t.name} · ${list.map(k => PERMS[k]).join(', ') || 'nenhuma'}`, id);
-    notify(id, 'Suas permissões mudaram', list.length ? 'Você pode: ' + list.map(k => PERMS[k]).join(', ') : 'Você ficou sem permissões no painel.');
+    notify(id, 'Suas permissões mudaram', list.length ? 'Você pode: ' + list.map(k => PERMS[k]).join(', ') : 'Você ficou sem permissões no painel.', '', 'security');
     res.json({ ok: true, perms: list });
   }));
   app.get('/api/admin/perms', auth, adminOnly, (_req, res) => res.json({ perms: PERMS }));
