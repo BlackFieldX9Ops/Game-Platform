@@ -39,11 +39,14 @@ export function mountStore(c) {
   // Preços e textos editáveis pelo administrador ficam em settings('price_ov'); o resto vem dos padrões acima.
   const overrides = () => { const r = get("SELECT value FROM settings WHERE key = 'price_ov'"); return r ? parseJ(r.value, {}) : {}; };
   const saveOv = o => run("INSERT INTO settings (key, value) VALUES ('price_ov', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", JSON.stringify(o));
+  const customPacks = () => { const r = get("SELECT value FROM settings WHERE key = 'custom_packs'"); const l = r ? parseJ(r.value, []) : []; return Array.isArray(l) ? l : []; };
+  const saveCustomPacks = l => run("INSERT INTO settings (key, value) VALUES ('custom_packs', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", JSON.stringify(l));
+  const allPacks = () => [...PACKS, ...customPacks()];
   const merged = (list, ov) => list.map(p => ({ ...p, ...(ov[p.id] || {}), base: p, edited: !!ov[p.id] }));
   const catalog = (all_ = false) => {
     const ov = overrides(), keep = x => all_ || x.active !== false;
     const strip = x => { if (all_) return x; const { base, edited, active, ...r } = x; return r; };
-    return { plans: merged(PLANS, ov).filter(keep).map(strip), packs: merged(PACKS, ov).filter(keep).map(strip), items: merged(ITEMS, ov).filter(keep).map(strip) };
+    return { plans: merged(PLANS, ov).filter(keep).map(strip), packs: merged(allPacks(), ov).filter(keep).map(strip), items: merged(ITEMS, ov).filter(keep).map(strip) };
   };
   const sale = (userId, kind, ref, name, o = {}) => run('INSERT INTO sales (user_id, kind, ref, name, cents, coins, cut, owner_id, days, coupon) VALUES (?,?,?,?,?,?,?,?,?,?)', userId, kind, ref, name, o.cents || 0, o.coins || 0, o.cut || 0, o.owner || null, o.days || 0, o.coupon || null);
   const brl = c => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
@@ -76,8 +79,201 @@ export function mountStore(c) {
     };
   };
 
+
+  /* ---------- pagamentos: InfinitePay (link de pagamento), Pix manual ou teste ---------- */
+  const PAY_DEF = { mode: 'test', handle: '', apiKey: '', pixKey: '', pixName: '', pixCity: '', note: '', minCents: 100 };
+  const payCfg = () => { const r = get("SELECT value FROM settings WHERE key = 'pay_cfg'"); return { ...PAY_DEF, ...(r ? parseJ(r.value, {}) : {}) }; };
+  const savePay = o => run("INSERT INTO settings (key, value) VALUES ('pay_cfg', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", JSON.stringify(o));
+  const API = () => (process.env.INFINITEPAY_API || 'https://api.checkout.infinitepay.io').replace(/\/+$/, '');
+  const PUB = () => (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
+  const payPublic = cfg => ({ mode: cfg.mode, handle: cfg.handle, hasKey: !!cfg.apiKey, pixKey: cfg.pixKey, pixName: cfg.pixName, pixCity: cfg.pixCity, note: cfg.note, minCents: cfg.minCents, webhook: PUB() ? PUB() + '/api/pay/webhook' : '', publicUrl: PUB() });
+  const ipFetch = async (path, body, cfg) => {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 12000);
+    try {
+      const r = await fetch(API() + path, { method: 'POST', headers: { 'content-type': 'application/json', ...(cfg.apiKey ? { 'x-api-key': cfg.apiKey } : {}) }, body: JSON.stringify(body), signal: ctl.signal });
+      const txt = await r.text(); let j = null; try { j = JSON.parse(txt); } catch { }
+      return { status: r.status, json: j, text: txt.slice(0, 300) };
+    } finally { clearTimeout(t); }
+  };
+  const findUrl = j => {
+    if (!j || typeof j !== 'object') return '';
+    for (const k of ['url', 'link', 'checkout_url', 'payment_url', 'invoice_url', 'checkoutUrl', 'paymentUrl']) if (typeof j[k] === 'string' && /^https:\/\//.test(j[k])) return j[k];
+    for (const v of Object.values(j)) { if (typeof v === 'string' && /^https:\/\//.test(v)) return v; if (v && typeof v === 'object') { const x = findUrl(v); if (x) return x; } }
+    return '';
+  };
+  const createLink = async (cfg, o) => {
+    if (!cfg.handle) bad('Falta o InfiniteTag nas configurações de pagamento', 409);
+    const body = { handle: cfg.handle, items: [{ quantity: 1, price: o.cents, description: o.name }], order_nsu: o.nsu };
+    if (PUB()) { body.redirect_url = PUB() + '/?paid=' + o.nsu; body.webhook_url = PUB() + '/api/pay/webhook'; body.webhook = { url: PUB() + '/api/pay/webhook', events: ['paid'] }; }
+    const r = await ipFetch('/links', body, cfg);
+    const url = findUrl(r.json);
+    if (r.status >= 300 || !url) { console.error('InfinitePay /links', r.status, r.text); bad('A InfinitePay não devolveu o link de pagamento (' + r.status + '). Confira o InfiniteTag.', 502); }
+    return url;
+  };
+  const orderOut = o => ({ nsu: o.nsu, name: o.name, cents: o.cents, coins: o.coins, status: o.status, method: o.method, link: o.link || '', created_at: o.created_at, paid_at: o.paid_at || null });
+  // Entrega o pedido uma única vez (a troca de status é o que impede entrega dupla).
+  const fulfill = (nsu, via, extra = {}) => {
+    const o = get('SELECT * FROM orders WHERE nsu = ?', nsu);
+    if (!o) return { ok: false, code: 404 };
+    if (o.status === 'paid') return { ok: true, already: true, order: o };
+    if (o.status !== 'pending') return { ok: false, code: 409, order: o };
+    const r = run("UPDATE orders SET status = 'paid', paid_at = ?, tx_nsu = COALESCE(?, tx_nsu), slug = COALESCE(?, slug), receipt = COALESCE(?, receipt), paid_cents = COALESCE(?, paid_cents), note = ? WHERE nsu = ? AND status = 'pending'", now(), extra.tx || null, extra.slug || null, extra.receipt || null, extra.paid || null, via, nsu);
+    if (!r.changes) return { ok: true, already: true, order: get('SELECT * FROM orders WHERE nsu = ?', nsu) };
+    const u = get('SELECT * FROM users WHERE id = ?', o.user_id);
+    const cat = catalog(true), plan = cat.plans.find(p => p.id === o.item_id), pack = cat.packs.find(p => p.id === o.item_id);
+    const cp = o.coupon ? get('SELECT * FROM coupons WHERE code = ?', o.coupon) : null;
+    const item = plan || pack;
+    if (!u || !item) return { ok: false, code: 410, order: o };
+    grant(u, plan, pack, cp && cp.active ? cp : null, o.cents, true);
+    return { ok: true, order: get('SELECT * FROM orders WHERE nsu = ?', nsu) };
+  };
+  const checkPaid = async (o, tx, slug) => {
+    const cfg = payCfg();
+    const r = await ipFetch('/payment_check', { handle: cfg.handle, order_nsu: o.nsu, transaction_nsu: tx, slug }, cfg);
+    const j = r.json || {};
+    return j.success === true && j.paid === true && Number(j.amount) === o.cents ? { ok: true, paid: Number(j.paid_amount) || o.cents, method: j.capture_method || '' } : { ok: false };
+  };
+
+  app.get('/api/admin/pay', auth, adminOnly, (_req, res) => res.json({ cfg: payPublic(payCfg()) }));
+  app.post('/api/admin/pay', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
+    const b = req.body || {}, cur = payCfg(), next = { ...cur }, notes = [];
+    if (b.mode !== undefined) { if (!['test', 'infinitepay', 'pix'].includes(b.mode)) bad('Modo inválido'); if (b.mode !== cur.mode) { notes.push(`modo ${cur.mode} → ${b.mode}`); next.mode = b.mode; } }
+    if (b.handle !== undefined) { const h = String(b.handle).trim().replace(/^\$/, '').slice(0, 40); if (h && !/^[A-Za-z0-9._-]{2,40}$/.test(h)) bad('InfiniteTag inválido (letras, números, ponto, - ou _; sem o $)'); if (h !== cur.handle) { notes.push('InfiniteTag alterado'); next.handle = h; } }
+    if (b.apiKey !== undefined && String(b.apiKey).trim() !== '') { const k = String(b.apiKey).trim(); if (!/^inchk_[A-Za-z0-9_-]{8,200}$/.test(k)) bad('A chave de API da InfinitePay começa com inchk_'); next.apiKey = k; notes.push('chave de API alterada'); }
+    if (b.clearKey) { next.apiKey = ''; notes.push('chave de API removida'); }
+    for (const [f, max, nm] of [['pixKey', 80, 'chave Pix'], ['pixName', 40, 'nome do recebedor'], ['pixCity', 30, 'cidade'], ['note', 200, 'aviso de pagamento']]) {
+      if (b[f] !== undefined) { const v = String(b[f]).trim().slice(0, max); if (v !== cur[f]) { notes.push(nm + ' alterado(a)'); next[f] = v; } }
+    }
+    if (b.minCents !== undefined) { const v = Math.round(Number(b.minCents)); if (!Number.isInteger(v) || v < 100 || v > 100000) bad('Valor mínimo de R$ 1,00 a R$ 1.000,00'); if (v !== cur.minCents) { notes.push('valor mínimo alterado'); next.minCents = v; } }
+    if (next.mode === 'infinitepay' && !next.handle) bad('Para usar a InfinitePay, informe o InfiniteTag', 409);
+    if (next.mode === 'pix' && !next.pixKey) bad('Para o Pix manual, informe a chave Pix', 409);
+    if (!notes.length) return res.json({ ok: true, unchanged: true, cfg: payPublic(cur) });
+    savePay(next);
+    logAct(req, 'Pagamentos: configuração alterada', notes.join(' · '));
+    res.json({ ok: true, cfg: payPublic(next) });
+  }));
+  // Cria um link de R$ 1,00 só para ver se a conta responde (nada é cobrado se ninguém pagar).
+  app.post('/api/admin/pay/test', auth, adminOnly, wrap(async (req, res) => {
+    const cfg = payCfg();
+    if (!cfg.handle) bad('Informe e salve o InfiniteTag antes de testar', 409);
+    const nsu = 'teste-' + globalThis.crypto.randomUUID();
+    const body = { handle: cfg.handle, items: [{ quantity: 1, price: 100, description: 'Teste de conexão Game Platform' }], order_nsu: nsu };
+    const r = await ipFetch('/links', body, cfg);
+    const url = findUrl(r.json);
+    logAct(req, 'Pagamentos: teste de conexão', r.status < 300 && url ? 'ok' : 'falhou (' + r.status + ')');
+    res.json({ ok: r.status < 300 && !!url, status: r.status, url, detail: url ? '' : r.text });
+  }));
+
+  app.post('/api/store/checkout', auth, wrap(async (req, res) => {
+    const id = String(req.body.id || ''), u = get('SELECT * FROM users WHERE id = ?', req.user.id), cfg = payCfg();
+    const cat = catalog(), plan = cat.plans.find(p => p.id === id), pack = cat.packs.find(p => p.id === id), item = plan || pack;
+    if (!item) bad('Item não encontrado ou fora de venda', 404);
+    const cp = couponFor(u.id, req.body.coupon, item, plan ? 'plan' : 'pack');
+    if (plan) { const col = plan.kind === 'premium' ? 'premium_until' : 'studio_until'; if (u[col] === FOREVER) bad('Você já tem este plano liberado sem prazo.', 409); }
+    const cents = priceWith(item, cp);
+    if (cfg.mode === 'test') {
+      const g = grant(u, plan, pack, cp, cents, false);
+      return res.json({ mode: 'test', ok: true, got: g.got, ...state(get('SELECT * FROM users WHERE id = ?', u.id)) });
+    }
+    if (cents < cfg.minCents) bad('Valor abaixo do mínimo para pagamento (R$ ' + (cfg.minCents / 100).toFixed(2).replace('.', ',') + ')', 400);
+    const open = get("SELECT COUNT(*) AS n FROM orders WHERE user_id = ? AND status = 'pending' AND created_at > datetime('now','-1 hour')", u.id).n;
+    if (open >= 5) bad('Você tem pedidos em aberto demais. Conclua ou aguarde.', 429);
+    const nsu = globalThis.crypto.randomUUID(), o = { nsu, cents, name: item.name };
+    run('INSERT INTO orders (nsu, user_id, kind, item_id, name, cents, coins, days, coupon, method) VALUES (?,?,?,?,?,?,?,?,?,?)', nsu, u.id, plan ? plan.kind : 'coins', item.id, item.name, cents, pack ? pack.coins : 0, plan ? plan.days : 0, cp ? cp.code : null, cfg.mode);
+    if (cfg.mode === 'infinitepay') {
+      let link;
+      try { link = await createLink(cfg, o); } catch (e) { run("UPDATE orders SET status = 'canceled', note = ? WHERE nsu = ?", 'falha ao criar link', nsu); throw e; }
+      run('UPDATE orders SET link = ? WHERE nsu = ?', link, nsu);
+      return res.json({ mode: 'infinitepay', order: orderOut(get('SELECT * FROM orders WHERE nsu = ?', nsu)), url: link });
+    }
+    res.json({ mode: 'pix', order: orderOut(get('SELECT * FROM orders WHERE nsu = ?', nsu)), pix: { key: cfg.pixKey, name: cfg.pixName, city: cfg.pixCity, note: cfg.note, cents, code: nsu.slice(0, 8).toUpperCase() } });
+  }));
+  app.get('/api/store/orders', auth, (req, res) => {
+    const cfg = payCfg();
+    res.json({ orders: all('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 30', req.user.id).map(o => ({ ...orderOut(o), ...(o.method === 'pix' ? { pix: { key: cfg.pixKey, name: cfg.pixName, city: cfg.pixCity, note: cfg.note, cents: o.cents, code: o.nsu.slice(0, 8).toUpperCase() } } : {}) })) });
+  });
+  // O app volta do pagamento e pergunta se já caiu; se tiver os dados do retorno, confirma direto com a InfinitePay.
+  app.post('/api/store/orders/:nsu/verify', auth, wrap(async (req, res) => {
+    const o = get('SELECT * FROM orders WHERE nsu = ? AND user_id = ?', String(req.params.nsu), req.user.id);
+    if (!o) bad('Pedido não encontrado', 404);
+    if (o.status === 'pending' && o.method === 'infinitepay') {
+      const tx = String(req.body.transaction_nsu || o.tx_nsu || ''), slug = String(req.body.slug || o.slug || '');
+      if (tx && slug) {
+        const c = await checkPaid(o, tx, slug);
+        if (c.ok) fulfill(o.nsu, 'verificado pelo retorno', { tx, slug, receipt: String(req.body.receipt_url || '').slice(0, 300), paid: c.paid });
+      }
+    }
+    const f = get('SELECT * FROM orders WHERE nsu = ?', o.nsu);
+    res.json({ order: orderOut(f), ...(f.status === 'paid' ? state(get('SELECT * FROM users WHERE id = ?', req.user.id)) : {}) });
+  }));
+  // Aviso automático da InfinitePay. Não há assinatura, então sempre confirmamos com payment_check antes de entregar.
+  app.post('/api/pay/webhook', wrap(async (req, res) => {
+    const b = req.body || {}, nsu = String(b.order_nsu || '');
+    const o = nsu ? get('SELECT * FROM orders WHERE nsu = ?', nsu) : null;
+    if (!o) return res.status(200).json({ ok: true, ignored: true });
+    if (o.status === 'paid') return res.json({ ok: true, already: true });
+    if (o.method !== 'infinitepay') return res.json({ ok: true, ignored: true });
+    const tx = String(b.transaction_nsu || ''), slug = String(b.invoice_slug || b.slug || '');
+    let c = { ok: false };
+    try { c = await checkPaid(o, tx, slug); } catch (e) { console.error('payment_check', e.message); return res.status(400).json({ ok: false }); }
+    if (!c.ok) return res.status(400).json({ ok: false });
+    fulfill(o.nsu, 'confirmado pelo aviso automático', { tx, slug, receipt: String(b.receipt_url || '').slice(0, 300), paid: c.paid });
+    res.json({ ok: true });
+  }));
+
+  // Admin: pedidos e confirmação manual (Pix)
+  app.get('/api/admin/orders', auth, staffCan('finance'), wrap((req, res) => {
+    const st = ['pending', 'paid', 'canceled'].includes(req.query.status) ? req.query.status : '';
+    const rows = all(`SELECT o.*, u.name AS buyer FROM orders o JOIN users u ON u.id = o.user_id ${st ? 'WHERE o.status = ?' : ''} ORDER BY o.created_at DESC LIMIT 100`, ...(st ? [st] : []));
+    res.json({ orders: rows.map(o => ({ ...orderOut(o), buyer: o.buyer, user_id: o.user_id, note: o.note, receipt: o.receipt || '', code: o.nsu.slice(0, 8).toUpperCase() })), pending: get("SELECT COUNT(*) AS n FROM orders WHERE status = 'pending'").n });
+  }));
+  app.post('/api/admin/orders/:nsu/confirm', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
+    const o = get('SELECT * FROM orders WHERE nsu = ?', String(req.params.nsu));
+    if (!o) bad('Pedido não encontrado', 404);
+    if (o.status === 'paid') bad('Este pedido já foi pago', 409);
+    if (o.status !== 'pending') bad('Este pedido foi cancelado', 409);
+    const r = fulfill(o.nsu, 'confirmado pelo administrador ' + req.user.name);
+    if (!r.ok) bad('Não foi possível entregar este pedido', r.code || 409);
+    logAct(req, 'Pedido confirmado manualmente', `${o.name} · ${o.cents / 100} · pedido ${o.nsu.slice(0, 8).toUpperCase()}`);
+    res.json({ ok: true });
+  }));
+  app.post('/api/admin/orders/:nsu/cancel', auth, adminOnly, wrap((req, res) => {
+    const o = get('SELECT * FROM orders WHERE nsu = ?', String(req.params.nsu));
+    if (!o) bad('Pedido não encontrado', 404);
+    if (o.status !== 'pending') bad('Só pedidos em aberto podem ser cancelados', 409);
+    run("UPDATE orders SET status = 'canceled', note = ? WHERE nsu = ? AND status = 'pending'", 'cancelado por ' + req.user.name, o.nsu);
+    logAct(req, 'Pedido cancelado', `${o.name} · pedido ${o.nsu.slice(0, 8).toUpperCase()}`);
+    res.json({ ok: true });
+  }));
+
+  // Pacotes de moedas: criar e remover (os padrões só podem sair de venda)
+  app.post('/api/admin/packs', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
+    const b = req.body || {}, name = String(b.name || '').trim().slice(0, 40), coins = Number(b.coins), price = Number(b.price);
+    if (name.length < 2) bad('Dê um nome ao pacote');
+    if (!Number.isInteger(coins) || coins < 1 || coins > 1_000_000) bad('Moedas de 1 a 1.000.000');
+    if (!Number.isInteger(price) || price < 0 || price > 10_000_000) bad('Preço inválido (centavos)');
+    const l = customPacks();
+    if (l.length >= 30) bad('Limite de 30 pacotes extras');
+    const id = 'cp' + Date.now().toString(36);
+    l.push({ id, name, coins, price }); saveCustomPacks(l);
+    logAct(req, 'Loja: pacote criado', `${name} · ${coins} moedas · ${brl(price)}`);
+    res.json({ ok: true, catalog: catalog(true) });
+  }));
+  app.delete('/api/admin/packs/:id', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
+    const id = String(req.params.id), l = customPacks(), p = l.find(x => x.id === id);
+    if (!p) bad('Só pacotes criados por você podem ser apagados. Os padrões podem ser tirados de venda.', 404);
+    saveCustomPacks(l.filter(x => x.id !== id));
+    const ov = overrides(); delete ov[id]; saveOv(ov);
+    logAct(req, 'Loja: pacote apagado', p.name);
+    res.json({ ok: true, catalog: catalog(true) });
+  }));
+
   app.get('/api/store/log', auth, (req, res) => res.json({ log: all('SELECT id, delta, note, created_at FROM coin_log WHERE user_id = ? ORDER BY id DESC LIMIT 50', req.user.id) }));
-  app.get('/api/store', auth, (req, res) => res.json({ ...catalog(), test: true, ...state(req.user) }));
+  app.get('/api/store', auth, (req, res) => res.json({ ...catalog(), test: payCfg().mode === 'test', payMode: payCfg().mode, ...state(req.user) }));
 
   app.post('/api/store/coupon', auth, wrap((req, res) => {
     const cat = catalog(), id = String(req.body.id || ''), plan = cat.plans.find(p => p.id === id), pack = cat.packs.find(p => p.id === id), item = plan || pack;
@@ -95,24 +291,34 @@ export function mountStore(c) {
     res.json({ reward: r, ...state(u) });
   }));
 
+  // Entrega o plano ou o pacote (usado na compra de teste, na confirmação do pagamento e na confirmação manual do Pix).
+  const grant = (u, plan, pack, cp, cents, live) => {
+    if (plan) {
+      const col = plan.kind === 'premium' ? 'premium_until' : 'studio_until';
+      const base = u[col] && u[col] > now() ? new Date(u[col]).getTime() : Date.now();
+      run(`UPDATE users SET ${col} = ? WHERE id = ?`, new Date(base + plan.days * 86_400_000).toISOString(), u.id);
+      sale(u.id, plan.kind, plan.id, plan.name, { cents, days: plan.days, coupon: cp ? cp.code : null }); if (cp) useCoupon(u.id, cp);
+      notifyK(u.id, plan.kind === 'premium' ? 'Premium ativo' : 'Studio liberado', plan.kind === 'premium' ? `${plan.name} ativo. Aproveite o bônus diário e os itens exclusivos.` : `${plan.name} ativo. Você já pode publicar jogos.`, 'premium');
+      return { got: 0 };
+    }
+    const got = Math.floor((hasPremium(u) ? Math.floor(pack.coins * 1.1) : pack.coins) * (cp && cp.kind === 'bonus' ? 1 + cp.value / 100 : 1));
+    run('UPDATE users SET coins = coins + ? WHERE id = ?', got, u.id);
+    clog(u.id, got, 'Pacote ' + pack.name + (live ? '' : ' (teste)'));
+    sale(u.id, 'coins', pack.id, pack.name, { cents, coins: got, coupon: cp ? cp.code : null }); if (cp) useCoupon(u.id, cp);
+    notifyK(u.id, 'Moedas recebidas', `${got} moedas foram adicionadas à sua conta.`, 'premium');
+    return { got };
+  };
+
   app.post('/api/store/buy', auth, wrap((req, res) => {
     const id = String(req.body.id || '');
     const u = get('SELECT * FROM users WHERE id = ?', req.user.id);
     const cat = catalog(), plan = cat.plans.find(p => p.id === id), pack = cat.packs.find(p => p.id === id), item = cat.items.find(p => p.id === id);
-    if (!plan && !pack && !item && [...PLANS, ...PACKS, ...ITEMS].some(p => p.id === id)) bad('Este item não está à venda agora', 410);
+    if (!plan && !pack && !item && [...PLANS, ...allPacks(), ...ITEMS].some(p => p.id === id)) bad('Este item não está à venda agora', 410);
     const cp = plan ? couponFor(u.id, req.body.coupon, plan, 'plan') : pack ? couponFor(u.id, req.body.coupon, pack, 'pack') : null;
-    if (plan) {
-      const col = plan.kind === 'premium' ? 'premium_until' : 'studio_until';
-      if (u[col] === FOREVER) bad('Você já tem este plano liberado sem prazo.', 409);
-      const base = u[col] && u[col] > now() ? new Date(u[col]).getTime() : Date.now();
-      run(`UPDATE users SET ${col} = ? WHERE id = ?`, new Date(base + plan.days * 86_400_000).toISOString(), u.id);
-      sale(u.id, plan.kind, plan.id, plan.name, { cents: priceWith(plan, cp), days: plan.days, coupon: cp ? cp.code : null }); if (cp) useCoupon(u.id, cp);
-      notifyK(u.id, plan.kind === 'premium' ? 'Premium ativo' : 'Studio liberado', plan.kind === 'premium' ? `${plan.name} ativo. Aproveite o bônus diário e os itens exclusivos.` : `${plan.name} ativo. Você já pode publicar jogos.`, 'premium');
-    } else if (pack) {
-      const got = Math.floor((hasPremium(u) ? Math.floor(pack.coins * 1.1) : pack.coins) * (cp && cp.kind === 'bonus' ? 1 + cp.value / 100 : 1));
-      run('UPDATE users SET coins = coins + ? WHERE id = ?', got, u.id);
-      clog(u.id, got, 'Pacote ' + pack.name + ' (teste)');
-      sale(u.id, 'coins', pack.id, pack.name, { cents: priceWith(pack, cp), coins: got, coupon: cp ? cp.code : null }); if (cp) useCoupon(u.id, cp);
+    if (plan || pack) {
+      if (payCfg().mode !== 'test') bad('O pagamento real está ligado. Use o botão de comprar para abrir o pagamento.', 409);
+      if (plan) { const col = plan.kind === 'premium' ? 'premium_until' : 'studio_until'; if (u[col] === FOREVER) bad('Você já tem este plano liberado sem prazo.', 409); }
+      grant(u, plan, pack, cp, priceWith(plan || pack, cp), false);
     } else if (item) {
       if (owned(u.id).includes(item.id)) bad('Você já tem este item', 409);
       if (item.premium && !hasPremium(u)) bad('Item exclusivo de quem tem o Premium', 403);
@@ -191,7 +397,7 @@ export function mountStore(c) {
 
   app.post('/api/admin/prices', auth, adminOnly, wrap((req, res) => {
     confirmCheck(req);
-    const b = req.body, id = String(b.id || ''), base = [...PLANS, ...PACKS, ...ITEMS].find(p => p.id === id);
+    const b = req.body, id = String(b.id || ''), base = [...PLANS, ...allPacks(), ...ITEMS].find(p => p.id === id);
     if (!base) bad('Item não encontrado', 404);
     const isItem = ITEMS.includes(base), field = isItem ? 'coins' : 'price';
     const ov = overrides(), cur = { ...base, ...(ov[id] || {}) }, next = { ...(ov[id] || {}) }, notes = [];
@@ -199,6 +405,11 @@ export function mountStore(c) {
       const v = Number(b[field]);
       if (!Number.isInteger(v) || v < 0 || v > (isItem ? 100000 : 10_000_000)) bad(isItem ? 'Preço em moedas inválido (0 a 100000)' : 'Preço inválido (centavos, até 100000,00)');
       if (v !== cur[field]) { notes.push(isItem ? `${cur.coins} → ${v} moedas` : `${brl(cur.price)} → ${brl(v)}`); next[field] = v; }
+    }
+    if (b.coins !== undefined && !isItem && base.coins !== undefined) {
+      const v = Number(b.coins);
+      if (!Number.isInteger(v) || v < 1 || v > 1_000_000) bad('Moedas do pacote inválidas (1 a 1.000.000)');
+      if (v !== cur.coins) { notes.push(`${cur.coins} → ${v} moedas no pacote`); next.coins = v; }
     }
     if (b.name !== undefined) { const n = String(b.name).trim().slice(0, 40); if (n.length < 2) bad('Nome muito curto'); if (n !== cur.name) { notes.push(`nome "${cur.name}" → "${n}"`); next.name = n; } }
     if (b.perks !== undefined) {
@@ -216,7 +427,7 @@ export function mountStore(c) {
 
   app.post('/api/admin/prices/reset', auth, adminOnly, wrap((req, res) => {
     confirmCheck(req);
-    const id = String(req.body.id || ''), base = [...PLANS, ...PACKS, ...ITEMS].find(p => p.id === id);
+    const id = String(req.body.id || ''), base = [...PLANS, ...allPacks(), ...ITEMS].find(p => p.id === id);
     if (!base) bad('Item não encontrado', 404);
     const ov = overrides(); delete ov[id]; saveOv(ov);
     logAct(req, 'Loja: item restaurado ao padrão', base.name);
@@ -289,9 +500,9 @@ export function mountStore(c) {
     if (!/^[A-Z0-9_-]{3,20}$/.test(code)) bad('Código de 3 a 20 letras, números, - ou _');
     const kind = b.kind === 'bonus' ? 'bonus' : 'percent', value = Number(b.value);
     if (!Number.isInteger(value) || value < 1 || value > (kind === 'percent' ? 90 : 100)) bad(kind === 'percent' ? 'Desconto de 1 a 90%' : 'Bônus de 1 a 100%');
-    const scope = String(b.scope || 'all'), valid = ['all', 'plans', 'packs', ...PLANS.map(p => p.id), ...PACKS.map(p => p.id)];
+    const scope = String(b.scope || 'all'), valid = ['all', 'plans', 'packs', ...PLANS.map(p => p.id), ...allPacks().map(p => p.id)];
     if (!valid.includes(scope)) bad('Alcance inválido');
-    if (kind === 'bonus' && !(scope === 'all' || scope === 'packs' || PACKS.some(p => p.id === scope))) bad('Bônus só vale para pacotes de moedas');
+    if (kind === 'bonus' && !(scope === 'all' || scope === 'packs' || allPacks().some(p => p.id === scope))) bad('Bônus só vale para pacotes de moedas');
     const max = Math.max(0, Math.min(100000, Number(b.max_uses) || 0)), ends = /^\d{4}-\d{2}-\d{2}$/.test(String(b.ends_at || '')) ? b.ends_at : null;
     if (get('SELECT 1 FROM coupons WHERE code = ?', code)) bad('Já existe um cupom com este código', 409);
     run('INSERT INTO coupons (code, kind, value, scope, max_uses, ends_at) VALUES (?,?,?,?,?,?)', code, kind, value, scope, max, ends);

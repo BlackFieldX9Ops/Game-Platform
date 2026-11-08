@@ -117,6 +117,9 @@ if (!logCols.includes('role')) db.exec("ALTER TABLE logs ADD COLUMN role TEXT NO
 db.exec('CREATE INDEX IF NOT EXISTS logs_target ON logs(target_id, id)');
 if (!userCols.includes('avatar')) db.exec('ALTER TABLE users ADD COLUMN avatar TEXT');
 if (!userCols.includes('bio')) db.exec("ALTER TABLE users ADD COLUMN bio TEXT NOT NULL DEFAULT ''");
+if (!userCols.includes('banner_img')) db.exec('ALTER TABLE users ADD COLUMN banner_img TEXT');
+if (!userCols.includes('fav_games')) db.exec("ALTER TABLE users ADD COLUMN fav_games TEXT NOT NULL DEFAULT '[]'");
+if (!userCols.includes('platform')) db.exec("ALTER TABLE users ADD COLUMN platform TEXT NOT NULL DEFAULT ''");
 const gameCols = db.prepare('PRAGMA table_info(games)').all().map(c => c.name);
 if (!gameCols.includes('cover')) db.exec('ALTER TABLE games ADD COLUMN cover TEXT');
 if (!gameCols.includes('orientation')) db.exec("ALTER TABLE games ADD COLUMN orientation TEXT NOT NULL DEFAULT 'auto'");
@@ -432,6 +435,32 @@ CREATE TRIGGER IF NOT EXISTS users_uid_ai AFTER INSERT ON users WHEN NEW.uid IS 
     ELSE (SELECT COALESCE(MAX(uid), 0) + 1 FROM users) END
   WHERE id = NEW.id;
 END;
+`);
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS orders (
+  nsu TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  item_id TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  cents INTEGER NOT NULL DEFAULT 0,
+  coins INTEGER NOT NULL DEFAULT 0,
+  days INTEGER NOT NULL DEFAULT 0,
+  coupon TEXT,
+  method TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',
+  link TEXT,
+  tx_nsu TEXT,
+  slug TEXT,
+  receipt TEXT,
+  paid_cents INTEGER,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  paid_at TEXT
+);
+CREATE INDEX IF NOT EXISTS orders_user ON orders(user_id, created_at);
+CREATE INDEX IF NOT EXISTS orders_status ON orders(status, created_at);
 `);
 
 db.exec(`

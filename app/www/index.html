@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="232750ab085a">
+<meta name="gp-ui" content="415ee7f470ac">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -577,9 +577,9 @@ button.idc{cursor:pointer}
 .pf-av.fr-gold .avatar.xl{border-color:#f5c542;box-shadow:0 0 0 3px #f5c54233,0 0 20px #f5c54299}
 .pf-av.fr-neon .avatar.xl{border-color:#22d3ee;box-shadow:0 0 0 3px #22d3ee33,0 0 22px #22d3eeaa}
 .pf-av.fr-fire .avatar.xl{border-color:#fb923c;box-shadow:0 0 0 3px #ef444455,0 0 24px #f97316bb}
-.pbanner.bn-aurora{background:linear-gradient(120deg,#0f766e,#4f46e5 55%,#a855f7)}
-.pbanner.bn-sunset{background:linear-gradient(120deg,#7c2d12,#db2777 55%,#f59e0b)}
-.pbanner.bn-space{background:radial-gradient(90% 120% at 80% 0%,#312e81,#0b1026 60%,#02030a)}
+.pbanner.bn-aurora,.pf-cover.bn-aurora,.pf-cthumb.bn-aurora{background:linear-gradient(120deg,#0f766e,#4f46e5 55%,#a855f7)}
+.pbanner.bn-sunset,.pf-cover.bn-sunset,.pf-cthumb.bn-sunset{background:linear-gradient(120deg,#7c2d12,#db2777 55%,#f59e0b)}
+.pbanner.bn-space,.pf-cover.bn-space,.pf-cthumb.bn-space{background:radial-gradient(90% 120% at 80% 0%,#312e81,#0b1026 60%,#02030a)}
 /* loja */
 .plan{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px}
 .plan .price{font-weight:800;color:#c4b5fd}
@@ -641,9 +641,9 @@ header.top.srch #sbtn{display:none}
 .sw.fr-ice{border-color:#bae6fd;box-shadow:0 0 14px #7dd3fcaa}
 .sw.fr-royal{border-color:#a78bfa;box-shadow:0 0 0 2px #fbbf24,0 0 14px #a78bfaaa}
 .sw.fr-gem{border-color:#34d399;box-shadow:0 0 0 2px #22d3ee,0 0 16px #34d399bb}
-.sw.bn-forest,.pbanner.bn-forest{background:linear-gradient(120deg,#052e16,#15803d 60%,#86efac)}
-.sw.bn-candy,.pbanner.bn-candy{background:linear-gradient(120deg,#be185d,#a855f7 55%,#38bdf8)}
-.sw.bn-gold,.pbanner.bn-gold{background:linear-gradient(120deg,#78350f,#d97706 55%,#fde68a)}
+.sw.bn-forest,.pbanner.bn-forest,.pf-cover.bn-forest,.pf-cthumb.bn-forest{background:linear-gradient(120deg,#052e16,#15803d 60%,#86efac)}
+.sw.bn-candy,.pbanner.bn-candy,.pf-cover.bn-candy,.pf-cthumb.bn-candy{background:linear-gradient(120deg,#be185d,#a855f7 55%,#38bdf8)}
+.sw.bn-gold,.pbanner.bn-gold,.pf-cover.bn-gold,.pf-cthumb.bn-gold{background:linear-gradient(120deg,#78350f,#d97706 55%,#fde68a)}
 .pf-av.fr-ice .avatar.xl{border-color:#bae6fd;box-shadow:0 0 0 3px #7dd3fc33,0 0 20px #7dd3fcaa}
 .pf-av.fr-royal .avatar.xl{border-color:#a78bfa;box-shadow:0 0 0 3px #fbbf24,0 0 22px #a78bfaaa}
 .pf-av.fr-gem .avatar.xl{border-color:#34d399;box-shadow:0 0 0 3px #22d3ee,0 0 24px #34d399bb}
@@ -878,7 +878,7 @@ html.dk header.top{grid-column:2;grid-row:1;padding:16px 32px 6px;gap:10px}
 html.dk header.top .logo{display:none}
 html.dk header.top .search{display:flex;flex:1;max-width:560px;margin-right:auto}
 html.dk header.top #sbtn{display:none}
-html.dk main{grid-column:2;grid-row:2;padding:8px max(32px,calc((100% - 1240px)/2)) 36px}
+html.dk main{grid-column:2;grid-row:2;padding:8px max(28px,calc((100% - 1840px)/2)) 36px}
 html.dk .grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
 html.dk #view .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:10px}
 /* puxar para atualizar */
@@ -948,6 +948,35 @@ main{overflow-wrap:anywhere}
 .seg::-webkit-scrollbar{display:none}
 .seg button{white-space:nowrap}
 .pstats>*,.stats>*,.kpi{min-width:0}
+
+/* ---- perfil: capa, avatar sobreposto, favoritos ---- */
+.pf-cover{position:relative;height:150px;border-radius:18px;margin-top:2px;border:1px solid var(--line2);background:radial-gradient(120% 140% at 90% 100%,#5b34d1 0%,#241565 46%,#0f1130 100%) center/cover no-repeat;overflow:hidden}
+.pf-cover.img,.pf-cthumb.img{background-size:cover;background-position:center}
+.pf-cover.bn-default,.pf-cthumb.bn-default{background:linear-gradient(120deg,#1d1a5e,#4c2bb8 55%,#0e7490)}
+.pf-cover .cvb{position:absolute;right:10px;top:10px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(10,13,28,.62);color:#fff;border:1px solid rgba(255,255,255,.25);cursor:pointer;backdrop-filter:blur(4px)}
+.pf-cover .cvb svg{width:17px;height:17px}
+.pf-cover+.pf-head{margin-top:0;padding:0 6px;align-items:flex-start}
+.pf-cover+.pf-head .pf-av{margin-top:-46px}
+.pf-cover+.pf-head .pf-info{padding-top:8px}
+.pf-cthumb{flex:none;width:112px;height:40px;border-radius:10px;border:1px solid var(--line2);background-size:cover;background-position:center}
+.favs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 2px 2px}
+.favs span{font-size:calc(12px*var(--ts,1));color:var(--muted);font-weight:700;margin-right:2px}
+.favs em{font-style:normal;font-size:calc(12px*var(--ts,1));padding:3px 10px;border-radius:99px;background:var(--surface);border:1px solid var(--line2);color:#e0dbff}
+.pf-look{margin-top:12px}
+@media (min-width:900px){.pf-cover{height:220px}.pf-cover+.pf-head .pf-av{margin-top:-56px}}
+
+.sgrid{display:grid;gap:12px}.sgrid>.sc{margin-bottom:0}
+html.dk .sgrid{grid-template-columns:minmax(300px,5fr) minmax(0,7fr);gap:18px;align-items:start;margin-bottom:12px}
+html.dk .stabs{max-width:none}
+
+#ws .wthree{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+@media (max-width:760px){#ws .wthree,#ws .wtwo{grid-template-columns:1fr}}
+#ws .wprice{white-space:nowrap}
+#ws .wprice .wpin+.wpin{margin-top:6px}
+.payrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.payrow:first-of-type{border-top:0}
+.payrow span{flex:none;width:112px;font-size:calc(12px*var(--ts,1));color:var(--muted)}
+.payrow b{flex:1;min-width:0;font-size:calc(13.5px*var(--ts,1));word-break:break-all}
 </style>
 
 <div id="ws" hidden></div>
@@ -1329,7 +1358,7 @@ function storeGames(kind){
  +'<div class="sec"><h2>'+(kind==='early'?'Acesso antecipado':'Jogos pagos')+'</h2></div>'+(list.length?'<div class="grid">'+list.map(card).join('')+'</div>':'<div class="empty">'+(kind==='early'?'Nenhum jogo em acesso antecipado à venda.':'Nenhum jogo pago ainda.')+(studioOn()?'<br>Publique um no Studio com preço em moedas.':'')+'</div>')
 }
 function needLogin(){return on()?'':'<div class="panel mini" style="margin-bottom:10px"><div class="row"><div><b>Entre para comprar</b><div class="note" style="margin:2px 0 0">Planos, moedas e skins ficam na sua conta.</div></div><button class="btn sm" data-a="sub" data-v="auth">Entrar</button></div></div>'}
-function testNote(){return '<p class="note" style="margin:0 0 10px">Compras de teste: liberam na hora e <b>não cobram nada</b> por enquanto. O pagamento de verdade entra depois.</p>'}
+function testNote(){if(S.store&&S.store.test===false)return '';return '<p class="note" style="margin:0 0 10px">Compras de teste: liberam na hora e <b>não cobram nada</b> por enquanto. O pagamento de verdade entra depois.</p>'}
 function planUntil(a){return !a||!a.active?'':a.until==='sempre'?'sem prazo':a.until?'até '+new Date(a.until).toLocaleDateString('pt-BR'):''}
 function couponBox(){
  if(!on())return '';
@@ -1357,17 +1386,21 @@ function clogHtml(){
  return '<div class="sec"><h2>Extrato de moedas</h2></div>'+(l.length?'<div class="list">'+l.slice(0,20).map(function(x){return '<div class="li"><div class="body"><b>'+esc(x.note)+'</b><span class="note">'+esc(rel(x.created_at))+'</span></div><span class="cl '+(x.delta>0?'up':'dn')+'">'+(x.delta>0?'+':'')+x.delta+'</span></div>'}).join('')+'</div>':'<div class="empty">Suas compras e ganhos de moedas aparecem aqui.</div>');
 }
 var SLOTN={frame:'Molduras de perfil',banner:'Fundos do perfil',title:'Títulos',ncolor:'Cor do nome',theme:'Temas do app',bubble:'Balões do chat'};
-function storeSkins(){
- var st=S.store;if(!st)return needLogin()+'<div class="empty">'+(on()?'Carregando…':'Entre para ver as skins.')+'</div>';
+function skinGrp(slot,only){
+ var st=S.store;if(!st)return '';
  var own=st.owned||[],eq=st.equipped||{};
- function grp(slot){
-  return '<div class="sec tight"><h2>'+SLOTN[slot]+'</h2></div><div class="skins">'+st.items.filter(function(i){return i.slot===slot}).map(function(i){
+ var list=st.items.filter(function(i){return i.slot===slot&&(!only||own.indexOf(i.id)>=0||!i.coins)});
+ if(!list.length)return '';
+ return '<div class="sec tight"><h2>'+SLOTN[slot]+'</h2></div><div class="skins">'+list.map(function(i){
    var has=own.indexOf(i.id)>=0,on_=eq[slot]===i.id,cls=i.id.replace('_','-'),lock=i.premium&&!(S.user&&S.user.premium)&&!has;
    var sw=slot==='title'?'<div class="sw ti">'+esc(i.name)+'</div>':slot==='ncolor'?'<div class="sw nc '+cls+'">Nome</div>':slot==='bubble'?'<div class="sw bb '+cls+'">Olá!</div>':'<div class="sw '+(slot==='frame'?'fr':slot==='banner'?'bn':'th')+' '+cls+'"></div>';
    return '<div class="skin">'+sw+'<b>'+esc(i.name)+(i.premium?' <i class="pm">Premium</i>':'')+'</b>'
-    +(has?'<button class="btn '+(on_?'ghost ':'')+'sm" data-a="equip" data-v="'+slot+'" data-id="'+(on_?'':i.id)+'">'+(on_?'Remover':'Usar')+'</button>':lock?'<button class="btn ghost sm" data-a="plans">Só Premium</button>':'<button class="btn sm" data-a="buy" data-v="'+i.id+'">'+(i.coins?ic('coin')+i.coins:'Grátis')+'</button>')+'</div>'}).join('')+'</div>';
- }
- return needLogin()+'<div class="panel mini"><div class="row"><div><b>Seu saldo</b></div><button class="idc coin" data-a="sttab" data-v="coins">'+ic('coin')+'<b>'+(S.user?S.user.coins||0:0)+'</b></button></div></div>'+['frame','banner','title','ncolor','theme','bubble'].map(grp).join('')
+    +(has||(only&&!i.coins&&!lock)?'<button class="btn '+(on_?'ghost ':'')+'sm" data-a="'+(has?'equip':'buy')+'" data-v="'+(has?slot:i.id)+'"'+(has?' data-id="'+(on_?'':i.id)+'"':'')+'>'+(has?(on_?'Remover':'Usar'):'Pegar grátis')+'</button>':lock?'<button class="btn ghost sm" data-a="plans">Só Premium</button>':'<button class="btn sm" data-a="buy" data-v="'+i.id+'">'+(i.coins?ic('coin')+i.coins:'Grátis')+'</button>')+'</div>'}).join('')+'</div>';
+}
+function storeSkins(){
+ var st=S.store;if(!st)return needLogin()+'<div class="empty">'+(on()?'Carregando…':'Entre para ver as skins.')+'</div>';
+ var own=st.owned||[],eq=st.equipped||{};
+ return needLogin()+'<div class="panel mini"><div class="row"><div><b>Seu saldo</b></div><button class="idc coin" data-a="sttab" data-v="coins">'+ic('coin')+'<b>'+(S.user?S.user.coins||0:0)+'</b></button></div></div>'+['frame','banner','title','ncolor','theme','bubble'].map(function(x){return skinGrp(x,false)}).join('')
   +'<p class="note">Molduras, fundos, títulos e cores aparecem no seu perfil. Temas mudam as cores do app. Balões mudam as suas mensagens no chat.</p>';
 }
 function store(){
@@ -1381,7 +1414,16 @@ function loadClog(){if(!on())return;api('GET','/store/log').then(function(r){S.c
 function loadStore(){if(!on())return;api('GET','/store').then(function(r){r._t=Date.now();S.store=r;syncMe(r);loadClog();if(S.tab==='store'&&!S.sub&&!S.detail)render(true)}).catch(function(){})}
 function buyItem(id){
  if(!on()){toast('Entre numa conta para comprar');S.sub='auth';render();return}
- var cp=(/^(studio|premium|coins)/.test(id)&&S.coupon)?S.coupon:'';api('POST','/store/buy',cp?{id:id,coupon:cp}:{id:id}).then(function(r){if(cp)S.coupon='';var st=S.store||{};S.store=Object.assign({},st,r);syncMe(r);loadClog();toast(/^studio/.test(id)?'Studio liberado!':/^premium/.test(id)?'Premium ativo!':/^coins/.test(id)?'Moedas adicionadas':'Item comprado e em uso');render(true);loadStore()}).catch(function(e){toast(e.message)});
+ var money=/^(studio|premium|coins|cp)/.test(id),cp=(money&&S.coupon)?S.coupon:'';
+ var done=function(r){var st=S.store||{};S.store=Object.assign({},st,r);syncMe(r);loadClog();toast(/^studio/.test(id)?'Studio liberado!':/^premium/.test(id)?'Premium ativo!':/^(coins|cp)/.test(id)?'Moedas adicionadas':'Item comprado e em uso');render(true);loadStore()};
+ if(!money){api('POST','/store/buy',{id:id}).then(done).catch(function(e){toast(e.message)});return}
+ api('POST','/store/checkout',cp?{id:id,coupon:cp}:{id:id}).then(function(r){
+  if(cp)S.coupon='';
+  if(r.mode==='test'){done(r);return}
+  S.pay={order:r.order,url:r.url||'',pix:r.pix||null,mode:r.mode};
+  if(r.mode==='infinitepay')payOpen(r.url);
+  goSub('pay');
+ }).catch(function(e){toast(e.message)});
 }
 function buyGame(id){
  var g=find(id);if(!g||!g.remote)return;
@@ -1389,7 +1431,7 @@ function buyGame(id){
  api('POST','/games/'+g.rid+'/buy',{}).then(function(r){S.store=Object.assign({},S.store||{},r);syncMe(r);loadClog();S.lib[id]=1;sv('gp_lib',S.lib);toast('Compra confirmada. O jogo é seu!');render(true)}).catch(function(e){toast(e.message);if(/insuficientes/.test(e.message)){S.tab='store';S.shop='coins';S.detail=null;S.sub=null;render();loadStore()}});
 }
 function dailyGo(){api('POST','/store/daily',{}).then(function(r){r._t=Date.now();S.store=Object.assign({},S.store||{},r);syncMe(r);loadClog();toast('+'+r.reward+' moedas');render(true)}).catch(function(e){toast(e.message)})}
-function equipItem(slot,id){api('POST','/store/equip',{slot:slot,id:id||null}).then(function(r){S.store=Object.assign({},S.store||{},r);syncMe(r);render(true)}).catch(function(e){toast(e.message)})}
+function equipItem(slot,id){if(S.sub==='editprof'&&typeof pfKeep==='function')pfKeep();api('POST','/store/equip',{slot:slot,id:id||null}).then(function(r){S.store=Object.assign({},S.store||{},r);syncMe(r);render(true)}).catch(function(e){toast(e.message)})}
 function detail(g){
  var inLib=!!S.lib[g.id],wl=!!S.wish[g.id],a=avg(g.id),n=reviewsOf(g.id).length,tab=S.dtab,body='';
  if(tab==='rev'){
@@ -1473,7 +1515,7 @@ function publish_form(){
  var tb='<div class="tabs stabs">'+tabs.map(function(t){return '<button data-a="ssect" data-v="'+t[0]+'" aria-pressed="'+(sec===t[0])+'">'+ic(t[2])+t[1]+'</button>'}).join('')+'</div>';
  var body='';
  if(sec==='info'){
-  body='<div class="sc"><h3><i>'+ic('image')+'</i>Capa do jogo<small>16:9 · JPG, PNG ou WebP</small></h3>'
+  body='<div class="sgrid"><div class="sc"><h3><i>'+ic('image')+'</i>Capa do jogo<small>16:9 · JPG, PNG ou WebP</small></h3>'
    +'<label class="cvu" for="sCoverIn" id="cvDrop">'+(s.cover
      ?'<img src="'+s.cover+'" alt="Prévia da capa"><div class="acts"><button type="button" data-a="coverclear">'+ic('trash')+'Remover</button></div>'
      :'<div class="ph">'+ic('image')+'<b>Adicionar capa</b><span>Arraste uma imagem ou toque para escolher</span></div>')
@@ -1487,6 +1529,7 @@ function publish_form(){
    +'<label class="f" for="sTag">Tags</label><div class="catrow"><input class="in" id="sTag" value="'+esc(s.tagIn||'')+'" placeholder="Ex.: puzzle, relaxante" maxlength="20" autocomplete="off" autocapitalize="off"><button class="btn sm" data-a="tagadd">'+ic('plus')+'Adicionar</button></div>'
    +(s.tags.length?'<div class="tagl">'+s.tags.map(function(t){return '<button class="chip" data-a="tagrm" data-v="'+esc(t)+'" aria-label="Remover tag '+esc(t)+'">#'+esc(t)+' ×</button>'}).join('')+'</div>':'')
    +'<div style="margin-top:8px">'+swS('Criado com ajuda de IA','ai',s.ai)+'</div></div>'
+   +'</div>'
    +'<button class="btn ghost full" data-a="spreview">'+ic('eye')+(s.prev?'Fechar pré-visualização':'Pré-visualizar capa e informações')+'</button>';
  }else if(sec==='code'){
   var fileOk=s.code?'<div class="fileok">'+ic('check')+'<div><b>'+esc(s.src&&s.src.name?s.src.name:'Código colado')+'</b><small>'+fmtSize(s.code.length)+(s.zip?' · '+s.zip:'')+'</small></div>'+(big?'':'<button class="btn ghost sm" data-a="smode" data-v="code">Ver código</button>')+'<button class="del" data-a="sclear">Remover</button></div>':'';
@@ -1597,26 +1640,36 @@ function profile(){
  var icons=['play','play','play','lib','studio','studio','chat','chat','users','star'];
  var leg=al.map(function(a,i){return{ok:a[1]>=a[2],n:a[0].replace(/ \(.*\)/,''),i:icons[i]||'star'}}).sort(function(x,y){return (y.ok?1:0)-(x.ok?1:0)}).slice(0,6);
  var fr=on()&&S.user.frame?' '+S.user.frame.replace('_','-'):'',bn=on()&&S.user.banner?' '+S.user.banner.replace('_','-'):'';
+ var cov=on()&&S.user.bannerImg?' style="background-image:url('+S.user.bannerImg+')"':'';
  var plan=on()?(S.user.role==='admin'?'Admin':S.user.studio?'Ativo':'Ver'):'Ver';
- return '<div class="pf-head"><div class="pf-av'+fr+'">'+avatarEl(myAvatar(),nm,'xl')+'<label class="cam" for="pfQuick" aria-label="Trocar foto de perfil">'+ic('camera')+'</label><input type="file" id="pfQuick" class="vh" accept="image/*"><div class="lvl">NÍVEL<b>'+l.n+'</b></div></div>'
- +'<div class="pf-info"><h1'+(on()&&S.user.ncolor?' class="'+S.user.ncolor.replace('_','-')+'"':'')+'>'+esc(nm)+'</h1>'+(on()&&S.user.titleName?'<div class="ttl">'+esc(S.user.titleName)+'</div>':'')+'<div class="chips2">'+(on()?'<span class="idc" title="Seu ID de jogador">ID <b>#'+esc(S.user.uid||'000')+'</b></span><button class="idc coin" data-a="sttab" data-v="coins" aria-label="Moedas">'+ic('coin')+'<b>'+(S.user.coins||0)+'</b></button>':'<span class="idc">Offline</span>')+(isAdm?'<span class="idc adm">Admin</span>':'')+(on()&&S.user.premium?'<span class="idc prem">'+ic('star')+'Premium</span>':'')+'</div>'
+ var fav=on()&&S.user.favGames&&S.user.favGames.length?'<div class="favs"><span>Gosto de jogar</span>'+S.user.favGames.map(function(g){return '<em>'+esc(g)+'</em>'}).join('')+'</div>':'';
+ var pl=on()&&S.user.platform?{celular:'Celular',pc:'Computador',console:'Console',todos:'Em qualquer aparelho'}[S.user.platform]:'';
+ return '<div class="pf-cover'+(cov?' img':bn||' bn-default')+'"'+cov+'><label class="cvb" for="pfCover" aria-label="Trocar capa do perfil" title="Trocar capa">'+ic('edit')+'</label><input type="file" id="pfCover" class="vh" accept="image/*"></div>'
+ +'<div class="pf-head"><div class="pf-av'+fr+'">'+avatarEl(myAvatar(),nm,'xl')+'<label class="cam" for="pfQuick" aria-label="Trocar foto de perfil">'+ic('camera')+'</label><input type="file" id="pfQuick" class="vh" accept="image/*"><div class="lvl">NÍVEL<b>'+l.n+'</b></div></div>'
+ +'<div class="pf-info"><h1'+(on()&&S.user.ncolor?' class="'+S.user.ncolor.replace('_','-')+'"':'')+'>'+esc(nm)+'</h1>'+(on()&&S.user.titleName?'<div class="ttl">'+esc(S.user.titleName)+'</div>':'')+'<div class="chips2">'+(on()?'<span class="idc" title="Seu ID de jogador">ID <b>#'+esc(S.user.uid||'000')+'</b></span><button class="idc coin" data-a="sttab" data-v="coins" aria-label="Moedas">'+ic('coin')+'<b>'+(S.user.coins||0)+'</b></button>':'<span class="idc">Offline</span>')+(isAdm?'<span class="idc adm">Admin</span>':'')+(on()&&S.user.premium?'<span class="idc prem">'+ic('star')+'Premium</span>':'')+(pl?'<span class="idc">'+esc(pl)+'</span>':'')+'</div>'
  +(bio?'<div class="st">'+esc(bio)+'</div>':'')
  +'<div class="pf-xp"><span><b>'+l.cur+'</b>/'+l.max+' XP</span><div class="bar-xp"><i style="width:'+(l.cur/l.max*100)+'%"></i></div></div></div></div>'
+ +fav
  +'<div class="pstats"><div class="pstat">'+ic('lib')+'<div><b>'+libCount()+'</b><span>Biblioteca</span></div></div><div class="pstat">'+ic('pad')+'<div><b>'+S.plays+'</b><span>Partidas</span></div></div><div class="pstat">'+ic('studio')+'<div><b>'+myGames().length+'</b><span>Publicados</span></div></div></div>'
  +(on()?'':'<div class="panel mini" style="margin-top:10px"><div class="row"><div><b>Jogue com amigos</b><div class="note" style="margin:2px 0 0">Entre para publicar, fazer amigos e conversar.</div></div><button class="btn sm" data-a="sub" data-v="auth">Entrar</button></div></div>')
  +'<div class="sec tight"><h2>Meu legado</h2><button data-a="sub" data-v="ach">Ver todos</button></div><div class="legacy">'+leg.map(function(x){return '<div class="lg'+(x.ok?' ok':'')+'"><i>'+(x.ok?ic(x.i):ic('lock'))+'</i>'+esc(x.n)+'</div>'}).join('')+'</div>'
- +'<div class="tiles">'+mtile('edit','Editar perfil','sub','editprof','')+mtile('star','Missões','sub','missions',mAll().done.length)+mtile('trophy','Conquistas','sub','ach',done+'/'+al.length)+mtile('heart','Desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mtile('studio','Meu plano','plans','',plan)+'</div>'
- +'<div class="pbanner'+bn+'"><h3>Legado não se herda. Se constrói.</h3><button class="btn ghost" data-a="sttab" data-v="skins">'+ic('star')+'Skins</button></div>'
+ +'<div class="tiles">'+mtile('edit','Editar perfil','sub','editprof','')+mtile('star','Missões','sub','missions',mAll().done.length)+mtile('trophy','Conquistas','sub','ach',done+'/'+al.length)+mtile('heart','Desejos','sub','wish',Object.keys(S.wish).filter(function(k){return S.wish[k]&&find(k)}).length)+mtile('studio','Meu plano','plans','',plan)+mtile('star','Cores e skins','sttab','skins','')+'</div>'
 }
 function mtile(i,l,a,v,b){return '<button class="mtile" data-a="'+a+'"'+(v?' data-v="'+v+'"':'')+'>'+ic(i)+'<span>'+l+'</span>'+(b!==undefined&&b!==''?'<em>'+b+'</em>':'')+'</button>'}
-function pfInit(){return{name:myName(),bio:myBio(),avatar:myAvatar()}}
+function pfInit(){return{name:myName(),bio:myBio(),avatar:myAvatar(),fav:on()&&S.user.favGames?S.user.favGames.join(', '):'',plat:on()?(S.user.platform||''):''}}
+var PLATS=[['','Não informar'],['celular','Celular'],['pc','Computador'],['console','Console'],['todos','Em qualquer aparelho']];
 function editprof(){
- var f=S.pf||(S.pf=pfInit());
+ var f=S.pf||(S.pf=pfInit()),o=on();
+ var ext=o?'<div><label class="f" for="pfFav">Jogos que eu gosto de jogar <span class="mut">(até 8, separe por vírgula)</span></label><input class="in" id="pfFav" value="'+esc(f.fav||'')+'" maxlength="200" placeholder="Ex.: Minecraft, Free Fire, Xadrez" autocomplete="off"></div>'
+  +'<div><label class="f" for="pfPlat">Onde eu jogo</label><select class="in" id="pfPlat">'+PLATS.map(function(x){return '<option value="'+x[0]+'"'+(f.plat===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select></div>'
+  +'<div class="pf-pic"><div class="pf-cthumb'+(S.user.bannerImg?' img':(S.user.banner?' '+S.user.banner.replace('_','-'):' bn-default'))+'"'+(S.user.bannerImg?' style="background-image:url('+S.user.bannerImg+')"':'')+'></div><div class="acts"><label class="btn sm" for="pfCover">'+ic('edit')+'Trocar capa</label>'+(S.user.bannerImg?'<button class="btn ghost sm" data-a="pfcvrm">'+ic('trash')+'Remover capa</button>':'')+'</div></div>':'';
+ var look=o?'<div class="panel pf-look"><h3 style="margin:0 0 4px">Aparência do perfil</h3><p class="note" style="margin:0 0 6px">Cor do nome, fundo, moldura e título que você já tem (ou que são grátis). Para ter mais, abra a Loja.</p>'+(S.store?['ncolor','banner','frame','title'].map(function(x){return skinGrp(x,true)}).join(''):'<div class="empty">Carregando…</div>')+'<button class="btn ghost sm" data-a="sttab" data-v="skins" style="margin-top:8px">'+ic('star')+'Ver tudo na Loja</button></div>':'';
  return subhead('Editar perfil')+'<div class="panel pf-edit"><div class="pf-pic">'+avatarEl(f.avatar,f.name,'xl')+'<div class="acts"><label class="btn sm" for="pfIn">'+ic('camera')+'Trocar foto</label>'+(f.avatar?'<button class="btn ghost sm" data-a="pfrm">'+ic('trash')+'Remover</button>':'')+'</div><input type="file" id="pfIn" class="vh" accept="image/*"></div>'
  +'<div><label class="f" for="pfName">Nome</label><input class="in" id="pfName" value="'+esc(f.name)+'" maxlength="20" autocomplete="off"></div>'
  +'<div><label class="f" for="pfBio">Sobre você</label><textarea class="in" id="pfBio" maxlength="120" placeholder="Conte algo sobre você">'+esc(f.bio)+'</textarea></div>'
- +'<button class="btn full" data-a="pfsave">'+ic('check')+'Salvar perfil</button></div>'
- +'<p class="note">Nome com 3 a 20 letras, números, _ . ou -. A foto é reduzida automaticamente.</p>'
+ +ext
+ +'<button class="btn full" data-a="pfsave">'+ic('check')+'Salvar perfil</button></div>'+look
+ +'<p class="note">Nome com 3 a 20 letras, números, _ . ou -. A foto e a capa são reduzidas automaticamente.</p>'
 }
 function ach(){
  return subhead('Conquistas')+'<div class="list">'+achList().map(function(a){var p=Math.min(a[1],a[2]),ok=a[1]>=a[2];return '<div class="li"><div class="avatar" style="width:40px;height:40px;font-size:16px;'+(ok?'':'filter:grayscale(1);opacity:.5')+'">'+(ok?ic('check'):ic('trophy'))+'</div><div class="body"><div class="row"><b>'+a[0]+'</b><span class="badge'+(ok?' ok':'')+'">'+(ok?'Concluída':p+'/'+a[2])+'</span></div><div class="bar-xp" style="margin-top:6px"><i style="width:'+(p/a[2]*100)+'%"></i></div></div></div>'}).join('')+'</div>'
@@ -1808,7 +1861,7 @@ function render(keep){
  var u=unseen();$('#bell').innerHTML=ic('bell')+(u?'<i class="dot">'+u+'</i>':'');
  var y=view.scrollTop,html;
  if(S.detail){var g=find(S.detail);html=g?detail(g):home()}
- else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,editprof:editprof,update:updView,uiprefs:uiView,notifprefs:npView}[S.sub]()}
+ else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,pay:payView,editprof:editprof,update:updView,uiprefs:uiView,notifprefs:npView}[S.sub]()}
  else html={home:home,store:store,lib:library,studio:studio,profile:profile,chat:community}[S.tab]();
  view.innerHTML=(S.maint&&!ws0()?'<div class="warnbar">'+ic('alert')+'<div><b>Em manutenção</b>'+esc(S.maint.msg||'Voltamos já.')+'</div></div>':'')+offBar()+html;view.classList.toggle('cm',!!view.querySelector('.chatpg'));
  if(S.sub==='upd'&&!on()){var ch=false;updList().forEach(function(x){if(S.seen.indexOf(x.id)<0){S.seen.push(x.id);ch=true}});if(ch){save('seen')}}
@@ -2466,11 +2519,13 @@ function wsBuy(){
  var B=WS.buy,c=B.com;
  if(!wsCan('finance'))return '<div class="wempty">Você não tem permissão para ver as compras.</div>';
  if(!c)return '<div class="wempty">'+(B.busy?'Carregando…':'Não foi possível carregar.')+'</div>';
- var h='<div class="wnote wwarn">Compras com dinheiro são de teste: ativam na hora, sem cobrança real. Os valores abaixo são simulados até existir um meio de pagamento.</div>'
+ var h=(WS.pay.cfg&&WS.pay.cfg.mode!=='test'?'':'<div class="wnote wwarn">Modo teste: as compras ativam na hora e não cobram nada. Para vender de verdade, abra a aba <b>Pagamentos</b>.</div>')
   +'<div class="wgrid">'+wsSum('Hoje',c.today)+wsSum('Últimos 7 dias',c.d7)+wsSum('Últimos 30 dias',c.d30)+wsStat('Moedas em circulação',c.coinsInCirculation)+wsStat('Premium ativos',c.activePlans.premium)+wsStat('Studio ativos',c.activePlans.studio)+wsStat('Estornos',c.refunds)+'</div>'
-  +'<div class="wtabs">'+(wsIsAdmin()?[['sales','Vendas'],['prices','Preços'],['plans','Planos VIP'],['coupons','Cupons'],['creators','Criadores']]:[['sales','Vendas'],['creators','Criadores']]).map(function(t){return '<button class="wtab'+(B.tab===t[0]?' on':'')+'" data-a="w_btab" data-v="'+t[0]+'">'+t[1]+'</button>'}).join('')+'</div>';
+  +'<div class="wtabs">'+(wsIsAdmin()?[['sales','Vendas'],['orders','Pedidos'+(WS.pay.pending?' ('+WS.pay.pending+')':'')],['prices','Preços e pacotes'],['plans','Planos VIP'],['coupons','Cupons'],['pay','Pagamentos'],['creators','Criadores']]:[['sales','Vendas'],['creators','Criadores']]).map(function(t){return '<button class="wtab'+(B.tab===t[0]?' on':'')+'" data-a="w_btab" data-v="'+t[0]+'">'+t[1]+'</button>'}).join('')+'</div>';
  if(B.tab==='sales')return h+wsSales();
  if(B.tab==='prices'&&wsIsAdmin())return h+wsPrices();
+ if(B.tab==='orders')return h+wsOrders();
+ if(B.tab==='pay'&&wsIsAdmin())return h+wsPay();
  if(B.tab==='coupons'&&wsIsAdmin())return h+wsCoupons();
  if(B.tab==='creators')return h+wsCreators();
  if(!wsIsAdmin())return h+wsSales();
@@ -2491,15 +2546,15 @@ function wsSales(){
 function wsPriceRow(x,isItem){
  var val=isItem?x.coins:(x.price/100).toFixed(2).replace('.',','),off=x.active===false;
  return '<tr class="'+(off?'wdim':'')+'"><td><b>'+esc(x.name)+'</b>'+(x.premium?' <span class="wchip active">Premium</span>':'')+(x.edited?' <span class="wchip suspended">editado</span>':'')+'<span class="mut" style="display:block">padrão: '+(isItem?x.base.coins+' moedas':wsBRL(x.base.price))+(isItem?' · '+esc(x.slot):'')+'</span></td>'
-  +'<td class="wprice"><label class="wpin"><span>'+(isItem?'moedas':'R$')+'</span><input class="in" id="wsP_'+x.id+'" value="'+val+'" inputmode="decimal" autocomplete="off"></label></td>'
+  +'<td class="wprice">'+(!isItem&&x.coins!==undefined?'<label class="wpin"><span>moedas</span><input class="in" id="wsC_'+x.id+'" value="'+x.coins+'" inputmode="numeric" autocomplete="off"></label>':'')+'<label class="wpin"><span>'+(isItem?'moedas':'R$')+'</span><input class="in" id="wsP_'+x.id+'" value="'+val+'" inputmode="decimal" autocomplete="off"></label></td>'
   +'<td class="wbtns"><button class="btn sm" data-a="w_psave" data-v="'+x.id+'">Salvar</button>'
   +'<button class="btn ghost sm" data-a="w_ptog" data-v="'+x.id+':'+(off?1:0)+'">'+(off?'Voltar à venda':'Tirar da venda')+'</button>'
-  +(x.edited?'<button class="btn ghost sm" data-a="w_preset" data-v="'+x.id+'">Restaurar</button>':'')+'</td></tr>';
+  +(x.edited?'<button class="btn ghost sm" data-a="w_preset" data-v="'+x.id+'">Restaurar</button>':'')+(!isItem&&/^cp/.test(x.id)?'<button class="btn ghost sm danger" data-a="w_pkdel" data-v="'+x.id+'">Apagar</button>':'')+'</td></tr>';
 }
 function wsPrices(){
  var c=WS.buy.com.catalog,q=WS.buy.iq.toLowerCase();
  var it=c.items.filter(function(x){return !q||x.name.toLowerCase().indexOf(q)>=0||x.slot.indexOf(q)>=0});
- return '<div class="wbar"><label class="wsearch">'+wi('search')+'<input class="in" id="wsIq" data-w="iq" value="'+esc(WS.buy.iq)+'" placeholder="Filtrar skins por nome ou tipo (frame, banner, title…)" autocomplete="off"></label></div>'
+ return wsPackNew()+'<div class="wbar"><label class="wsearch">'+wi('search')+'<input class="in" id="wsIq" data-w="iq" value="'+esc(WS.buy.iq)+'" placeholder="Filtrar skins por nome ou tipo (frame, banner, title…)" autocomplete="off"></label></div>'
   +'<div class="wcard wfill"><div class="wscroll"><table class="wt"><thead><tr><th>Pacotes de moedas</th><th>Preço</th><th></th></tr></thead><tbody>'+c.packs.map(function(x){return wsPriceRow(x,false)}).join('')+'</tbody>'
   +'<thead><tr><th>Skins e itens</th><th>Preço</th><th></th></tr></thead><tbody>'+(it.map(function(x){return wsPriceRow(x,true)}).join('')||'<tr><td colspan="3"><div class="wempty">Nenhum item.</div></td></tr>')+'</tbody></table></div></div>';
 }
@@ -2570,13 +2625,14 @@ async function wsBuyDo(path,body,ok){
 function wsAct2(a,v,t){
  var B=WS.buy,G=WS.gm;
  switch(a){
-  case 'w_btab':B.tab=v;wsRender();if(v==='coupons'||v==='creators')wsLoadBuyX(v);break;
+  case 'w_btab':B.tab=v;wsRender();if(v==='coupons'||v==='creators')wsLoadBuyX(v);if(v==='orders'||v==='pay')wsLoadPay();break;
   case 'w_bmore':wsSalesFetch(false).then(wsRender).catch(function(e){toast(e.message)});break;
   case 'w_refund':{var s=B.sales.filter(function(x){return String(x.id)===v})[0];if(!s)break;
    wsAsk({title:'Estornar compra',body:s.buyer+' · '+s.name+'. '+({coins:'As moedas do pacote saem do saldo (falha se já foram gastas).',studio:'Os dias do plano são retirados.',premium:'Os dias do plano são retirados.',item:'As moedas voltam e a skin é retirada.',game:'As moedas voltam ao comprador, o criador devolve a parte dele e o jogo sai da biblioteca.'}[s.kind]||''),need:1,ok:'Estornar',danger:1,run:function(r){return wsBuyDo('/admin/sales/'+s.id+'/refund',{reason:r},'Compra estornada')}});break}
   case 'w_psave':{var el=document.getElementById('wsP_'+v);if(!el)break;var isItem=/^[a-z]{2}_/.test(v);var val=isItem?Number(String(el.value).trim()):wsParseBRL(el.value);
    if(isNaN(val)||val<0){toast('Valor inválido');break}
-   api('POST','/admin/prices',isItem?{id:v,coins:val}:{id:v,price:val}).then(function(r){toast(r.unchanged?'Nada mudou':'Preço salvo');if(B.com)B.com.catalog=r.catalog;wsRender()}).catch(function(e){toast(e.message)});break}
+   var pcEl=document.getElementById('wsC_'+v),pbody=isItem?{id:v,coins:val}:{id:v,price:val};if(pcEl){var cn=Number(String(pcEl.value).replace(/\D/g,''));if(!cn||cn<1){toast('Moedas do pacote inválidas');break}pbody.coins=cn}
+   api('POST','/admin/prices',pbody).then(function(r){toast(r.unchanged?'Nada mudou':'Preço salvo');if(B.com)B.com.catalog=r.catalog;wsRender()}).catch(function(e){toast(e.message)});break}
   case 'w_plsave':{var nm=document.getElementById('wsPN_'+v),pr=document.getElementById('wsP_'+v),pk=document.getElementById('wsPK_'+v);var cents=wsParseBRL(pr.value);if(isNaN(cents)||cents<0){toast('Preço inválido');break}
    api('POST','/admin/prices',{id:v,name:nm.value,price:cents,perks:pk.value.split('\n').map(function(x){return x.trim()}).filter(Boolean)}).then(function(r){toast(r.unchanged?'Nada mudou':'Plano salvo');if(B.com)B.com.catalog=r.catalog;wsRender()}).catch(function(e){toast(e.message)});break}
   case 'w_ptog':{var p=v.split(':');wsBuyDo('/admin/prices',{id:p[0],active:p[1]==='1'},p[1]==='1'?'De volta à venda':'Tirado da venda');break}
@@ -3016,6 +3072,82 @@ function wsAct5(a,v,t){
    return true}
   case 'w_ncancel':wsAsk({title:'Cancelar envio agendado',body:'A notificação não será enviada.',need:0,ok:'Cancelar envio',danger:1,run:function(){return api('POST','/admin/notif/campaigns/'+v+'/cancel',{}).then(function(){toast('Cancelada');WS.modal=null;return wsLoadNtf()}).catch(function(e){toast(e.message)}).then(wsRender)}});return true;
   case 'w_nretry':api('POST','/admin/notif/retry',{}).then(function(r){toast(r.requeued+' envio(s) na fila de novo');return wsLoadNtf()}).catch(function(e){toast(e.message)}).then(wsRender);return true;
+ }
+ return wsAct6(a,v,t);
+}
+
+/* ---------- painel: Compras → Pedidos, Pagamentos e pacotes de moedas ---------- */
+WS.pay={cfg:null,orders:[],pending:0,flt:'pending',test:null,busy:0};
+var PAY_MODES=[['test','Teste (não cobra nada, entrega na hora)'],['infinitepay','InfinitePay (link de pagamento: Pix e cartão)'],['pix','Pix manual (você confirma cada pagamento)']];
+function wsPayInfo(){
+ var c=WS.pay.cfg;if(!c)return '<div class="wempty">Carregando…</div>';
+ var live=c.mode!=='test';
+ return '<div class="wnote'+(live?'':' wwarn')+'">'+(live?'Pagamento real ligado: '+(c.mode==='infinitepay'?'InfinitePay':'Pix manual')+'. Quem compra só recebe depois do pagamento confirmado.':'Modo teste: as compras entregam na hora e não cobram nada. Troque o modo abaixo quando estiver pronto para vender.')+'</div>';
+}
+function wsPay(){
+ var P=WS.pay,c=P.cfg;if(!c)return '<div class="wempty">'+(P.busy?'Carregando…':'Não foi possível carregar.')+'</div>';
+ var t=P.test?'<div class="wnote'+(P.test.ok?'':' wwarn')+'" style="margin-top:8px">'+(P.test.ok?'Conexão ok (resposta '+P.test.status+'). Link de teste de R$ 1,00: <a href="'+esc(P.test.url)+'" target="_blank" rel="noopener">abrir</a>. Ninguém é cobrado se não pagar.':'Não deu certo ('+P.test.status+'). '+esc(P.test.detail||'Confira o InfiniteTag.'))+'</div>':'';
+ return wsPayInfo()
+  +'<div class="wtwo"><div class="wcard"><div class="wch"><h3>Como receber</h3></div><div class="wpb">'
+  +'<label class="f">Modo de pagamento</label><select class="in" id="wsPayMode">'+PAY_MODES.map(function(m){return '<option value="'+m[0]+'"'+(c.mode===m[0]?' selected':'')+'>'+m[1]+'</option>'}).join('')+'</select>'
+  +'<label class="f">Valor mínimo por compra (R$)</label><input class="in" id="wsPayMin" value="'+(c.minCents/100).toFixed(2).replace('.',',')+'" inputmode="decimal" autocomplete="off">'
+  +'<label class="f">Aviso mostrado na tela de pagamento (opcional)</label><input class="in" id="wsPayNote" maxlength="200" value="'+esc(c.note||'')+'" placeholder="Ex.: As moedas chegam em até 1 minuto após o pagamento.">'
+  +'<p class="mut" style="margin:10px 0 0">Endereço do aviso automático (webhook): <b>'+esc(c.webhook||'defina PUBLIC_URL no servidor')+'</b>. Você não precisa cadastrar em lugar nenhum: o app já envia esse endereço ao criar cada link.</p></div></div>'
+  +'<div class="wcard"><div class="wch"><h3>InfinitePay</h3>'+(c.handle?'<span class="wchip active">configurada</span>':'<span class="wchip suspended">falta o InfiniteTag</span>')+'</div><div class="wpb">'
+  +'<label class="f">InfiniteTag (sem o $)</label><input class="in" id="wsPayHandle" maxlength="40" value="'+esc(c.handle||'')+'" placeholder="minhaloja" autocomplete="off">'
+  +'<label class="f">Chave de API (opcional) '+(c.hasKey?'<span class="wchip active">salva</span>':'')+'</label><input class="in" id="wsPayKey" type="password" placeholder="'+(c.hasKey?'Deixe vazio para manter a atual':'inchk_…')+'" autocomplete="new-password">'
+  +'<div class="wact" style="margin-top:8px"><button class="btn ghost sm" data-a="w_paytest">Testar conexão</button>'+(c.hasKey?'<button class="btn ghost sm danger" data-a="w_paykey">Remover chave</button>':'')+'</div>'+t
+  +'<p class="mut" style="margin:10px 0 0">A InfiniteTag aparece no app InfinitePay, no seu perfil (começa com $). A chave de API é opcional e fica só no servidor; ela nunca aparece de volta aqui.</p></div></div></div>'
+  +'<div class="wcard"><div class="wch"><h3>Pix manual</h3>'+(c.pixKey?'<span class="wchip active">chave salva</span>':'<span class="wchip suspended">sem chave</span>')+'</div><div class="wpb"><div class="wtwo">'
+  +'<div><label class="f">Chave Pix</label><input class="in" id="wsPixKey" maxlength="80" value="'+esc(c.pixKey||'')+'" placeholder="CPF, e-mail, telefone ou chave aleatória" autocomplete="off"></div>'
+  +'<div><label class="f">Nome de quem recebe</label><input class="in" id="wsPixName" maxlength="40" value="'+esc(c.pixName||'')+'" autocomplete="off"></div></div>'
+  +'<label class="f">Cidade (opcional)</label><input class="in" id="wsPixCity" maxlength="30" value="'+esc(c.pixCity||'')+'" autocomplete="off">'
+  +'<p class="mut" style="margin:10px 0 0">No modo Pix manual, o jogador vê a chave, o valor e um código do pedido. Depois que o dinheiro cair, você confirma na aba <b>Pedidos</b> e as moedas ou o plano são entregues.</p></div></div>'
+  +'<div class="wact" style="margin-top:12px"><button class="btn" data-a="w_paysave">Salvar configuração de pagamento</button></div>';
+}
+var ORD_ST={pending:'Em aberto',paid:'Pago',canceled:'Cancelado'};
+function wsOrders(){
+ var P=WS.pay;
+ var chips=[['pending','Em aberto'],['paid','Pagos'],['canceled','Cancelados'],['','Todos']].map(function(f){return '<button class="wtab'+(P.flt===f[0]?' on':'')+'" data-a="w_oflt" data-v="'+f[0]+'">'+f[1]+(f[0]==='pending'&&P.pending?' ('+P.pending+')':'')+'</button>'}).join('');
+ var rows=P.orders.map(function(o){
+  var acts=o.status==='pending'?'<button class="btn sm" data-a="w_oconf" data-v="'+o.nsu+'">Confirmar pagamento</button><button class="btn ghost sm" data-a="w_ocancel" data-v="'+o.nsu+'">Cancelar</button>':'';
+  return '<tr><td class="mut">'+wsDT(o.created_at)+'</td><td><b>'+esc(o.buyer)+'</b></td><td>'+esc(o.name)+(o.coins?'<span class="mut" style="display:block">'+wsFmtN(o.coins)+' moedas</span>':'')+'</td><td class="num">'+wsBRL(o.cents)+'</td><td class="mut">'+(o.method==='infinitepay'?'InfinitePay':o.method==='pix'?'Pix manual':esc(o.method))+'<span style="display:block">código '+esc(o.code)+'</span></td><td><span class="wchip '+(o.status==='paid'?'active':o.status==='pending'?'suspended':'banned')+'">'+ORD_ST[o.status]+'</span>'+(o.receipt?'<span style="display:block"><a href="'+esc(o.receipt)+'" target="_blank" rel="noopener">comprovante</a></span>':'')+'</td><td class="wbtns">'+acts+'</td></tr>';
+ }).join('');
+ return '<div class="wtabs" style="margin-top:0">'+chips+'</div><div class="wcard wfill"><div class="wscroll"><table class="wt"><thead><tr><th>Quando</th><th>Comprador</th><th>Item</th><th class="num">Valor</th><th>Pagamento</th><th>Situação</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="7"><div class="wempty">Nenhum pedido aqui.</div></td></tr>')+'</tbody></table></div></div>';
+}
+function wsPackNew(){
+ return '<div class="wcard"><div class="wch"><h3>Novo pacote de moedas</h3></div><div class="wpb"><div class="wthree">'
+  +'<div><label class="f">Nome</label><input class="in" id="wsNpName" maxlength="40" placeholder="Ex.: 5.000 moedas" autocomplete="off"></div>'
+  +'<div><label class="f">Moedas</label><input class="in" id="wsNpCoins" inputmode="numeric" placeholder="5000" autocomplete="off"></div>'
+  +'<div><label class="f">Preço (R$)</label><input class="in" id="wsNpPrice" inputmode="decimal" placeholder="14,90" autocomplete="off"></div></div>'
+  +'<div class="wact" style="margin-top:8px"><button class="btn sm" data-a="w_pknew">Criar pacote</button></div></div></div>';
+}
+async function wsLoadPay(){
+ var P=WS.pay;P.busy=1;wsRender();
+ try{var r=await Promise.all([api('GET','/admin/pay'),api('GET','/admin/orders'+(P.flt?'?status='+P.flt:''))]);P.cfg=r[0].cfg;P.orders=r[1].orders;P.pending=r[1].pending}catch(e){toast(e.message)}
+ P.busy=0;wsRender();
+}
+async function wsLoadOrders(){
+ var P=WS.pay;try{var r=await api('GET','/admin/orders'+(P.flt?'?status='+P.flt:''));P.orders=r.orders;P.pending=r.pending}catch(e){toast(e.message)}wsRender();
+}
+function wsAct6(a,v,t){
+ var P=WS.pay,B=WS.buy,g=function(id){var e=document.getElementById(id);return e?e.value:''};
+ switch(a){
+  case 'w_paysave':{
+   var body={mode:g('wsPayMode'),handle:g('wsPayHandle'),pixKey:g('wsPixKey'),pixName:g('wsPixName'),pixCity:g('wsPixCity'),note:g('wsPayNote')};
+   var mn=wsParseBRL(g('wsPayMin'));if(isNaN(mn)||mn<100){toast('Valor mínimo de R$ 1,00 ou mais');return true}body.minCents=mn;
+   if(g('wsPayKey').trim())body.apiKey=g('wsPayKey').trim();
+   api('POST','/admin/pay',body).then(function(r){toast(r.unchanged?'Nada mudou':'Configuração salva');P.cfg=r.cfg;wsRender()}).catch(function(e){toast(e.message)});return true}
+  case 'w_paytest':api('POST','/admin/pay/test',{}).then(function(r){P.test=r;wsRender()}).catch(function(e){toast(e.message)});return true;
+  case 'w_paykey':wsAsk({title:'Remover a chave de API',body:'A InfinitePay continua funcionando só com o InfiniteTag.',need:0,ok:'Remover',danger:1,run:function(){return api('POST','/admin/pay',{clearKey:true}).then(function(r){P.cfg=r.cfg;WS.modal=null;toast('Chave removida')}).catch(function(e){toast(e.message)}).then(wsRender)}});return true;
+  case 'w_oflt':P.flt=v;wsLoadOrders();return true;
+  case 'w_oconf':{var o=P.orders.filter(function(x){return x.nsu===v})[0];if(!o)return true;
+   wsAsk({title:'Confirmar pagamento',body:o.buyer+' · '+o.name+' · '+wsBRL(o.cents)+'. Só confirme se o dinheiro já caiu na sua conta. As moedas ou o plano são entregues agora.',need:0,ok:'Confirmar e entregar',run:function(){return api('POST','/admin/orders/'+v+'/confirm',{}).then(function(){toast('Pedido entregue');WS.modal=null;return wsLoadPay()}).catch(function(e){toast(e.message)}).then(wsRender)}});return true}
+  case 'w_ocancel':wsAsk({title:'Cancelar pedido',body:'O pedido deixa de poder ser pago por aqui. Nada é entregue.',need:0,ok:'Cancelar pedido',danger:1,run:function(){return api('POST','/admin/orders/'+v+'/cancel',{}).then(function(){toast('Pedido cancelado');WS.modal=null;return wsLoadPay()}).catch(function(e){toast(e.message)}).then(wsRender)}});return true;
+  case 'w_pknew':{var nm=g('wsNpName').trim(),co=Number(String(g('wsNpCoins')).replace(/\D/g,'')),pr=wsParseBRL(g('wsNpPrice'));
+   if(nm.length<2){toast('Dê um nome ao pacote');return true}if(!co||co<1){toast('Informe as moedas');return true}if(isNaN(pr)||pr<0){toast('Informe o preço');return true}
+   wsBuyDo('/admin/packs',{name:nm,coins:co,price:pr},'Pacote criado');return true}
+  case 'w_pkdel':wsAsk({title:'Apagar pacote',body:'O pacote sai da loja. Vendas já feitas continuam no extrato.',need:0,ok:'Apagar',danger:1,run:function(){return api('DELETE','/admin/packs/'+v).then(function(r){toast('Pacote apagado');WS.modal=null;if(B.com)B.com.catalog=r.catalog}).catch(function(e){toast(e.message)}).then(wsRender)}});return true;
  }
  return false;
 }
@@ -3618,15 +3750,77 @@ function pushUrlBoot(){
 
 /* ---------- ações dos botões ---------- */
 function goSub(v){S.sub=v;S.tab=SUBTAB[v]||S.tab;S.detail=null;render()}
+
+/* ---------- pagamento (InfinitePay e Pix manual) ---------- */
+function payOpen(u){
+ if(!/^https:\/\//.test(u||'')){toast('Link de pagamento indisponível');return}
+ try{if(native()&&window.GPNative.openUrl){window.GPNative.openUrl(u);return}}catch(e){}
+ try{var w=window.open(u,'_blank','noopener');if(w)return}catch(e){}
+ location.href=u;
+}
+function payBR(c){return 'R$ '+(c/100).toFixed(2).replace('.',',')}
+function payView(){
+ var P=S.pay;if(!P||!P.order)return subhead('Pagamento')+'<div class="empty">Nenhum pagamento em andamento.</div><button class="btn full" data-a="back">Voltar</button>';
+ var o=P.order,paid=o.status==='paid',canc=o.status==='canceled',t='';
+ if(paid)t='<div class="panel" style="text-align:center"><div style="font-size:34px;margin:4px 0">'+ic('check')+'</div><h2 style="margin:6px 0">Pagamento confirmado</h2><p class="note">'+esc(o.name)+' já está na sua conta.</p><button class="btn full" data-a="paydone">Continuar</button></div>';
+ else if(canc)t='<div class="panel"><b>Pedido cancelado</b><p class="note">Nada foi cobrado. Você pode tentar de novo pela Loja.</p><button class="btn full" data-a="paydone">Voltar à Loja</button></div>';
+ else if(P.mode==='infinitepay')t='<div class="panel"><b>'+esc(o.name)+'</b> · '+payBR(o.cents)+'<p class="note">Pague com Pix ou cartão na página da InfinitePay. Quando o pagamento for aprovado, volte para cá: a confirmação é automática.</p><div class="stack"><button class="btn full" data-a="payopen">'+ic('coin')+'Abrir pagamento</button><button class="btn ghost full" data-a="payverify">Já paguei, verificar agora</button></div></div>';
+ else{var x=P.pix||{};t='<div class="panel"><b>'+esc(o.name)+'</b> · '+payBR(o.cents)+'<p class="note" style="margin-top:8px">Faça um Pix com estes dados:</p>'
+  +'<div class="payrow"><span>Chave Pix</span><b class="wr">'+esc(x.key||'')+'</b><button class="btn ghost sm" data-a="paycopy" data-v="'+esc(x.key||'')+'">Copiar</button></div>'
+  +(x.name?'<div class="payrow"><span>Recebedor</span><b>'+esc(x.name)+(x.city?' · '+esc(x.city):'')+'</b></div>':'')
+  +'<div class="payrow"><span>Valor</span><b>'+payBR(x.cents||o.cents)+'</b><button class="btn ghost sm" data-a="paycopy" data-v="'+((x.cents||o.cents)/100).toFixed(2)+'">Copiar</button></div>'
+  +'<div class="payrow"><span>Código do pedido</span><b>'+esc(x.code||'')+'</b><button class="btn ghost sm" data-a="paycopy" data-v="'+esc(x.code||'')+'">Copiar</button></div>'
+  +'<p class="note">Depois de pagar, a equipe confirma e o item chega na sua conta. Isso pode levar alguns minutos.'+(x.note?' '+esc(x.note):'')+'</p><button class="btn ghost full" data-a="payverify">Já paguei, verificar</button></div>'}
+ return subhead('Pagamento')+t+'<p class="note">Pedido '+esc(o.nsu.slice(0,8).toUpperCase())+' · '+({pending:'aguardando pagamento',paid:'pago',canceled:'cancelado'}[o.status]||o.status)+'</p>';
+}
+function payCheck(extra,quiet){
+ var P=S.pay;if(!P||!P.order||P.order.status!=='pending')return Promise.resolve();
+ return api('POST','/store/orders/'+P.order.nsu+'/verify',extra||{}).then(function(r){
+  P.order=r.order;
+  if(r.order.status==='paid'){S.store=Object.assign({},S.store||{},r);syncMe(r);loadClog();toast('Pagamento confirmado!')}
+  else if(!quiet)toast(r.order.status==='canceled'?'Pedido cancelado':'Ainda não recebemos o pagamento');
+  if(S.sub==='pay')render(true);
+ }).catch(function(e){if(!quiet)toast(e.message)});
+}
+function payBoot(){
+ try{
+  var q=new URLSearchParams(location.search),nsu=q.get('paid')||q.get('order_nsu');
+  if(!nsu||!on())return;
+  var extra={transaction_nsu:q.get('transaction_nsu')||'',slug:q.get('slug')||'',receipt_url:q.get('receipt_url')||''};
+  history.replaceState(null,'',location.pathname);
+  api('GET','/store/orders').then(function(r){
+   var o=(r.orders||[]).filter(function(x){return x.nsu===nsu})[0];if(!o)return;
+   S.pay={order:o,url:o.link||'',pix:o.pix||null,mode:o.method};
+   return payCheck(extra,true).then(function(){goSub('pay')});
+  }).catch(function(){});
+ }catch(e){}
+}
+setInterval(function(){if(S.sub==='pay'&&S.pay&&S.pay.order&&S.pay.order.status==='pending'&&!document.hidden)payCheck({},true)},6000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&S.pay&&S.pay.order&&S.pay.order.status==='pending')payCheck({},true)});
+
+/* pilha de telas: ao voltar de uma subtela de Configurações, volta para as Configurações (e não para a Início) */
+function navMark(v){
+ if(!S.sub){S.nav=[];return}
+ if(v===S.sub)return;
+ S.nav=S.nav||[];
+ var i=S.nav.lastIndexOf(v);
+ if(i>=0){S.nav=S.nav.slice(0,i);return}
+ if(S.nav[S.nav.length-1]!==S.sub)S.nav.push(S.sub);
+}
 function gpAct(a,v,t){
  switch(a){
   case 'sub':
+   navMark(v);
    if(v==='update'){goSub(v);syncRun(false);return true}
    if(v==='uiprefs'){goSub(v);return true}
    if(v==='notifprefs'){goSub(v);npLoad().then(function(){render(true)});return true}
    if(v==='upd'){S.ncat='';return false}
    return false;
   case 'uireload':location.reload();return true;
+  case 'payopen':payOpen(S.pay&&S.pay.url);return true;
+  case 'payverify':payCheck({},false);return true;
+  case 'paycopy':try{navigator.clipboard.writeText(v).then(function(){toast('Copiado')},function(){toast('Segure o texto para copiar')})}catch(e){toast('Segure o texto para copiar')}return true;
+  case 'paydone':S.pay=null;S.sub=null;S.tab='store';S.detail=null;render();loadStore();return true;
   case 'uilater':SY.uiNew='';webUiBanner();return true;
   case 'uipre':S.ui.g=uiClamp(v,80,uiMax());['lay','menu','panel','btn','txt'].forEach(function(k){S.ui[k]=100});uiApply();uiSave();render(true);return true;
   case 'uireset':S.ui.g=100;['lay','menu','panel','btn','txt'].forEach(function(k){S.ui[k]=100});S.ui.tch=0;uiApply();uiSave();render(true);toast('Tamanhos restaurados');return true;
@@ -3978,7 +4172,29 @@ function importFile(f){
  r.onload=function(){keepForms();S.studio.code=String(r.result);S.studio.zip='';S.studio.src={name:f.name,size:f.size};S.studio.mode='file';if(!S.studio.title)S.studio.title=f.name.replace(/\.[^.]+$/,'').slice(0,40);render(true);toast('Arquivo carregado')};
  r.readAsText(f);
 }
-function pfKeep(){var n=document.getElementById('pfName'),b=document.getElementById('pfBio');if(!S.pf)S.pf=pfInit();if(n)S.pf.name=n.value;if(b)S.pf.bio=b.value}
+function pfKeep(){var n=document.getElementById('pfName'),b=document.getElementById('pfBio'),fv=document.getElementById('pfFav'),pt=document.getElementById('pfPlat');if(!S.pf)S.pf=pfInit();if(n)S.pf.name=n.value;if(b)S.pf.bio=b.value;if(fv)S.pf.fav=fv.value;if(pt)S.pf.plat=pt.value}
+function setCover(f){
+ if(!on()){toast('Entre numa conta para ter capa no perfil');return}
+ if(!/^image\//.test(f.type)){toast('Escolha uma imagem (JPG, PNG ou WebP)');return}
+ var u=URL.createObjectURL(f),im=new Image();
+ im.onload=function(){
+  try{
+   var W=960,H=320,out='',q=[.82,.68,.55,.42];
+   for(var k=0;k<q.length;k++){
+    var c=document.createElement('canvas');c.width=W;c.height=H;var x=c.getContext('2d');
+    var sc=Math.max(W/im.naturalWidth,H/im.naturalHeight),w=im.naturalWidth*sc,h=im.naturalHeight*sc;
+    x.fillStyle='#11152a';x.fillRect(0,0,W,H);x.drawImage(im,(W-w)/2,(H-h)/2,w,h);
+    out=c.toDataURL('image/jpeg',q[k]);if(out.length<=200000)break;
+   }
+   URL.revokeObjectURL(u);
+   if(out.length>220000){toast('Imagem muito pesada. Escolha outra.');return}
+   if(S.sub==='editprof')pfKeep();
+   api('PATCH','/me',{bannerImg:out}).then(function(pr){S.user=Object.assign({},S.user,pr.user);save('user');toast('Capa atualizada');render(true)}).catch(function(e){toast(e.message)});
+  }catch(e){toast('Não consegui usar essa imagem')}
+ };
+ im.onerror=function(){URL.revokeObjectURL(u);toast('Não consegui abrir essa imagem')};
+ im.src=u;
+}
 function playNow(){
  var best=null,n=0,rel_=released().filter(function(g){return gOwned(g)});
  rel_.forEach(function(g){var c=+(S.pc||{})[g.id]||0;if(c>n){n=c;best=g}});
@@ -4055,8 +4271,10 @@ async function act(a,v,t){
   case 'cat2':S.cat=v;render(true);break;
   case 'playnow':playNow();break;
   case 'equip':equipItem(v,t.dataset.id||'');break;
+  case 'pfcvrm':pfKeep();api('PATCH','/me',{bannerImg:null}).then(function(pr){S.user=Object.assign({},S.user,pr.user);save('user');toast('Capa removida');render(true)}).catch(function(e){toast(e.message)});break;
   case 'ustudio':{var us=v.split(':');api('POST','/admin/users/'+us[0]+'/studio',{on:us[1]==='1'}).then(function(){toast(us[1]==='1'?'Studio liberado':'Studio removido');return loadAdmin()}).catch(function(e){toast(e.message)});break}
-  case 'sub':if(v==='editprof')S.pf=pfInit();S.sub=v;S.tab=SUBTAB[v]||S.tab;S.detail=null;if(v==='settings')S.confirmReset=false;render();
+  case 'sub':navMark(v);if(v==='editprof')S.pf=pfInit();S.sub=v;S.tab=SUBTAB[v]||S.tab;S.detail=null;if(v==='settings')S.confirmReset=false;render();
+   if(v==='editprof'&&on()&&!S.store)loadStore();
    if(v==='admin'&&on()&&S.user.role==='admin')loadAdmin();
    if(v==='friends'&&on())refreshFriends();
    if(v==='community'&&on())api('GET','/posts').then(function(r){S.rposts=r.posts;if(S.sub==='community')render(true)}).catch(function(){});
@@ -4064,7 +4282,7 @@ async function act(a,v,t){
    if(v==='auth')probe().then(function(){if(S.sub==='auth')render(true)});
    break;
   case 'open':S.detail=v;S.dtab='rev';S.draft.rev='';render();loadReviews(v);break;
-  case 'back':if(S.detail)S.detail=null;else if(S.sub==='chat')S.sub='friends';else S.sub=null;render(true);break;
+  case 'back':if(S.detail)S.detail=null;else if(S.sub==='chat')S.sub='friends';else if(S.nav&&S.nav.length){S.sub=S.nav.pop();S.tab=SUBTAB[S.sub]||S.tab}else S.sub=null;render(true);break;
   case 'play':
    g=find(v);if(!g)break;
    if(g.remote){try{var r=await api('POST','/games/'+g.rid+'/play');S.playingRid=g.rid;S.user.xp=r.xp;sv('gp_user',S.user);openGame({key:v,title:r.title,code:r.code,libs:libsMap(r.libs),ext:r.ext,cfg:r.settings,ori:g.ori})}catch(e){toast(e.message)}}
@@ -4099,7 +4317,7 @@ async function act(a,v,t){
    pfKeep();var pn=(S.pf.name||'').trim(),pb=(S.pf.bio||'').trim().slice(0,120);
    if(pn.length<3||pn.length>20){toast('O nome precisa ter de 3 a 20 caracteres');return}
    if(!/^[\p{L}\p{N}_.-]+$/u.test(pn)){toast('O nome só pode ter letras, números, _ . e -');return}
-   if(on()){try{var pr=await api('PATCH','/me',{name:pn,bio:pb,avatar:S.pf.avatar||null});S.user=pr.user;save('user')}catch(er){toast(er.message);return}}
+   if(on()){try{var pr=await api('PATCH','/me',{name:pn,bio:pb,avatar:S.pf.avatar||null,favGames:String(S.pf.fav||'').split(/[,;\n]/).map(function(x){return x.trim()}).filter(Boolean).slice(0,8),platform:S.pf.plat||''});S.user=pr.user;save('user')}catch(er){toast(er.message);return}}
    else{S.name=pn;S.bio=pb;S.avatar=S.pf.avatar||'';save('name');save('bio');save('avatar')}
    S.pf=null;S.sub=null;toast('Perfil salvo');render();break;
   case 'gdel':
@@ -4296,6 +4514,7 @@ document.addEventListener('change',function(e){
  if(t.id==='sCoverIn'&&t.files[0]){setCover(t.files[0]);t.value=''}
  if(t.id==='pfIn'&&t.files[0]){setAvatar(t.files[0]);t.value=''}
  if(t.id==='pfQuick'&&t.files[0]){setAvatar(t.files[0],true);t.value=''}
+ if(t.id==='pfCover'&&t.files[0]){setCover(t.files[0]);t.value=''}
  if(t.dataset&&t.dataset.early!==undefined){S.studio.early=t.checked?1:0}
  if(t.dataset.lib){S.studio.libs[t.dataset.lib]=t.checked}
  if(t.dataset.ss){S.studio[t.dataset.ss]=t.checked?1:0}
@@ -4353,7 +4572,7 @@ setInterval(function(){if(on()&&!document.hidden)refreshFriends()},20000);
   if(S.srvOk){connectWs();await refreshAll();pushBoot()}
   else{SY.fails=1;SY.offline=!navigator.onLine;toast('Sem conexão com o servidor. Você está vendo os dados salvos.')}
  }
- pushUrlBoot();
+ pushUrlBoot();setTimeout(payBoot,1200);
  syncBoot();
  setInterval(maybeAuto,30000);
 })();

@@ -16,6 +16,7 @@ import { mountAdmin } from './admin.js';
 import { mountSecurity } from './security.js';
 import { mountAppVer } from './appver.js';
 import { mountPush } from './push.js';
+import { mountAdminX } from './adminx.js';
 import { mountStore, hasStudio, hasPremium, fmtUid, itemName } from './store.js';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -52,7 +53,9 @@ function str(v, name, min, max) {
   return t;
 }
 const int = (v, name) => { const n = Number(v); if (!Number.isInteger(n) || n < 1) bad(`${name} inválido`); return n; };
-const publicUser = u => ({ id: u.id, uid: fmtUid(u), name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '', studio: hasStudio(u), premium: hasPremium(u), coins: u.coins || 0, frame: u.frame || null, banner: u.banner || null, title: u.title || null, titleName: itemName(u.title), ncolor: u.ncolor || null, theme: u.theme || null, bubble: u.bubble || null , perms: permsOf(u) });
+const parseFav = v => { try { const a = JSON.parse(v || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string').slice(0, 8) : []; } catch { return []; } };
+const PLATFORMS = ['', 'celular', 'pc', 'console', 'todos'];
+const publicUser = u => ({ id: u.id, uid: fmtUid(u), name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '', bannerImg: u.banner_img || null, favGames: parseFav(u.fav_games), platform: u.platform || '', studio: hasStudio(u), premium: hasPremium(u), coins: u.coins || 0, frame: u.frame || null, banner: u.banner || null, title: u.title || null, titleName: itemName(u.title), ncolor: u.ncolor || null, theme: u.theme || null, bubble: u.bubble || null , perms: permsOf(u) });
 const sign = u => jwt.sign({ id: u.id, v: u.token_ver || 0 }, SECRET, { expiresIn: '30d' });
 
 function userFromToken(token) {
@@ -178,7 +181,7 @@ const setMaintenance = v => { run("INSERT INTO settings (key, value) VALUES ('ma
 // Modo manutenção: só a equipe usa a API; os demais recebem 503 com o aviso (login, cadastro e verificação continuam abertos).
 app.use('/api', (req, _res, next) => {
   const m = maintenance(); if (!m) return next();
-  if (/^\/(health|maintenance|auth|app|push\/config)(\/|$)/.test(req.path)) return next();
+  if (/^\/(health|maintenance|auth|app|push\/config|pay\/webhook)(\/|$)/.test(req.path)) return next();
   const u = userFromToken(String(req.headers.authorization || '').slice(7));
   if (u && (u.role === 'admin' || u.role === 'mod')) return next();
   next(new HttpError(503, 'Em manutenção: ' + (m.msg || 'voltamos já.')));
@@ -228,7 +231,21 @@ app.patch('/api/me', auth, wrap((req, res) => {
     else if (typeof b.avatar === 'string' && b.avatar.length <= 80_000 && COVER_RE.test(b.avatar)) avatar = b.avatar;
     else bad('Foto inválida (use JPG, PNG ou WebP pequenos)');
   }
-  run('UPDATE users SET name = ?, bio = ?, avatar = ? WHERE id = ?', name, bio, avatar, cur.id);
+  let bannerImg = cur.banner_img || null, fav = parseFav(cur.fav_games), platform = cur.platform || '';
+  if ('bannerImg' in b) {
+    if (b.bannerImg === null || b.bannerImg === '') bannerImg = null;
+    else if (typeof b.bannerImg === 'string' && b.bannerImg.length <= 220_000 && COVER_RE.test(b.bannerImg)) bannerImg = b.bannerImg;
+    else bad('Capa inválida (use JPG, PNG ou WebP)');
+  }
+  if (b.favGames !== undefined) {
+    if (!Array.isArray(b.favGames)) bad('Lista de jogos inválida');
+    fav = [...new Set(b.favGames.map(x => String(x).trim().replace(/\s+/g, ' ').slice(0, 24)).filter(x => x.length >= 2))].slice(0, 8);
+  }
+  if (b.platform !== undefined) {
+    if (!PLATFORMS.includes(b.platform)) bad('Plataforma inválida');
+    platform = b.platform;
+  }
+  run('UPDATE users SET name = ?, bio = ?, avatar = ?, banner_img = ?, fav_games = ?, platform = ? WHERE id = ?', name, bio, avatar, bannerImg, JSON.stringify(fav), platform, cur.id);
   res.json({ user: publicUser(get('SELECT * FROM users WHERE id = ?', cur.id)) });
 }));
 
@@ -508,6 +525,7 @@ const sec = mountSecurity({ app, auth, adminOnly, wrap, bad, get, all, run, db, 
 const confirmCheck = sec.need;
 Object.assign(hub, mountPush({ app, auth, adminOnly, staffCan, permsOf, wrap, bad, int, get, all, run, logAct, confirmCheck, parseJ, isOnline, pushTo, PROD }));
 mountAdmin({ hub, confirmCheck, alertAdmins, staffCan, permsOf, PERMS, app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance });
+mountAdminX({ app, auth, adminOnly, wrap, bad, get, all, run, db, logAct, confirmCheck, parseJ, runBackup: sec.runBackup });
 mountStore({ confirmCheck, alertAdmins, staffCan, app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
 mountAccounts({ hub, app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 
