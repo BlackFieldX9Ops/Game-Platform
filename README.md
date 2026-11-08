@@ -241,3 +241,7 @@ Em telas com 1000 px ou mais (navegador no PC ou app Linux) quem é **administra
 - **Em breve:** Compras e tabela de preços, Jogos e jogadores, Mensagens globais e Studio em tela grande.
 
 Depois de atualizar o app, o servidor no Render precisa ser reimplantado para ter os novos endpoints `/api/admin/*`.
+
+### Compras e Jogos no painel
+- **Compras (só administrador):** resumo de vendas (hoje, 7 e 30 dias), moedas em circulação e planos ativos; **Vendas** com estorno (motivo obrigatório; devolve moedas, retira dias de plano ou skin, tira o jogo da biblioteca); **Preços** dos pacotes de moedas e das skins, com "tirar da venda" e "restaurar padrão"; **Planos VIP** com nome, preço e lista de vantagens editáveis. Na gaveta do usuário, **Ajustar moedas** e **Ajustar plano** (± dias), sempre com motivo. As compras com dinheiro continuam de teste, sem cobrança real. Tudo vai para a Auditoria.
+- **Jogos (administrador e moderador):** partidas, jogadores, biblioteca (sem contar o criador), nota, denúncias e **jogando agora** por jogo; gaveta com quem está jogando e quem já jogou (quantas vezes e quando). Moderador e administrador despublicam com motivo (o criador é avisado); só o administrador destaca.

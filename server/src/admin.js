@@ -1,7 +1,7 @@
 // Área de gestão: usuários, suspensão e banimento, perfis de acesso e moderação de conteúdo.
 // Perfis: admin (tudo), mod (usuários, denúncias e conteúdo, sem dinheiro e sem banir) e user.
 export function mountAdmin(c) {
-  const { app, auth, staffOnly, adminOnly, wrap, bad, int, get, all, run, logAct, notify, fmtUid } = c;
+  const { app, auth, staffOnly, adminOnly, wrap, bad, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline } = c;
   const isAdmin = u => u.role === 'admin';
   const dateBR = s => String(s || '').slice(0, 10).split('-').reverse().join('/');
   const esc = s => String(s).replace(/[%_\\]/g, m => '\\' + m);
@@ -148,6 +148,61 @@ export function mountAdmin(c) {
     }
     res.json({ ok: true, removed });
   }));
+
+  // ---------- jogos e jogadores ----------
+  const playersNow = () => { const out = {}; for (const [uid, p] of playing) { if (Date.now() - p.at > PLAY_TTL || !isOnline(uid)) { playing.delete(uid); continue; } (out[p.gid] = out[p.gid] || []).push(uid); } return out; };
+
+  app.get('/api/admin/games/stats', auth, staffOnly, (req, res) => {
+    const q = req.query, w = ["g.status != 'removed'"], p = [];
+    if (['published', 'unpublished'].includes(q.status)) { w.push('g.status = ?'); p.push(q.status); }
+    if (q.q) { w.push("(LOWER(g.title) LIKE ? ESCAPE '\\' OR LOWER(u.name) LIKE ? ESCAPE '\\')"); const l = `%${esc(String(q.q).trim().slice(0, 40).toLowerCase())}%`; p.push(l, l); }
+    const now = playersNow();
+    const rows = all(`SELECT g.id, g.title, g.category, g.dim, g.status, g.visibility, g.featured, g.plays, g.settings, g.created_at, u.id AS owner_id, u.name AS developer,
+      (SELECT COUNT(*) FROM library l WHERE l.game_id = g.id AND l.user_id != g.owner_id) AS library, (SELECT COUNT(*) FROM purchases pu WHERE pu.game_id = g.id) AS buyers,
+      (SELECT COUNT(*) FROM game_plays gp WHERE gp.game_id = g.id) AS players, (SELECT COUNT(*) FROM reviews r WHERE r.game_id = g.id) AS reviews,
+      (SELECT ROUND(AVG(r.stars), 1) FROM reviews r WHERE r.game_id = g.id) AS rating,
+      (SELECT COUNT(*) FROM reports rp WHERE rp.target_type = 'game' AND rp.target_id = g.id AND rp.status = 'open') AS reports
+      FROM games g JOIN users u ON u.id = g.owner_id WHERE ${w.join(' AND ')} LIMIT 500`, ...p)
+      .map(g => ({ ...g, featured: !!g.featured, price: Math.round(Number(parseJ(g.settings, {}).price)) || 0, settings: undefined, online: (now[g.id] || []).length }));
+    const key = { plays: 'plays', library: 'library', players: 'players', online: 'online', rating: 'rating', reports: 'reports', new: 'id' }[q.sort] || 'plays';
+    rows.sort((a, b) => ((b[key] || 0) - (a[key] || 0)) || (b.id - a.id));
+    res.json({ games: rows.slice(0, 200), total: rows.length, totals: {
+      games: rows.length, published: rows.filter(g => g.status === 'published').length, plays: rows.reduce((s, g) => s + g.plays, 0),
+      library: rows.reduce((s, g) => s + g.library, 0), playingNow: Object.values(now).reduce((s, l) => s + l.length, 0) } });
+  });
+
+  app.get('/api/admin/games/:id/players', auth, staffOnly, wrap((req, res) => {
+    const id = int(req.params.id, 'id'), adm = isAdmin(req.user);
+    const g = get('SELECT g.id, g.title, g.category, g.dim, g.status, g.visibility, g.featured, g.plays, g.version, g.created_at, g.updated_at, g.settings, u.id AS owner_id, u.name AS developer FROM games g JOIN users u ON u.id = g.owner_id WHERE g.id = ?', id);
+    if (!g) bad('Jogo não encontrado', 404);
+    const names = ids => ids.length ? all(`SELECT id, name FROM users WHERE id IN (${ids.map(() => '?').join(',')})`, ...ids) : [];
+    const out = {
+      game: { id: g.id, title: g.title, category: g.category, dim: g.dim, status: g.status, visibility: g.visibility, featured: !!g.featured, plays: g.plays, version: g.version, created_at: g.created_at, updated_at: g.updated_at, owner_id: g.owner_id, developer: g.developer, price: Math.round(Number(parseJ(g.settings, {}).price)) || 0 },
+      playingNow: names(playersNow()[id] || []),
+      counts: { library: get('SELECT COUNT(*) AS n FROM library WHERE game_id = ? AND user_id != ?', id, g.owner_id).n, players: get('SELECT COUNT(*) AS n FROM game_plays WHERE game_id = ?', id).n, wishlist: get('SELECT COUNT(*) AS n FROM wishlist WHERE game_id = ?', id).n, reviews: get('SELECT COUNT(*) AS n FROM reviews WHERE game_id = ?', id).n, reports: get("SELECT COUNT(*) AS n FROM reports WHERE target_type = 'game' AND target_id = ? AND status = 'open'", id).n },
+      rating: get('SELECT ROUND(AVG(stars), 1) AS r FROM reviews WHERE game_id = ?', id).r,
+      players: all('SELECT u.id, u.name, gp.plays, gp.last_at FROM game_plays gp JOIN users u ON u.id = gp.user_id WHERE gp.game_id = ? ORDER BY gp.last_at DESC LIMIT 40', id),
+      reviews: all('SELECT r.id, r.stars, substr(r.text,1,140) AS text, r.created_at, u.name AS author FROM reviews r JOIN users u ON u.id = r.user_id WHERE r.game_id = ? ORDER BY r.id DESC LIMIT 6', id)
+    };
+    if (adm) { out.counts.buyers = get('SELECT COUNT(*) AS n FROM purchases WHERE game_id = ?', id).n; out.earned = get("SELECT COALESCE(SUM(cut),0) AS n FROM sales WHERE kind = 'game' AND ref = ? AND refunded_at IS NULL", String(id)).n; }
+    res.json(out);
+  }));
+
+  // Despublicar / republicar: moderador e administrador, sempre com motivo ao despublicar.
+  app.post('/api/admin/games/:id/status', auth, staffOnly, wrap((req, res) => {
+    const id = int(req.params.id, 'id'), status = req.body.status;
+    if (!['published', 'unpublished'].includes(status)) bad('Estado inválido');
+    const g = get("SELECT * FROM games WHERE id = ? AND status != 'removed'", id);
+    if (!g) bad('Jogo não encontrado', 404);
+    const reason = typeof req.body.reason === 'string' ? req.body.reason.trim().slice(0, 140) : '';
+    if (status === 'unpublished' && reason.length < 5) bad('Escreva o motivo (mínimo 5 letras)');
+    run("UPDATE games SET status = ?, updated_at = datetime('now') WHERE id = ?", status, id);
+    if (status === 'unpublished') run('UPDATE games SET featured = 0 WHERE id = ?', id);
+    logAct(req, status === 'published' ? 'Jogo republicado' : 'Jogo despublicado', `${g.title}${reason ? ' · ' + reason : ''}`, g.owner_id);
+    if (g.owner_id !== req.user.id) notify(g.owner_id, status === 'published' ? 'Jogo republicado' : 'Jogo despublicado pela administração', status === 'published' ? `${g.title} voltou para a Loja.` : `${g.title}: ${reason}`);
+    res.json({ ok: true });
+  }));
+
 
   // ---------- auditoria ----------
   app.get('/api/admin/audit', auth, adminOnly, (req, res) => {

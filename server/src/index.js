@@ -228,9 +228,12 @@ app.post('/api/games/:id/play', auth, wrap((req, res) => {
   if (g.status === 'unpublished') bad('Jogo despublicado', 404);
   if (needsBuy(g, req.user)) bad('Compre o jogo para jogar', 402);
   run('UPDATE games SET plays = plays + 1 WHERE id = ?', g.id);
+  run("INSERT INTO game_plays (user_id, game_id, plays) VALUES (?,?,1) ON CONFLICT(user_id, game_id) DO UPDATE SET plays = plays + 1, last_at = datetime('now')", req.user.id, g.id);
+  playing.set(req.user.id, { gid: g.id, at: Date.now() });
   run('UPDATE users SET xp = xp + 25 WHERE id = ?', req.user.id);
   res.json({ title: g.title, code: g.code, libs: JSON.parse(g.libs), ext: parseJ(g.settings, {}).ext || [], settings: parseJ(g.settings, {}), xp: req.user.xp + 25 });
 }));
+app.post('/api/games/:id/leave', auth, (req, res) => { const p = playing.get(req.user.id); if (p && p.gid === Number(req.params.id)) playing.delete(req.user.id); res.json({ ok: true }); });
 app.post('/api/games', auth, wrap((req, res) => {
   if (process.env.STUDIO_GATE !== 'off' && !hasStudio(req.user)) bad('O Studio é exclusivo de quem tem o plano. Veja os planos na Loja.', 403);
   const d = gameInput(req.body);
@@ -337,6 +340,8 @@ app.delete('/api/posts/:id', auth, wrap((req, res) => {
 /* ---------- amigos ---------- */
 const online = new Map(); // userId -> Set<WebSocket>
 const isOnline = id => (online.get(id)?.size || 0) > 0;
+const playing = new Map(); // userId -> { gid, at }: quem está jogando agora (some ao sair do jogo, ao cair a conexão ou em 45 min)
+const PLAY_TTL = 45 * 60_000;
 app.get('/api/friends', auth, (req, res) => {
   const rows = all(`SELECT f.status, f.requester_id, f.addressee_id,
     u.id AS id, u.name AS name, u.avatar AS avatar FROM friends f
@@ -463,7 +468,7 @@ app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
 });
 
 /* ---------- contas: Google, recuperar senha, verificar e-mail, progresso ---------- */
-mountAdmin({ app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid });
+mountAdmin({ app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline });
 mountStore({ app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
 mountAccounts({ app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 
@@ -493,7 +498,7 @@ wss.on('connection', (ws, req) => {
   if (!online.has(u.id)) online.set(u.id, new Set());
   online.get(u.id).add(ws);
   ws.send(JSON.stringify({ type: 'ready', user: publicUser(u) }));
-  ws.on('close', () => { online.get(u.id)?.delete(ws); });
+  ws.on('close', () => { online.get(u.id)?.delete(ws); if (!online.get(u.id)?.size) playing.delete(u.id); });
 });
 
 server.listen(PORT, () => console.log(`Game Platform API em http://localhost:${PORT}`));

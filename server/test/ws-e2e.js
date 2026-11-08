@@ -52,6 +52,10 @@ async function main() {
   const post = await api('POST', '/posts', { text: 'compre moedas baratas aqui' }, caio.token);
   const pid = post.post ? post.post.id : post.id;
   await api('POST', `/posts/${pid}/comments`, { text: 'comentário ofensivo' }, caio.token);
+  await api('POST', '/store/buy', { id: 'coins500' }, ana.token);
+  await api('POST', '/store/buy', { id: 'ti_pioneer' }, ana.token);
+  const gm = await api('POST', '/games', { title: 'Corrida Neon', category: 'Aventura', dim: '2D', code: '<h1>x</h1>' }, ana.token);
+  await api('POST', `/games/${gm.id}/play`, {}, caio.token);
   await api('POST', '/reports', { targetType: 'user', targetId: caio.user.id, reason: 'Spam no chat' }, ana.token);
 
   // quem vê o painel
@@ -64,7 +68,7 @@ async function main() {
 
   const A = open({ gp_clean: 2, gp_token: adm.token, gp_user: adm.user });
   ok('administrador em tela larga vê o painel', await until(() => !A.ws().hidden && A.d.documentElement.classList.contains('ws')));
-  ok('menu lateral completo com auditoria e itens em breve', ['Visão geral', 'Usuários', 'Moderação', 'Denúncias', 'Auditoria', 'Compras', 'Jogos', 'Mensagens', 'Studio'].every(t => A.wtext().includes(t)) && (A.wtext().match(/em breve/g) || []).length === 4);
+  ok('menu lateral completo com auditoria e itens em breve', ['Visão geral', 'Usuários', 'Moderação', 'Denúncias', 'Auditoria', 'Compras', 'Jogos', 'Mensagens', 'Studio'].every(t => A.wtext().includes(t)) && (A.wtext().match(/em breve/g) || []).length === 2);
   ok('visão geral carrega números', await until(() => /Usuários\s*4/.test(A.wtext())), A.wtext().slice(0, 200));
 
   // usuários
@@ -103,8 +107,43 @@ async function main() {
   ok('dispensar denúncia esvazia a fila', await until(() => /Nenhuma denúncia aberta/.test(A.wtext())));
   A.click('[data-a="w_sec"][data-v="audit"]');
   ok('auditoria mostra suspensão e remoção com autor e motivo', await until(() => /Usuário suspenso/.test(A.wtext()) && /Propaganda/.test(A.wtext()) && /Administrador/.test(A.wtext())));
+  // compras
   A.click('[data-a="w_sec"][data-v="buy"]');
-  ok('Compras mostra em breve', /em breve/.test(A.$('.wbody').textContent));
+  ok('Compras lista as vendas e o resumo', await until(() => /Pacote|500 moedas/.test(A.wtext()) && /Ana/.test(A.wtext()) && /R\$ 19,90/.test(A.wtext())), A.wtext().slice(0, 300));
+  A.click('[data-a="w_btab"][data-v="prices"]');
+  ok('aba de preços lista pacotes e skins', await until(() => A.$('#wsP_coins500') && A.$('#wsP_fr_gold')));
+  A.$('#wsP_coins500').value = '24,90'; A.click('[data-a="w_psave"][data-v="coins500"]');
+  ok('salvar preço atualiza a loja pública', await until(async () => (await api('GET', '/store', null, ana.token)).packs.find(p => p.id === 'coins500').price === 2490, 4000));
+  A.click('[data-a="w_btab"][data-v="plans"]');
+  ok('aba de planos mostra nome, preço e vantagens editáveis', !!A.$('#wsPN_studio30') && !!A.$('#wsPK_premium30'));
+  A.$('#wsPN_premium30').value = 'VIP 30 dias'; A.click('[data-a="w_plsave"][data-v="premium30"]');
+  ok('salvar plano muda o nome na loja', await until(async () => (await api('GET', '/store', null, ana.token)).plans.find(p => p.id === 'premium30').name === 'VIP 30 dias', 4000));
+  A.click('[data-a="w_btab"][data-v="sales"]');
+  A.click('[data-a="w_refund"]');
+  ok('estornar abre confirmação com motivo', !!A.$('#wsMReason'));
+  A.$('#wsMReason').value = 'Cobrança duplicada'; A.click('[data-a="w_mok"]');
+  ok('estorno marca a venda como estornada', await until(() => /Estornada/.test(A.wtext())), A.toast());
+
+  // ajuste de moedas pela gaveta do usuário
+  A.click('[data-a="w_sec"][data-v="users"]');
+  await until(() => A.$('#wsUq'));
+  A.$('#wsUq').value = ''; A.$('#wsUq').dispatchEvent(new A.w.Event('input', { bubbles: true }));
+  await until(() => A.d.querySelectorAll('.wrow').length >= 4);
+  [...A.d.querySelectorAll('.wrow')].find(r => /Ana/.test(r.textContent)).click();
+  ok('gaveta do admin tem ajustar moedas e plano', await until(() => A.$('[data-a="w_ucoins"]') && A.$('[data-a="w_uplan"]')));
+  const coinsBefore = (await api('GET', '/me', null, ana.token)).user.coins;
+  A.click('[data-a="w_ucoins"]');
+  A.$('#wsMF_delta').value = '40'; A.$('#wsMReason').value = 'Prêmio do torneio'; A.click('[data-a="w_mok"]');
+  ok('ajuste de moedas é aplicado', await until(async () => (await api('GET', '/me', null, ana.token)).user.coins === coinsBefore + 40, 4000));
+
+  // jogos
+  A.click('[data-a="w_sec"][data-v="games"]');
+  ok('Jogos lista estatísticas', await until(() => /Corrida Neon/.test(A.wtext()) && /Jogando agora/.test(A.wtext())));
+  A.d.querySelector('.wrow').click();
+  ok('gaveta do jogo mostra quem jogou', await until(() => A.$('.wdrawer') && /Quem jogou/.test(A.$('.wdrawer').textContent) && /Caio/.test(A.$('.wdrawer').textContent)));
+  A.click('[data-a="w_gstatus"]');
+  A.$('#wsMReason').value = 'Conteúdo impróprio'; A.click('[data-a="w_mok"]');
+  ok('despublicar jogo pelo painel', await until(async () => (await api('GET', '/admin/games/' + gm.id + '/players', null, adm.token)).game.status === 'unpublished', 4000));
 
   // moderador
   const M = open({ gp_clean: 2, gp_token: bia.token, gp_user: { ...bia.user, role: 'mod' } });
@@ -113,6 +152,10 @@ async function main() {
   M.click('[data-a="w_sec"][data-v="users"]');
   ok('moderador vê usuários sem e-mail', await until(() => M.d.querySelectorAll('.wrow').length === 4) && !/@x\.com/.test(M.wtext()));
   [...M.d.querySelectorAll('.wrow')].find(r => /Ana/.test(r.textContent)).click();
+  ok('moderador vê Jogos e Compras só como em breve', /em breve/.test(M.ws().querySelector('.wnavs').textContent) && !!M.$('[data-a="w_sec"][data-v="games"]'));
+  M.click('[data-a="w_sec"][data-v="games"]');
+  ok('moderador abre Jogos', await until(() => /Jogando agora|Corrida Neon/.test(M.wtext())));
+  M.click('[data-a="w_sec"][data-v="users"]');
   ok('moderador não tem Banir nem Tornar moderador', await until(() => M.$('[data-a="w_ustatus"]')) && !M.$('[data-v$=":banned"]') && !M.$('[data-a="w_urole"]'));
 
   // sair do painel e voltar

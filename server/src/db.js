@@ -286,6 +286,34 @@ CREATE TRIGGER IF NOT EXISTS users_uid_ai AFTER INSERT ON users WHEN NEW.uid IS 
 END;
 `);
 
+db.exec(`
+CREATE TABLE IF NOT EXISTS sales (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  ref TEXT NOT NULL DEFAULT '',
+  name TEXT NOT NULL DEFAULT '',
+  cents INTEGER NOT NULL DEFAULT 0,
+  coins INTEGER NOT NULL DEFAULT 0,
+  cut INTEGER NOT NULL DEFAULT 0,
+  owner_id INTEGER,
+  days INTEGER NOT NULL DEFAULT 0,
+  refunded_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS sales_kind ON sales(kind, id);
+CREATE INDEX IF NOT EXISTS sales_user ON sales(user_id, id);
+CREATE TABLE IF NOT EXISTS game_plays (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  plays INTEGER NOT NULL DEFAULT 0,
+  last_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, game_id)
+);
+CREATE INDEX IF NOT EXISTS game_plays_game ON game_plays(game_id, last_at);
+`);
+
+
 addCol('users', 'title', 'TEXT');
 addCol('users', 'ncolor', 'TEXT');
 addCol('users', 'theme', 'TEXT');
