@@ -238,10 +238,16 @@ Em telas com 1000 px ou mais (navegador no PC ou app Linux) quem é **administra
 - **Moderação:** comentários, avaliações e publicações com busca, seleção em massa e remoção com motivo (o autor é avisado).
 - **Denúncias:** fila com dispensar / aplicar.
 - **Auditoria (só admin):** quem fez o quê, em quem, quando e por quê.
-- **Em breve:** Compras e tabela de preços, Jogos e jogadores, Mensagens globais e Studio em tela grande.
 
 Depois de atualizar o app, o servidor no Render precisa ser reimplantado para ter os novos endpoints `/api/admin/*`.
 
 ### Compras e Jogos no painel
 - **Compras (só administrador):** resumo de vendas (hoje, 7 e 30 dias), moedas em circulação e planos ativos; **Vendas** com estorno (motivo obrigatório; devolve moedas, retira dias de plano ou skin, tira o jogo da biblioteca); **Preços** dos pacotes de moedas e das skins, com "tirar da venda" e "restaurar padrão"; **Planos VIP** com nome, preço e lista de vantagens editáveis. Na gaveta do usuário, **Ajustar moedas** e **Ajustar plano** (± dias), sempre com motivo. As compras com dinheiro continuam de teste, sem cobrança real. Tudo vai para a Auditoria.
 - **Jogos (administrador e moderador):** partidas, jogadores, biblioteca (sem contar o criador), nota, denúncias e **jogando agora** por jogo; gaveta com quem está jogando e quem já jogou (quantas vezes e quando). Moderador e administrador despublicam com motivo (o criador é avisado); só o administrador destaca.
+
+### Mensagens, manutenção, alertas e Studio grande
+- **Mensagens:** o administrador envia um aviso para todos, Premium, quem tem Studio, criadores, equipe ou um jogador; o moderador só para um jogador. Pode marcar como **importante** (não some em 24 h). Pede confirmação com o tamanho do público e fica no histórico e na Auditoria.
+- **Modo manutenção (só admin):** ligado, só administradores e moderadores usam o app; os jogadores veem o aviso (faixa no app e erro 503 na API). Login e cadastro continuam abertos.
+- **Alertas** na Visão geral: denúncias na fila ou paradas há mais de 24 h, jogo ou jogador com 3+ denúncias, suspensões que terminam em 24 h, onda de contas novas, estornos em excesso e manutenção ligada.
+- **Studio grande:** o mesmo Studio do app (informações, código, bibliotecas, missões, avançado, revisar, meus jogos) numa tela larga, com a **prévia do jogo ao lado** (celular em pé, deitado ou tela cheia). Cole o código e use **Rodar** ou Ctrl + Enter no editor; a prévia roda isolada, como no app.
+- **Ainda não existe:** confirmação por código no e-mail para ações pesadas; cobrança real de pagamento.

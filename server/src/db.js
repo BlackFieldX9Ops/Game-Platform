@@ -311,6 +311,18 @@ CREATE TABLE IF NOT EXISTS game_plays (
   PRIMARY KEY (user_id, game_id)
 );
 CREATE INDEX IF NOT EXISTS game_plays_game ON game_plays(game_id, last_at);
+CREATE TABLE IF NOT EXISTS broadcasts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  actor_id INTEGER,
+  actor TEXT NOT NULL,
+  audience TEXT NOT NULL,
+  user_id INTEGER,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL DEFAULT '',
+  important INTEGER NOT NULL DEFAULT 0,
+  count INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `);
 
 

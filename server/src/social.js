@@ -372,7 +372,7 @@ export function mountSocial(c) {
 
   /* ---------- notificações: validade de 24 h, avisos importantes e apagar ---------- */
   // Importantes (atualização, permissão, código, compra de passe/pacote/skin/premium) não expiram: só somem quando o jogador apaga.
-  const IMPORTANT = ['update', 'perm', 'code', 'purchase', 'premium'];
+  const IMPORTANT = ['update', 'perm', 'code', 'purchase', 'premium', 'notice'];
   const impQ = IMPORTANT.map(() => '?').join(',');
   const purge = () => run(`DELETE FROM notifications WHERE kind NOT IN (${impQ}) AND created_at < datetime('now','-24 hours')`, ...IMPORTANT);
   purge(); setInterval(purge, 3600e3).unref();

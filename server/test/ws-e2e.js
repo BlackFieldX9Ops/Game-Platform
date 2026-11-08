@@ -68,8 +68,15 @@ async function main() {
 
   const A = open({ gp_clean: 2, gp_token: adm.token, gp_user: adm.user });
   ok('administrador em tela larga vê o painel', await until(() => !A.ws().hidden && A.d.documentElement.classList.contains('ws')));
-  ok('menu lateral completo com auditoria e itens em breve', ['Visão geral', 'Usuários', 'Moderação', 'Denúncias', 'Auditoria', 'Compras', 'Jogos', 'Mensagens', 'Studio'].every(t => A.wtext().includes(t)) && (A.wtext().match(/em breve/g) || []).length === 2);
+  ok('menu lateral completo com auditoria e itens em breve', ['Visão geral', 'Usuários', 'Moderação', 'Denúncias', 'Auditoria', 'Compras', 'Jogos', 'Mensagens', 'Studio'].every(t => A.wtext().includes(t)) && (A.wtext().match(/em breve/g) || []).length === 0);
   ok('visão geral carrega números', await until(() => /Usuários\s*4/.test(A.wtext())), A.wtext().slice(0, 200));
+
+  ok('visão geral mostra alertas e o modo manutenção', await until(() => /Alertas/.test(A.wtext()) && /denúncia\(s\) aguardando/.test(A.wtext()) && /Modo manutenção/.test(A.wtext())), A.wtext().slice(0, 300));
+  A.$('#wsMaintMsg').value = 'Voltamos às 10h'; A.click('[data-a="w_maint"][data-v="1"]');
+  ok('liga a manutenção pelo painel', await until(async () => (await api('GET', '/maintenance')).on === true, 4000));
+  ok('painel mostra manutenção ligada', await until(() => /LIGADO/.test(A.wtext())));
+  A.click('[data-a="w_maint"][data-v="0"]');
+  ok('desliga a manutenção pelo painel', await until(async () => (await api('GET', '/maintenance')).on === false, 4000));
 
   // usuários
   A.click('[data-a="w_sec"][data-v="users"]');
@@ -136,6 +143,14 @@ async function main() {
   A.$('#wsMF_delta').value = '40'; A.$('#wsMReason').value = 'Prêmio do torneio'; A.click('[data-a="w_mok"]');
   ok('ajuste de moedas é aplicado', await until(async () => (await api('GET', '/me', null, ana.token)).user.coins === coinsBefore + 40, 4000));
 
+  // mensagens
+  A.click('[data-a="w_sec"][data-v="msg"]');
+  ok('Mensagens abre o editor com os públicos', await until(() => A.$('#wsMt') && /Premium ativos/.test(A.wtext()) && /Enviadas/.test(A.wtext())));
+  A.$('#wsMt').value = 'Torneio sábado'; A.$('#wsMb').value = 'Inscrições abertas até sexta.'; A.click('[data-a="w_msend"]');
+  ok('enviar pede confirmação com o tamanho do público', await until(() => A.$('.wmodal') && /Torneio sábado/.test(A.$('.wmodal').textContent) && /pessoa/.test(A.$('.wmodal').textContent)), A.wtext().slice(0, 200));
+  A.click('[data-a="w_mok"]');
+  ok('mensagem global chega e aparece no histórico', await until(async () => (await api('GET', '/notifications', null, ana.token)).notifications.some(n => n.title === 'Torneio sábado') && /Torneio sábado/.test(A.wtext()), 4000));
+
   // jogos
   A.click('[data-a="w_sec"][data-v="games"]');
   ok('Jogos lista estatísticas', await until(() => /Corrida Neon/.test(A.wtext()) && /Jogando agora/.test(A.wtext())));
@@ -152,11 +167,27 @@ async function main() {
   M.click('[data-a="w_sec"][data-v="users"]');
   ok('moderador vê usuários sem e-mail', await until(() => M.d.querySelectorAll('.wrow').length === 4) && !/@x\.com/.test(M.wtext()));
   [...M.d.querySelectorAll('.wrow')].find(r => /Ana/.test(r.textContent)).click();
-  ok('moderador vê Jogos e Compras só como em breve', /em breve/.test(M.ws().querySelector('.wnavs').textContent) && !!M.$('[data-a="w_sec"][data-v="games"]'));
+  ok('moderador vê Compras e Studio só como em breve', (M.ws().querySelector('.wnavs').textContent.match(/em breve/g) || []).length === 2 && !!M.$('[data-a="w_sec"][data-v="games"]'));
   M.click('[data-a="w_sec"][data-v="games"]');
   ok('moderador abre Jogos', await until(() => /Jogando agora|Corrida Neon/.test(M.wtext())));
+  M.click('[data-a="w_sec"][data-v="msg"]');
+  ok('moderador só manda mensagem para um jogador', await until(() => M.$('#wsMt')) && !/Todos os jogadores/.test(M.wtext()) && /Um jogador/.test(M.wtext()) && !/Enviadas/.test(M.wtext()));
   M.click('[data-a="w_sec"][data-v="users"]');
   ok('moderador não tem Banir nem Tornar moderador', await until(() => M.$('[data-a="w_ustatus"]')) && !M.$('[data-v$=":banned"]') && !M.$('[data-a="w_urole"]'));
+
+  // Studio grande (administrador): editor do Studio com prévia ao lado
+  A.click('[data-a="w_sec"][data-v="studio"]');
+  ok('Studio grande mostra o editor e a área da prévia', await until(() => A.$('.wst .wst-l') && A.$('#wsPrevSlot') && /Prévia do jogo/.test(A.wtext())));
+  A.click('[data-a="ssect"][data-v="code"]');
+  ok('aba de código do Studio abre dentro do painel', await until(() => A.$('[data-a="smode"][data-v="code"]')));
+  A.click('[data-a="smode"][data-v="code"]');
+  ok('editor de código aparece ao escolher colar código', await until(() => A.$('#sCode')));
+  A.$('#sCode').value = '<canvas id="c"></canvas><script>document.title="ok"</script>'; A.click('[data-a="w_srun"]');
+  ok('Rodar cria a prévia isolada com o código', await until(() => { const f = A.$('.wprev'); return f && f.getAttribute('sandbox') === 'allow-scripts allow-pointer-lock' && /canvas id="c"/.test(f.getAttribute('srcdoc') || f.srcdoc || ''); }), A.toast() + ' | ' + (A.$('.wprev') ? 'frame ' + String(A.$('.wprev').srcdoc).slice(-120) : 'sem frame'));
+  A.click('[data-a="ssect"][data-v="info"]');
+  ok('a prévia continua rodando ao trocar de aba', !!A.$('.wprev'));
+  A.click('[data-a="w_sstop"]');
+  ok('Parar remove a prévia', !A.$('.wprev') && !!A.$('#wsPrevSlot'));
 
   // sair do painel e voltar
   A.click('[data-a="w_exit"]');

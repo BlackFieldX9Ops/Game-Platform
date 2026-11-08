@@ -1,7 +1,7 @@
 // Área de gestão: usuários, suspensão e banimento, perfis de acesso e moderação de conteúdo.
 // Perfis: admin (tudo), mod (usuários, denúncias e conteúdo, sem dinheiro e sem banir) e user.
 export function mountAdmin(c) {
-  const { app, auth, staffOnly, adminOnly, wrap, bad, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline } = c;
+  const { app, auth, staffOnly, adminOnly, wrap, bad, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance } = c;
   const isAdmin = u => u.role === 'admin';
   const dateBR = s => String(s || '').slice(0, 10).split('-').reverse().join('/');
   const esc = s => String(s).replace(/[%_\\]/g, m => '\\' + m);
@@ -202,6 +202,79 @@ export function mountAdmin(c) {
     if (g.owner_id !== req.user.id) notify(g.owner_id, status === 'published' ? 'Jogo republicado' : 'Jogo despublicado pela administração', status === 'published' ? `${g.title} voltou para a Loja.` : `${g.title}: ${reason}`);
     res.json({ ok: true });
   }));
+
+
+  // ---------- mensagens da administração ----------
+  const AUD = {
+    all: { name: 'Todos os jogadores', sql: "status = 'active'" },
+    premium: { name: 'Premium ativos', sql: "status = 'active' AND premium_until > ?", p: () => [new Date().toISOString()] },
+    studio: { name: 'Quem tem Studio', sql: "status = 'active' AND role <> 'admin' AND studio_until > ?", p: () => [new Date().toISOString()] },
+    creators: { name: 'Criadores com jogo publicado', sql: "status = 'active' AND id IN (SELECT owner_id FROM games WHERE status = 'published')" },
+    staff: { name: 'Equipe (admin e moderadores)', sql: "status = 'active' AND role IN ('admin','mod')" }
+  };
+  const audIds = k => all(`SELECT id FROM users WHERE ${AUD[k].sql}`, ...(AUD[k].p ? AUD[k].p() : [])).map(r => r.id);
+
+  app.get('/api/admin/broadcast/count', auth, adminOnly, (req, res) => {
+    const k = req.query.audience; if (!AUD[k]) bad('Público inválido');
+    res.json({ count: audIds(k).length, name: AUD[k].name });
+  });
+  app.get('/api/admin/broadcasts', auth, adminOnly, (_req, res) => {
+    res.json({ broadcasts: all('SELECT b.id, b.actor, b.audience, b.user_id, u.name AS to_name, b.title, b.body, b.important, b.count, b.created_at FROM broadcasts b LEFT JOIN users u ON u.id = b.user_id ORDER BY b.id DESC LIMIT 40').map(b => ({ ...b, important: !!b.important, audienceName: b.audience === 'user' ? (b.to_name || 'Usuário') : (AUD[b.audience] || {}).name || b.audience })) });
+  });
+  app.post('/api/admin/broadcast', auth, staffOnly, wrap((req, res) => {
+    const b = req.body, aud = String(b.audience || '');
+    const title = typeof b.title === 'string' ? b.title.trim() : '', body = typeof b.body === 'string' ? b.body.trim() : '';
+    if (title.length < 2 || title.length > 60) bad('Título de 2 a 60 letras');
+    if (body.length < 2 || body.length > 300) bad('Mensagem de 2 a 300 letras');
+    const kind = b.important ? 'notice' : 'admin';
+    let ids = [], target = null;
+    if (aud === 'user') {
+      target = get('SELECT id, name, status FROM users WHERE id = ?', int(b.userId, 'userId'));
+      if (!target) bad('Usuário não encontrado', 404);
+      run('INSERT INTO notifications (user_id, title, body, kind) VALUES (?,?,?,?)', target.id, title, body, kind); ids = [target.id];
+    } else {
+      if (!isAdmin(req.user)) bad('Só o administrador envia para grupos', 403);
+      if (!AUD[aud]) bad('Público inválido');
+      ids = audIds(aud);
+      if (aud === 'all') run('INSERT INTO notifications (user_id, title, body, kind) VALUES (NULL,?,?,?)', title, body, kind);
+      else for (const id of ids) run('INSERT INTO notifications (user_id, title, body, kind) VALUES (?,?,?,?)', id, title, body, kind);
+    }
+    run('INSERT INTO broadcasts (actor_id, actor, audience, user_id, title, body, important, count) VALUES (?,?,?,?,?,?,?,?)', req.user.id, req.user.name, aud, target ? target.id : null, title, body, b.important ? 1 : 0, ids.length);
+    logAct(req, 'Mensagem enviada', `${target ? target.name : AUD[aud].name} (${ids.length}) · ${title}`, target ? target.id : null);
+    for (const id of aud === 'all' ? [...online.keys()] : ids) pushTo(id, { type: 'games' });
+    res.json({ ok: true, count: ids.length });
+  }));
+
+  // ---------- modo manutenção ----------
+  app.get('/api/admin/maintenance', auth, adminOnly, (_req, res) => { const m = maintenance(); res.json({ on: !!m, msg: m ? m.msg || '' : '' }); });
+  app.post('/api/admin/maintenance', auth, adminOnly, wrap((req, res) => {
+    const on = !!req.body.on, msg = typeof req.body.msg === 'string' ? req.body.msg.trim().slice(0, 140) : '';
+    if (on && msg.length < 3) bad('Escreva o aviso que os jogadores vão ver');
+    setMaintenance({ on, msg });
+    logAct(req, on ? 'Manutenção ligada' : 'Manutenção desligada', msg);
+    res.json({ ok: true, on, msg });
+  }));
+
+  // ---------- alertas ----------
+  app.get('/api/admin/alerts', auth, staffOnly, (req, res) => {
+    const out = [], n = (sql, ...p) => get(sql, ...p).n, adm = isAdmin(req.user);
+    const open = n("SELECT COUNT(*) AS n FROM reports WHERE status = 'open'");
+    const old = get("SELECT MIN(created_at) AS t FROM reports WHERE status = 'open'").t;
+    if (open) out.push({ level: 'warn', text: `${open} denúncia(s) aguardando análise`, go: 'rep' });
+    if (old && Date.parse(old.replace(' ', 'T') + 'Z') < Date.now() - 24 * 3600e3) out.push({ level: 'bad', text: 'Há denúncia parada há mais de 24 horas', go: 'rep' });
+    for (const g of all("SELECT g.id, g.title, COUNT(*) AS c FROM reports r JOIN games g ON g.id = r.target_id WHERE r.target_type = 'game' AND r.status = 'open' GROUP BY g.id HAVING c >= 3")) out.push({ level: 'bad', text: `O jogo "${g.title}" tem ${g.c} denúncias abertas`, go: 'games' });
+    for (const u of all("SELECT u.id, u.name, COUNT(*) AS c FROM reports r JOIN users u ON u.id = r.target_id WHERE r.target_type = 'user' AND r.status = 'open' GROUP BY u.id HAVING c >= 3")) out.push({ level: 'bad', text: `${u.name} recebeu ${u.c} denúncias abertas`, go: 'users' });
+    const exp = n("SELECT COUNT(*) AS n FROM users WHERE status = 'suspended' AND status_until IS NOT NULL AND status_until <= datetime('now','+1 day')");
+    if (exp) out.push({ level: 'info', text: `${exp} suspensão(ões) terminam nas próximas 24 horas`, go: 'users' });
+    const burst = n("SELECT COUNT(*) AS n FROM users WHERE created_at >= datetime('now','-1 hour')");
+    if (burst >= 20) out.push({ level: 'warn', text: `${burst} contas novas na última hora`, go: 'users' });
+    if (adm) {
+      const rf = n("SELECT COUNT(*) AS n FROM sales WHERE refunded_at >= datetime('now','-1 day')");
+      if (rf >= 3) out.push({ level: 'warn', text: `${rf} estornos nas últimas 24 horas`, go: 'buy' });
+    }
+    if (maintenance()) out.push({ level: 'warn', text: 'O modo manutenção está LIGADO: jogadores não conseguem usar o app', go: 'over' });
+    res.json({ alerts: out });
+  });
 
 
   // ---------- auditoria ----------

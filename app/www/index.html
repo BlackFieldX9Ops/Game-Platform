@@ -782,6 +782,30 @@ html.ws #app{display:none}
 #ws .wt th,#ws .wt td{padding-left:10px;padding-right:10px}
 #ws .wt td:first-child{min-width:140px}
 #ws .wdrawer{width:350px}
+#ws .walerts{display:flex;flex-direction:column}
+#ws .wal{display:flex;align-items:center;gap:10px;padding:10px 16px;text-align:left;border-top:1px solid var(--line);color:var(--fg)}
+#ws .wal:first-child{border-top:0}
+#ws .wal:hover{background:var(--surface2)}
+#ws .wal i{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+#ws .wal.warn i{background:var(--warn)}
+#ws .wal.bad i{background:var(--bad)}
+#ws .wal.info i{background:#38bdf8}
+#ws .wal span{flex:1}
+#ws .wal em{font-style:normal;font-size:11px;color:var(--muted)}
+#ws .wtwo{display:grid;grid-template-columns:minmax(340px,480px) minmax(0,1fr);gap:16px;align-items:start}
+#ws .wst{display:grid;grid-template-columns:minmax(440px,1fr) minmax(360px,.85fr);gap:16px;height:100%;min-height:0}
+#ws .wst-l{min-width:0;overflow:auto;padding-right:6px}
+#ws .wst-l>h1,#ws .wst-l>.sub{display:none}
+#ws .wst-r{min-width:0;display:flex;flex-direction:column;gap:10px;min-height:0}
+#ws .wst-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#ws .wst-bar .in{width:auto;min-height:34px;font-size:12.5px;border-radius:10px}
+#ws .wprevbox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;overflow:hidden}
+#ws .wprev,#ws .wprevph{border:0;background:#000;border-radius:10px;max-width:100%;max-height:100%}
+#ws .wprevph{background:var(--surface2);color:var(--fg);padding:24px;text-align:center;line-height:1.7;width:min(360px,100%)}
+#ws .wprevbox.phone .wprev{height:100%;aspect-ratio:9/19;width:auto}
+#ws .wprevbox.land .wprev{width:100%;aspect-ratio:19/9;height:auto}
+#ws .wprevbox.pc .wprev{width:100%;height:100%}
+#ws .wcol>*:not(.wfill){flex-shrink:0}
 </style>
 
 <div id="ws" hidden></div>
@@ -1046,11 +1070,12 @@ async function api(method,url,body){
  try{r=await fetch(base()+'/api'+url,{method:method,headers:Object.assign({'content-type':'application/json'},S.token?{authorization:'Bearer '+S.token}:{}),body:body?JSON.stringify(body):undefined})}
  catch(e){throw new Error('Sem conexão com o servidor')}
  var j={};try{j=await r.json()}catch(e){}
+ if(r.status===503&&/manuten/i.test(j.error||''))S.maint={on:true,msg:String(j.error).replace(/^Em manutenção:\s*/,'')};
  if(!r.ok){if(r.status===401&&S.token){logout(true);throw new Error('Sua sessão expirou. Entre de novo.')}throw new Error(j.error||'Erro do servidor ('+r.status+')')}
  return j;
 }
 async function probe(){
- try{var c=new AbortController(),t=setTimeout(function(){c.abort()},3500);var r=await fetch(base()+'/api/health',{signal:c.signal});clearTimeout(t);var j=await r.json();S.srvOk=!!(j&&j.ok)}catch(e){S.srvOk=false}
+ try{var c=new AbortController(),t=setTimeout(function(){c.abort()},3500);var r=await fetch(base()+'/api/health',{signal:c.signal});clearTimeout(t);var j=await r.json();S.srvOk=!!(j&&j.ok);S.maint=(j&&j.maintenance&&j.maintenance.on)?j.maintenance:null}catch(e){S.srvOk=false}
  return S.srvOk;
 }
 function mapGame(g){var st=g.settings||{};return{ai:!!g.ai,tags:g.tags||[],ver:g.version||'1.0.0',vis:g.visibility||'public',status:g.status||'published',cfg:st,created:g.created_at||'',upd:g.updated_at||'',rc:g.review_count||0,ori:g.orientation||'auto',cover:g.cover||'',featured:!!g.featured,id:'r'+g.id,rid:g.id,remote:1,title:g.title,genre:g.category,cat:g.category,dim:g.dim,age:g.age,desc:g.description,rating:g.rating,dl:String(g.plays),color:PAL[g.id%PAL.length],icon:g.dim==='3D'?'cube':'pad',dev:g.developer,owner:g.owner_id}}
@@ -1667,6 +1692,7 @@ function admin(){
 function studioOn(){if(S.forceStudio)return true;return on()?!!(S.user.studio||S.user.role==='admin'):admLocal()}
 function navItems(){var a=[['home','Início','home'],['store','Loja','store'],['lib','Biblioteca','lib'],['chat','Chat','chat']];if(studioOn())a.push(['studio','Studio','studio']);a.push(['profile','Perfil','user']);return a}
 function chatBadge(){return on()?(S.cun||0)+(typeof socUnseen==='function'?socUnseen():0):0}
+function ws0(){return false}
 function render(keep){
  if(!S.studio)S.studio=newStudio();
  if(typeof wsOn==='function'&&wsOn()){wsShow();return}
@@ -1680,7 +1706,7 @@ function render(keep){
  if(S.detail){var g=find(S.detail);html=g?detail(g):home()}
  else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,editprof:editprof}[S.sub]()}
  else html={home:home,store:store,lib:library,studio:studio,profile:profile,chat:community}[S.tab]();
- view.innerHTML=html;view.classList.toggle('cm',!!view.querySelector('.chatpg'));
+ view.innerHTML=(S.maint&&!ws0()?'<div class="warnbar">'+ic('alert')+'<div><b>Em manutenção</b>'+esc(S.maint.msg||'Voltamos já.')+'</div></div>':'')+html;view.classList.toggle('cm',!!view.querySelector('.chatpg'));
  if(S.sub==='upd'){var ch=false;updList().forEach(function(x){if(S.seen.indexOf(x.id)<0){S.seen.push(x.id);ch=true}});if(ch){save('seen')}}
  view.scrollTop=keep?y:0;
  if(S.tab==='home'&&!S.sub&&!S.detail)spark();
@@ -2064,7 +2090,7 @@ function wsChip(st,until){return '<span class="wchip '+st+'">'+WS_ST[st]+(st==='
 function wsNav(){
  var a=wsIsAdmin(),n=WS.ov?WS.ov.openReports:0;
  var items=[['over','Visão geral','grid'],['users','Usuários','users'],['mod','Moderação','chat'],['rep','Denúncias','flag',n],a?['audit','Auditoria','log']:null,
-  null,a?['buy','Compras','cart']:['buy','Compras','cart','soon'],['games','Jogos','pad'],['msg','Mensagens','mail','soon'],['studio','Studio','tool','soon']];
+  null,a?['buy','Compras','cart']:['buy','Compras','cart','soon'],['games','Jogos','pad'],['msg','Mensagens','mail'],studioOn()?['studio','Studio','tool']:['studio','Studio','tool','soon']];
  return items.map(function(i){
   if(!i)return '<div class="wsep"></div>';
   var soon=i[3]==='soon';
@@ -2077,13 +2103,13 @@ function wsOver(){
  if(!o)return '<div class="wempty">'+(WS.ovErr?esc(WS.ovErr):'Carregando…')+'</div>';
  var a=wsIsAdmin();
  var rec=(o.recent||[]).map(function(l){return '<tr><td class="mut">'+esc(rel(l.created_at))+'</td><td>'+esc(l.actor||'')+'</td><td><b>'+esc(l.action)+'</b> <span class="mut">'+esc(l.detail||'')+'</span></td></tr>'}).join('');
- return '<div class="wgrid">'
+ return wsAlerts()+'<div class="wgrid">'
   +wsStat('Usuários',o.users,'+'+(o.newUsers7d||0)+' em 7 dias')+wsStat('Online agora',o.online)+wsStat('Jogos',o.games)+wsStat('Partidas',o.plays)
   +wsStat('Denúncias abertas',o.openReports)+wsStat('Suspensos',o.suspended)+wsStat('Banidos',o.banned)+wsStat('Equipe',o.staff)
   +wsStat('Avaliações',o.reviews)+wsStat('Publicações',o.posts)+wsStat('Comentários',o.comments)
   +(a?wsStat('Moedas em circulação',o.coinsInCirculation)+wsStat('Vendas',o.sales):'')
   +'</div><div class="wcard"><div class="wch"><h3>Atividade recente da equipe</h3></div>'
-  +(rec?'<table class="wt"><tbody>'+rec+'</tbody></table>':'<div class="wempty">Nada registrado ainda.</div>')+'</div>';
+  +(rec?'<table class="wt"><tbody>'+rec+'</tbody></table>':'<div class="wempty">Nada registrado ainda.</div>')+'</div>'+wsMaint();
 }
 function wsUsers(){
  var U=WS.users,a=wsIsAdmin();
@@ -2182,10 +2208,10 @@ function wsModal(){
  return '<div class="wmodal"><div class="wbox"><h3>'+esc(m.title)+'</h3><p>'+esc(m.body)+'</p>'+fl+days+reason+'<div class="wbtns"><button class="btn ghost sm" data-a="w_mcancel">Cancelar</button><button class="btn sm'+(m.danger?' danger':'')+'" data-a="w_mok">'+esc(m.ok)+'</button></div></div></div>';
 }
 var WS_TITLES={over:['Visão geral','Resumo da plataforma agora'],users:['Usuários','Busque, filtre e gerencie contas'],mod:['Moderação','Comentários, avaliações e publicações'],rep:['Denúncias','Fila de denúncias abertas'],audit:['Auditoria','Tudo que a equipe fez, com autor e motivo'],
- buy:['Compras','Vendas, preços e planos'],games:['Jogos','Estatísticas, quem jogou e quem está online'],msg:['Mensagens','Avisos globais, por grupo ou por usuário'],studio:['Studio','Editor grande com prévia ao lado']};
+ buy:['Compras','Vendas, preços e planos'],games:['Jogos','Estatísticas, quem jogou e quem está online'],msg:['Mensagens','Avisos para todos, um grupo ou um jogador'],studio:['Studio','Editor grande com a prévia do jogo ao lado']};
 function wsBody(){
  var s=WS.sec;
- if(s==='over')return wsOver();if(s==='users')return wsUsers();if(s==='mod')return wsMod();if(s==='rep')return wsRep();if(s==='audit')return wsAudit();if(s==='buy'&&wsIsAdmin())return wsBuy();if(s==='games')return wsGames();
+ if(s==='over')return wsOver();if(s==='users')return wsUsers();if(s==='mod')return wsMod();if(s==='rep')return wsRep();if(s==='audit')return wsAudit();if(s==='buy'&&wsIsAdmin())return wsBuy();if(s==='games')return wsGames();if(s==='msg')return wsMsg();if(s==='studio')return wsStudio();
  var d={buy:'Vendas, preços e planos: só para administradores.',msg:'Mensagem global, por segmento ou para um usuário.',studio:'O Studio em tela grande, com o código e a prévia lado a lado.'};
  return wsSoon(WS_TITLES[s][0],d[s]||'');
 }
@@ -2193,6 +2219,7 @@ function wsRender(){
  var el=document.getElementById('ws');if(!el)return;
  var ae=document.activeElement,fid=ae&&ae.id&&el.contains(ae)?ae.id:'',ss=fid&&ae.selectionStart!==undefined?ae.selectionStart:0;
  var sc=el.querySelector('.wscroll'),st=sc?sc.scrollTop:0,ds=el.querySelector('.wdb'),dt=ds?ds.scrollTop:0;
+ var sl=el.querySelector('.wst-l'),slt=sl?sl.scrollTop:0,wc=el.querySelector('.wcol'),wct=wc?wc.scrollTop:0;
  var u=S.user,t=WS_TITLES[WS.sec]||['',''];
  el.hidden=false;document.documentElement.classList.add('ws');
  el.innerHTML='<nav class="wside"><div class="wbrand"><b>Game Platform</b><span>Painel de gestão</span></div><div class="wnavs">'+wsNav()+'</div>'
@@ -2200,6 +2227,8 @@ function wsRender(){
   +'<button class="wnav" data-a="w_exit">'+wi('out')+'<span>Voltar ao app</span></button></nav>'
   +'<main class="wmain"><header class="wtop"><div><h1>'+t[0]+'</h1><span>'+t[1]+'</span></div><button class="btn ghost sm" data-a="w_refresh">'+wi('sync')+'Atualizar</button></header><section class="wbody'+(WS.sec==='users'&&WS.users.sel!==null?' wopen':'')+'"><div class="wcol">'+wsBody()+'</div>'+(WS.sec==='users'?wsDrawer():WS.sec==='games'?wsGDrawer():'')+'</section></main>'+wsModal();
  if(fid){var n=document.getElementById(fid);if(n){n.focus();try{n.setSelectionRange(ss,ss)}catch(e){}}}
+ var slot=el.querySelector('#wsPrevSlot');if(slot&&WS.st.frame){var fr=WS.st.frame;slot.replaceWith(fr)}
+ sl=el.querySelector('.wst-l');if(sl)sl.scrollTop=slt;wc=el.querySelector('.wcol');if(wc)wc.scrollTop=wct;
  sc=el.querySelector('.wscroll');if(sc)sc.scrollTop=st;ds=el.querySelector('.wdb');if(ds)ds.scrollTop=dt;
 }
 function wsOff(){var el=document.getElementById('ws');if(el){el.hidden=true;el.innerHTML=''}document.documentElement.classList.remove('ws')}
@@ -2207,7 +2236,8 @@ function wsOff(){var el=document.getElementById('ws');if(el){el.hidden=true;el.i
 async function wsLoad(sec,force){
  sec=sec||WS.sec;
  try{
-  if(sec==='over'){try{WS.ov=await api('GET','/admin/overview');WS.ovErr=''}catch(e){WS.ovErr=e.message}}
+  if(sec==='over'){try{await wsLoadOver()}catch(e){WS.ovErr=e.message}}
+  if(sec==='msg'){await wsLoadMsg()}
   if(sec==='users'){var U=WS.users;U.busy=1;wsRender();var q=['limit=200'];if(U.q)q.push('q='+encodeURIComponent(U.q));if(U.status)q.push('status='+U.status);if(U.role)q.push('role='+U.role);if(U.plan)q.push('plan='+U.plan);
    var r=await api('GET','/admin/users?'+q.join('&'));U.list=r.users;U.total=r.total;U.busy=0}
   if(sec==='mod'){await wsContent(true)}
@@ -2246,7 +2276,7 @@ function wsAct(a,v,t){
  if(a.slice(0,2)!=='w_')return false;
  var U=WS.users,C=WS.ct;
  switch(a){
-  case 'w_sec':WS.sec=v;if(v==='users'||v==='mod'||v==='rep'||v==='audit'||v==='over'||v==='games'||(v==='buy'&&wsIsAdmin())){wsRender();wsLoad(v)}else wsRender();break;
+  case 'w_sec':wsMsgKeep();WS.sec=v;if(v==='studio'&&studioOn()){S.tab='studio';S.sub=null;S.detail=null;if(!S.stab||S.stab==='painel')S.stab='pub'}if(v==='users'||v==='mod'||v==='rep'||v==='audit'||v==='over'||v==='games'||v==='msg'||(v==='buy'&&wsIsAdmin())){wsRender();wsLoad(v)}else wsRender();break;
   case 'w_exit':try{localStorage.setItem('gp_ws_off','1')}catch(e){}wsOff();render();toast('Modo app ativado. Para voltar ao painel: Configurações → Painel de gestão');break;
   case 'w_enter':try{localStorage.removeItem('gp_ws_off')}catch(e){}S.sub=null;render();toast('Painel de gestão ativado');break;
   case 'w_refresh':wsLoad(WS.sec);break;
@@ -2285,7 +2315,7 @@ function wsAct(a,v,t){
    break}
   case 'w_aload':wsLoad('audit');break;
   case 'w_amore':wsAuditLoad(false).then(wsRender).catch(function(e){toast(e.message);wsRender()});break;
-  default:return wsAct2(a,v,t);
+  default:return wsAct2(a,v,t)||wsAct3(a,v,t);
  }
  return true;
 }
@@ -2448,6 +2478,98 @@ function wsAct2(a,v,t){
  }
  return true;
 }
+
+/* ---------- painel: Mensagens, alertas, manutenção e Studio grande ---------- */
+WS.msg={aud:'all',uq:'',ures:[],user:null,title:'',body:'',imp:0,hist:[],busy:0};
+WS.al={list:[],maint:null};
+WS.st={frame:null,dev:'phone',ran:''};
+var WS_AUD=[['all','Todos os jogadores'],['premium','Premium ativos'],['studio','Quem tem Studio'],['creators','Criadores com jogo publicado'],['staff','Equipe (admin e moderadores)'],['user','Um jogador']];
+function wsAlerts(){
+ var l=WS.al.list;
+ if(!l.length)return '<div class="wcard"><div class="wch"><h3>Alertas</h3></div><div class="wempty" style="padding:18px">Tudo tranquilo por aqui.</div></div>';
+ return '<div class="wcard"><div class="wch"><h3>Alertas ('+l.length+')</h3></div><div class="walerts">'+l.map(function(a){return '<button class="wal '+a.level+'" data-a="w_sec" data-v="'+a.go+'"><i></i><span>'+esc(a.text)+'</span><em>abrir</em></button>'}).join('')+'</div></div>';
+}
+function wsMaint(){
+ if(!wsIsAdmin())return '';
+ var m=WS.al.maint||{on:false,msg:''};
+ return '<div class="wcard"><div class="wch"><h3>Modo manutenção '+(m.on?'<span class="wchip banned">LIGADO</span>':'<span class="wchip active">desligado</span>')+'</h3></div><div class="wpb">'
+  +'<p class="mut" style="margin:0">Ligado, só administradores e moderadores usam o app; os jogadores veem o aviso abaixo. O login continua aberto.</p>'
+  +'<label class="f">Aviso para os jogadores</label><input class="in" id="wsMaintMsg" maxlength="140" value="'+esc(m.msg||'')+'" placeholder="Ex.: Voltamos às 10h com novidades!">'
+  +'<div class="wact" style="margin-top:6px"><button class="btn sm'+(m.on?'':' danger')+'" data-a="w_maint" data-v="'+(m.on?0:1)+'">'+(m.on?'Desligar manutenção':'Ligar manutenção')+'</button>'+(m.on?'<button class="btn ghost sm" data-a="w_maint" data-v="1">Atualizar aviso</button>':'')+'</div></div></div>';
+}
+function wsMsg(){
+ var M=WS.msg,a=wsIsAdmin(),auds=a?WS_AUD:[['user','Um jogador']];if(!a)M.aud='user';
+ var pick=M.aud==='user'?'<label class="f">Jogador</label>'+(M.user?'<div class="wnote" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span><b>'+esc(M.user.name)+'</b> · #'+esc(M.user.uidFmt||M.user.uid)+'</span><button class="btn ghost sm" data-a="w_mpick" data-v="0">Trocar</button></div>'
+  :'<input class="in" id="wsMu" data-w="mu" value="'+esc(M.uq)+'" placeholder="Buscar por nome ou #número" autocomplete="off">'+(M.ures.length?'<ul class="wl" style="margin-top:6px">'+M.ures.map(function(u){return '<li style="cursor:pointer" data-a="w_mpick" data-v="'+u.id+'"><b>'+esc(u.name)+'</b><span class="mut">#'+esc(u.uidFmt||u.uid)+'</span></li>'}).join('')+'</ul>':'')):'';
+ var hist=a?'<div class="wcard"><div class="wch"><h3>Enviadas</h3></div>'+(M.hist.length?'<div class="wscroll" style="max-height:340px"><table class="wt"><tbody>'+M.hist.map(function(b){return '<tr><td class="mut">'+wsDT(b.created_at)+'</td><td><b>'+esc(b.title)+'</b>'+(b.important?' <span class="wchip suspended">importante</span>':'')+'<span class="mut" style="display:block">'+esc(b.body)+'</span></td><td class="mut">'+esc(b.audienceName)+' · '+b.count+'<span style="display:block">'+esc(b.actor)+'</span></td></tr>'}).join('')+'</tbody></table></div>':'<div class="wempty" style="padding:18px">Nada enviado ainda.</div>')+'</div>':'';
+ return '<div class="wtwo"><div class="wcard"><div class="wch"><h3>Nova mensagem</h3></div><div class="wpb">'
+  +'<label class="f">Para quem</label><select class="in" data-w="ma">'+auds.map(function(o){return '<option value="'+o[0]+'"'+(M.aud===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select>'+pick
+  +'<label class="f">Título</label><input class="in" id="wsMt" maxlength="60" value="'+esc(M.title)+'" placeholder="Ex.: Torneio neste sábado" autocomplete="off">'
+  +'<label class="f">Mensagem <span class="mut" id="wsMc">'+M.body.length+'/300</span></label><textarea class="in" id="wsMb" rows="5" maxlength="300" placeholder="O texto que aparece em Avisos">'+esc(M.body)+'</textarea>'
+  +'<label class="tg" style="margin-top:6px"><span>Importante (não some depois de 24 h)</span><input type="checkbox" id="wsMi"'+(M.imp?' checked':'')+'></label>'
+  +'<div class="wact" style="margin-top:8px"><button class="btn sm" data-a="w_msend">Enviar</button></div></div></div>'+hist+'</div>';
+}
+function wsMsgKeep(){var t=document.getElementById('wsMt'),b=document.getElementById('wsMb'),i=document.getElementById('wsMi');if(t)WS.msg.title=t.value;if(b)WS.msg.body=b.value;if(i)WS.msg.imp=i.checked?1:0}
+/* ---- Studio grande: o mesmo Studio do app, com a prévia do jogo ao lado ---- */
+function wsStudio(){
+ if(!studioOn())return wsSoon('Studio','Você precisa do plano Studio (ou ser administrador) para usar o Studio.');
+ var dev=WS.st.dev;
+ return '<div class="wst"><div class="wst-l">'+studio()+'</div><div class="wst-r"><div class="wst-bar"><b>Prévia do jogo</b><div class="wact">'
+  +'<button class="btn sm" data-a="w_srun">'+wi('sync')+(WS.st.frame?'Rodar de novo':'Rodar')+'</button>'+(WS.st.frame?'<button class="btn ghost sm" data-a="w_sstop">Parar</button>':'')
+  +'<select class="in" data-w="sdev"><option value="phone"'+(dev==='phone'?' selected':'')+'>Celular em pé</option><option value="land"'+(dev==='land'?' selected':'')+'>Celular deitado</option><option value="pc"'+(dev==='pc'?' selected':'')+'>Tela cheia</option></select></div></div>'
+  +'<div class="wprevbox '+dev+'"><div id="wsPrevSlot" class="wprevph">Escreva ou cole o código e toque em <b>Rodar</b> (ou Ctrl + Enter dentro do editor).<br><span class="mut">A prévia usa as bibliotecas escolhidas e roda isolada, como no app.</span></div></div></div></div>';
+}
+function wsStudioRun(){
+ var s=S.studio;if(!s||!String(s.code||'').trim()){toast('Escreva ou cole o código do jogo primeiro');return}
+ var f=document.createElement('iframe');f.className='wprev';f.title='Prévia';f.setAttribute('sandbox','allow-scripts allow-pointer-lock');f.srcdoc=wrap(s.code,s.libs,s.ext,null);
+ WS.st.frame=f;wsRender();
+}
+/* ---- carregar ---- */
+async function wsLoadOver(){
+ var r=await Promise.all([api('GET','/admin/overview'),api('GET','/admin/alerts'),wsIsAdmin()?api('GET','/admin/maintenance'):Promise.resolve(null)]);
+ WS.ov=r[0];WS.ovErr='';WS.al.list=r[1].alerts;WS.al.maint=r[2];
+}
+async function wsLoadMsg(){
+ if(wsIsAdmin()){var r=await api('GET','/admin/broadcasts');WS.msg.hist=r.broadcasts}
+}
+async function wsUserSearch(){
+ var M=WS.msg;if(!M.uq.trim()){M.ures=[];wsRender();return}
+ var r=await api('GET','/admin/users?limit=6&q='+encodeURIComponent(M.uq.trim()));M.ures=r.users;wsRender();
+}
+/* ---- ações ---- */
+function wsAct3(a,v,t){
+ var M=WS.msg;
+ switch(a){
+  case 'w_maint':{var on=v==='1',msg=(document.getElementById('wsMaintMsg')||{}).value||'';
+   api('POST','/admin/maintenance',{on:on,msg:msg}).then(function(r){WS.al.maint={on:r.on,msg:r.msg};toast(r.on?'Manutenção ligada':'Manutenção desligada');return api('GET','/admin/alerts')}).then(function(r){WS.al.list=r.alerts;wsRender()}).catch(function(e){toast(e.message)});break}
+  case 'w_mpick':M.user=v==='0'?null:M.ures.filter(function(u){return String(u.id)===v})[0]||null;M.uq='';M.ures=[];wsRender();break;
+  case 'w_msend':{wsMsgKeep();
+   if(M.aud==='user'&&!M.user){toast('Escolha o jogador');break}
+   if(M.title.trim().length<2){toast('Escreva o título');break}
+   if(M.body.trim().length<2){toast('Escreva a mensagem');break}
+   var body={audience:M.aud,title:M.title.trim(),body:M.body.trim(),important:!!M.imp};if(M.aud==='user')body.userId=M.user.id;
+   var go=function(n){wsAsk({title:'Enviar mensagem',body:'"'+body.title+'" vai para '+n+'. Isso não pode ser desfeito.',need:0,ok:'Enviar',run:function(){return api('POST','/admin/broadcast',body).then(function(r){toast('Enviada para '+r.count);WS.modal=null;M.title='';M.body='';M.imp=0;M.user=null;return wsLoadMsg()}).catch(function(e){toast(e.message)}).then(wsRender)}})};
+   if(M.aud==='user')go(M.user.name);else api('GET','/admin/broadcast/count?audience='+M.aud).then(function(r){go(r.count+' pessoa(s) ('+r.name+')')}).catch(function(e){toast(e.message)});
+   break}
+  case 'w_srun':wsStudioRun();break;
+  case 'w_sstop':WS.st.frame=null;wsRender();break;
+  default:return false;
+ }
+ return true;
+}
+document.addEventListener('keydown',function(e){
+ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)&&e.target&&e.target.id==='sCode'&&typeof wsOn==='function'&&wsOn()&&WS.sec==='studio'){e.preventDefault();keepForms();wsStudioRun()}
+});
+document.addEventListener('input',function(e){
+ var t=e.target;if(!t||!t.dataset)return;
+ if(t.dataset.w==='mu'){WS.msg.uq=t.value;clearTimeout(WS.tm2);WS.tm2=setTimeout(wsUserSearch,300)}
+ if(t.id==='wsMb'){var c=document.getElementById('wsMc');if(c)c.textContent=t.value.length+'/300'}
+});
+document.addEventListener('change',function(e){
+ var t=e.target;if(!t||!t.dataset)return;
+ if(t.dataset.w==='ma'){wsMsgKeep();WS.msg.aud=t.value;WS.msg.user=null;WS.msg.ures=[];WS.msg.uq='';wsRender()}
+ if(t.dataset.w==='sdev'){WS.st.dev=t.value;wsRender()}
+});
 
 /* ---------- player ---------- */
 var cur=null;

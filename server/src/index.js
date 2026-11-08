@@ -153,7 +153,19 @@ function gameInput(b) {
 }
 
 /* ---------- saúde ---------- */
-app.get('/api/health', (_req, res) => res.json({ ok: true }));
+let maintCache = { at: 0, v: null };
+const maintenance = () => { if (Date.now() - maintCache.at > 1500) { const r = get("SELECT value FROM settings WHERE key = 'maintenance'"); maintCache = { at: Date.now(), v: r ? parseJ(r.value, null) : null }; } return maintCache.v && maintCache.v.on ? maintCache.v : null; };
+const setMaintenance = v => { run("INSERT INTO settings (key, value) VALUES ('maintenance', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", JSON.stringify(v)); maintCache = { at: 0, v: null }; };
+// Modo manutenção: só a equipe usa a API; os demais recebem 503 com o aviso (login, cadastro e verificação continuam abertos).
+app.use('/api', (req, _res, next) => {
+  const m = maintenance(); if (!m) return next();
+  if (/^\/(health|maintenance|auth)(\/|$)/.test(req.path)) return next();
+  const u = userFromToken(String(req.headers.authorization || '').slice(7));
+  if (u && (u.role === 'admin' || u.role === 'mod')) return next();
+  next(new HttpError(503, 'Em manutenção: ' + (m.msg || 'voltamos já.')));
+});
+app.get('/api/health', (_req, res) => { const m = maintenance(); res.json(m ? { ok: true, maintenance: { on: true, msg: m.msg || '' } } : { ok: true }); });
+app.get('/api/maintenance', (_req, res) => { const m = maintenance(); res.json({ on: !!m, msg: m ? m.msg || '' : '' }); });
 
 /* ---------- autenticação ---------- */
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false, message: { error: 'Muitas tentativas. Tente de novo em alguns minutos.' } });
@@ -468,7 +480,7 @@ app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
 });
 
 /* ---------- contas: Google, recuperar senha, verificar e-mail, progresso ---------- */
-mountAdmin({ app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline });
+mountAdmin({ app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance });
 mountStore({ app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
 mountAccounts({ app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 
