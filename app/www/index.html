@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="415ee7f470ac">
+<meta name="gp-ui" content="2df7954ec1fd">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -977,6 +977,55 @@ html.dk .stabs{max-width:none}
 .payrow:first-of-type{border-top:0}
 .payrow span{flex:none;width:112px;font-size:calc(12px*var(--ts,1));color:var(--muted)}
 .payrow b{flex:1;min-width:0;font-size:calc(13.5px*var(--ts,1));word-break:break-all}
+
+/* painel: Configurações */
+#ws .wcfg2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+#ws .wpair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#ws .wcfgbody{display:flex;flex-direction:column;gap:12px}
+#ws .wtabsw{flex-wrap:wrap;margin-bottom:4px}
+#ws .wcol1{display:block}
+#ws .wfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px 16px}
+#ws .wfield{display:flex;flex-direction:column;gap:5px;min-width:0}
+#ws .wfield.wide{grid-column:1/-1}
+#ws .wfield .wfh{font-size:calc(11.5px*var(--ts,1));line-height:1.35}
+#ws .wfield.wsw{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--surface2)}
+#ws .wswl{display:flex;align-items:center;gap:10px;cursor:pointer}
+#ws .wswl input,#ws .wcat input,#ws .wscope input{width:18px;height:18px;flex:none;accent-color:var(--accent)}
+#ws .wcats{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+#ws .wcat{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 11px;cursor:pointer}
+#ws .wcat.lock{opacity:.7;cursor:default}
+#ws .wcat i{color:var(--muted);font-size:calc(11px*var(--ts,1));font-style:normal}
+#ws .wrule{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+#ws .wrh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#ws .wrh span{display:flex;gap:4px}
+#ws .wscrollx{overflow-x:auto}
+#ws .wted td{padding:4px 5px;vertical-align:top}
+#ws .wted .in{min-width:130px}
+#ws .wscopes{display:flex;flex-direction:column;gap:8px}
+#ws .wscope{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+#ws .wscope span{display:flex;flex-direction:column;gap:3px;min-width:0}
+#ws .wscope em{font-style:normal;color:var(--muted);font-size:calc(12px*var(--ts,1))}
+#ws .wcfglink{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px dashed var(--line2);border-radius:12px;padding:9px 14px;color:var(--muted);font-size:calc(12.5px*var(--ts,1))}
+@media (max-width:900px){#ws .wcfg2,#ws .wpair{grid-template-columns:1fr}}
+
+/* Home: Jogue e compartilhe, aviso; página de regras */
+.sharep{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:6px}
+html.dk .sharep{grid-template-columns:repeat(4,minmax(0,1fr))}
+.shr{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);min-height:104px}
+.shr svg{width:22px;height:22px;color:var(--accent);margin-bottom:4px}
+.shr b{font-size:calc(14px*var(--ts,1))}
+.shr span{font-size:calc(12px*var(--ts,1));color:var(--muted);line-height:1.35}
+.shr:active{transform:scale(.98)}
+.warnbar.notice{border-color:#60a5fa55;background:linear-gradient(90deg,#60a5fa1c,#8b5cf615)}
+.warnbar.notice>svg{color:#60a5fa}
+.warnbar.notice b{display:block;margin-bottom:2px}
+.rulesg{display:grid;gap:14px}
+html.dk .rulesg{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;align-items:start}
+.rulec,.reqc{margin-bottom:10px}
+.chipok{font-size:calc(11px*var(--ts,1));font-weight:800;border-radius:99px;padding:3px 10px}
+.chipok.ok{background:#34d39922;color:#34d399}
+.chipok.bad{background:#fbbf2422;color:#fbbf24}
+#ws .wscope .wchip{align-self:flex-start}
 </style>
 
 <div id="ws" hidden></div>
@@ -1333,7 +1382,7 @@ function home(){
  if(S.q||S.hcat){var q=(S.q||'').toLowerCase(),rs=featFirst(all()).filter(function(g){return (!q||(g.title+' '+g.genre+' '+(g.cat||'')).toLowerCase().indexOf(q)>-1)&&(!S.hcat||g.cat===S.hcat)});
   return '<div class="row" style="margin:2px 0 10px"><h1 class="h1s" style="margin:0">'+(S.hcat&&!q?esc(S.hcat):'Resultados')+'</h1>'+(S.hcat?'<button class="chip" data-a="hcatx" aria-pressed="true">'+esc(S.hcat)+' ×</button>':'')+'</div>'+(rs.length?'<div class="grid">'+rs.map(card).join('')+'</div>':'<div class="empty">Nenhum jogo encontrado para “'+esc(S.q)+'”.</div>')}
  var rel_=released(),free=rel_.filter(function(g){return !gPrice(g)&&!gEarly(g)}),early=rel_.filter(gEarly),upd=updatedGames();
- return updBanner()+(uiShow('hero')?'<div class="hero"><canvas id="hc"></canvas><h1>Jogue. Crie. Compartilhe.</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="playnow">'+ic('play')+'Jogar agora</button>'+(studioOn()?'<button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button>':'<button class="btn ghost" data-a="plans">Ver planos</button>')+'</div></div>':'')+homeShort()
+ return updBanner()+platNotice()+(uiShow('hero')?'<div class="hero"><canvas id="hc"></canvas><h1>'+esc(platTag())+'</h1><p>Aceita jogos 2D e 3D em HTML, JavaScript e WebGL.</p><div class="dev"><button class="btn" data-a="playnow">'+ic('play')+'Jogar agora</button>'+(studioOn()?'<button class="btn ghost" data-a="go" data-v="studio">Criar um jogo</button>':'<button class="btn ghost" data-a="plans">Ver planos</button>')+'</div></div>':'')+homeShare()+homeShort()
  +(uiShow('upd')&&upd.length?'<div class="sec"><h2>Atualizações de jogos</h2></div><div class="list">'+upd.map(function(g){return '<button class="li upl" data-a="open" data-v="'+g.id+'">'+cover(g)+'<div class="body"><b>'+esc(g.title)+'</b><span class="note">Versão '+esc(g.ver||'')+' · '+esc(rel(g.upd))+'</span>'+(g.cfg&&g.cfg.notes?'<span class="unote">'+esc(g.cfg.notes)+'</span>':'')+'</div>'+ic('chev','chv')+'</button>'}).join('')+'</div>':'')
  +(uiShow('cats')?'<div class="sec"><h2>Categorias</h2></div><div class="cats">'+CATL().map(function(c){return '<button class="cat" data-a="cat" data-v="'+c[0]+'">'+ic(c[1])+c[0]+'</button>'}).join('')+'</div>':'')
  +(uiShow('rel')?'<div class="sec" id="lancados"><h2>Jogos lançados</h2></div>'+(free.length?'<div class="grid sm">'+featFirst(free).slice(0,8).map(card).join('')+'</div>':rel_.length?'<div class="empty">Os jogos gratuitos aparecem aqui. Os pagos ficam na Loja.</div>':'<div class="empty">Ainda não há jogos publicados.<br>Seja o primeiro: crie e publique o seu no Game Studio.'+(studioOn()?'<div style="margin-top:12px"><button class="btn sm" data-a="go" data-v="studio">'+ic('studio')+'Criar um jogo</button></div>':'<div style="margin-top:12px"><button class="btn sm" data-a="plans">Ver planos do Studio</button></div>')+'</div>'):'')
@@ -1760,7 +1809,7 @@ function settings(){
  +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação nos jogos</div><div class="seg">'+[['auto','O jogo decide'],['portrait','Sempre em pé'],['landscape','Sempre deitado']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">Fora dos jogos o app fica sempre em pé. Ao abrir um jogo, ele gira sozinho para a posição que o jogo pede (retrato ou paisagem). '+(native()?'Recursos do Android ativos.':'Neste navegador a rotação depende do aparelho.')+'</p></div>'
  +(wsIsStaff()&&wsWide()?'<div class="panel" style="margin-top:14px"><div class="row"><span><b>Painel de gestão</b><span class="note" style="display:block;margin:2px 0 0">Tela grande com menu lateral e tabelas.</span></span><button class="btn ghost sm" data-a="w_enter">Abrir painel</button></div></div>':'')
 +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (local)','admin'))+'</div>'+admBox()
- +'<div class="stack" style="margin-top:14px">'+mrow('sliders','Aparência e tamanho','sub','uiprefs')+mrow('bell','Notificações','sub','notifprefs')+mrow('upd','Atualização do app','sub','update',S.upv&&S.upv.st==='new'?'Nova':'')+'</div>'
+ +'<div class="stack" style="margin-top:14px">'+mrow('sliders','Aparência e tamanho','sub','uiprefs')+mrow('bell','Notificações','sub','notifprefs')+mrow('shield','Regras e requisitos','sub','rules')+mrow('upd','Atualização do app','sub','update',S.upv&&S.upv.st==='new'?'Nova':'')+'</div>'
  +updBanner()+updPanel()
  +'<dl class="panel kv" style="margin-top:12px"><dt>Tema</dt><dd>Escuro</dd><dt>Idioma</dt><dd>Português (Brasil)</dd><dt>Versão</dt><dd>1.2'+(curBuild()?' (build '+curBuild()+')':'')+'</dd></dl>'
  +'<div class="sec"><h2>Dados deste aparelho</h2></div>'
@@ -1861,7 +1910,7 @@ function render(keep){
  var u=unseen();$('#bell').innerHTML=ic('bell')+(u?'<i class="dot">'+u+'</i>':'');
  var y=view.scrollTop,html;
  if(S.detail){var g=find(S.detail);html=g?detail(g):home()}
- else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,pay:payView,editprof:editprof,update:updView,uiprefs:uiView,notifprefs:npView}[S.sub]()}
+ else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,pay:payView,editprof:editprof,update:updView,uiprefs:uiView,notifprefs:npView,rules:rulesView}[S.sub]()}
  else html={home:home,store:store,lib:library,studio:studio,profile:profile,chat:community}[S.tab]();
  view.innerHTML=(S.maint&&!ws0()?'<div class="warnbar">'+ic('alert')+'<div><b>Em manutenção</b>'+esc(S.maint.msg||'Voltamos já.')+'</div></div>':'')+offBar()+html;view.classList.toggle('cm',!!view.querySelector('.chatpg'));
  if(S.sub==='upd'&&!on()){var ch=false;updList().forEach(function(x){if(S.seen.indexOf(x.id)<0){S.seen.push(x.id);ch=true}});if(ch){save('seen')}}
@@ -2249,7 +2298,7 @@ function wsCan(k){if(!on()||!S.user)return false;if(S.user.role==='admin')return
 function wsNav(){
  var a=wsIsAdmin(),n=WS.ov?WS.ov.openReports:0;
  var items=[['over','Visão geral','grid'],wsCan('users')?['users','Usuários','users']:0,wsCan('content')?['mod','Moderação','chat']:0,wsCan('reports')?['rep','Denúncias','flag',n]:0,wsCan('audit')?['audit','Auditoria','log']:0,a?['sec','Segurança','lock']:0,
-  null,wsCan('finance')?['buy','Compras','cart']:0,wsCan('games')?['games','Jogos','pad']:0,wsCan('msgs')?['msg','Mensagens','mail']:0,studioOn()?['studio','Studio','tool']:['studio','Studio','tool','soon'],a?['ver','Versões do app','sync']:0,a?['ntf','Notificações','bell']:0].filter(function(x){return x!==0});
+  null,wsCan('finance')?['buy','Compras','cart']:0,wsCan('games')?['games','Jogos','pad']:0,wsCan('msgs')?['msg','Mensagens','mail']:0,studioOn()?['studio','Studio','tool']:['studio','Studio','tool','soon'],a?['ver','Versões do app','sync']:0,a?['ntf','Notificações','bell']:0,a?['cfg','Configurações','gear']:0].filter(function(x){return x!==0});
  return items.map(function(i){
   if(!i)return '<div class="wsep"></div>';
   var soon=i[3]==='soon';
@@ -2368,9 +2417,9 @@ function wsModal(){
  var reason=m.need?'<label class="f">Motivo'+(m.need>0?' (obrigatório)':'')+'</label><textarea class="in" id="wsMReason" rows="3" maxlength="140" placeholder="Explique o motivo — fica registrado na auditoria e o jogador é avisado">'+esc(m.text||'')+'</textarea>':'';
  return '<div class="wmodal"><div class="wbox"><h3>'+esc(m.title)+'</h3><p>'+esc(m.body)+'</p>'+fl+days+reason+'<div class="wbtns"><button class="btn ghost sm" data-a="w_mcancel">Cancelar</button><button class="btn sm'+(m.danger?' danger':'')+'" data-a="w_mok">'+esc(m.ok)+'</button></div></div></div>';
 }
-var WS_TITLES={ver:['Versões do app','Publicar, exigir e acompanhar atualizações'],ntf:['Notificações','Enviar, agendar e acompanhar entregas'],over:['Visão geral','Resumo da plataforma agora'],users:['Usuários','Busque, filtre e gerencie contas'],mod:['Moderação','Comentários, avaliações e publicações'],rep:['Denúncias','Fila de denúncias abertas'],audit:['Auditoria','Tudo que a equipe fez, com autor e motivo'],
+var WS_TITLES={cfg:['Configurações','Identidade, cadastro, moderação, chat, economia, regras e lançamento'],ver:['Versões do app','Publicar, exigir e acompanhar atualizações'],ntf:['Notificações','Enviar, agendar e acompanhar entregas'],over:['Visão geral','Resumo da plataforma agora'],users:['Usuários','Busque, filtre e gerencie contas'],mod:['Moderação','Comentários, avaliações e publicações'],rep:['Denúncias','Fila de denúncias abertas'],audit:['Auditoria','Tudo que a equipe fez, com autor e motivo'],
  buy:['Compras','Vendas, preços e planos'],games:['Jogos','Estatísticas, quem jogou e quem está online'],msg:['Mensagens','Avisos para todos, um grupo ou um jogador'],studio:['Studio','Editor grande com a prévia do jogo ao lado'],sec:['Segurança','Sessões da equipe, backups e confirmação de identidade']};
-function wsBody(){
+function wsBody0(){
  var s=WS.sec;
  if(s==='over')return wsOver();if(s==='users')return wsUsers();if(s==='mod')return wsMod();if(s==='rep')return wsRep();if(s==='audit')return wsAudit();if(s==='buy'&&wsCan('finance'))return wsBuy();if(s==='sec'&&wsIsAdmin())return wsSec();if(s==='ver'&&wsIsAdmin())return wsVer();if(s==='ntf'&&wsIsAdmin())return wsNtf();if(s==='games')return wsGames();if(s==='msg')return wsMsg();if(s==='studio')return wsStudio();
  var d={buy:'Vendas, preços e planos: só para administradores.',msg:'Mensagem global, por segmento ou para um usuário.',studio:'O Studio em tela grande, com o código e a prévia lado a lado.'};
@@ -2441,7 +2490,7 @@ function wsAct(a,v,t){
  if(a.slice(0,2)!=='w_')return false;
  var U=WS.users,C=WS.ct;
  switch(a){
-  case 'w_sec':wsMsgKeep();WS.sec=v;if(v==='studio'&&studioOn()){S.tab='studio';S.sub=null;S.detail=null;if(!S.stab||S.stab==='painel')S.stab='pub'}if(v==='users'||v==='mod'||v==='rep'||v==='audit'||v==='over'||v==='games'||v==='msg'||(v==='buy'&&wsCan('finance'))||v==='sec'||v==='ver'||v==='ntf'){wsRender();wsLoad(v)}else wsRender();break;
+  case 'w_sec':wsMsgKeep();WS.sec=v;if(v==='studio'&&studioOn()){S.tab='studio';S.sub=null;S.detail=null;if(!S.stab||S.stab==='painel')S.stab='pub'}if(v==='users'||v==='mod'||v==='rep'||v==='audit'||v==='over'||v==='games'||v==='msg'||(v==='buy'&&wsCan('finance'))||v==='sec'||v==='ver'||v==='ntf'){wsRender();wsLoad(v)}else if(v==='cfg'){wsRender();wsLoadCfg()}else wsRender();break;
   case 'w_exit':try{localStorage.setItem('gp_ws_off','1')}catch(e){}wsOff();render();toast('Modo app ativado. Para voltar ao painel: Configurações → Painel de gestão');break;
   case 'w_enter':try{localStorage.removeItem('gp_ws_off')}catch(e){}S.sub=null;render();toast('Painel de gestão ativado');break;
   case 'w_refresh':wsLoad(WS.sec);break;
@@ -2519,7 +2568,7 @@ function wsBuy(){
  var B=WS.buy,c=B.com;
  if(!wsCan('finance'))return '<div class="wempty">Você não tem permissão para ver as compras.</div>';
  if(!c)return '<div class="wempty">'+(B.busy?'Carregando…':'Não foi possível carregar.')+'</div>';
- var h=(WS.pay.cfg&&WS.pay.cfg.mode!=='test'?'':'<div class="wnote wwarn">Modo teste: as compras ativam na hora e não cobram nada. Para vender de verdade, abra a aba <b>Pagamentos</b>.</div>')
+ var h=(B.tab==='pay'||(WS.pay.cfg&&WS.pay.cfg.mode!=='test')?'':'<div class="wnote wwarn">Modo teste: as compras ativam na hora e não cobram nada. Para vender de verdade, abra a aba <b>Pagamentos</b>.</div>')
   +'<div class="wgrid">'+wsSum('Hoje',c.today)+wsSum('Últimos 7 dias',c.d7)+wsSum('Últimos 30 dias',c.d30)+wsStat('Moedas em circulação',c.coinsInCirculation)+wsStat('Premium ativos',c.activePlans.premium)+wsStat('Studio ativos',c.activePlans.studio)+wsStat('Estornos',c.refunds)+'</div>'
   +'<div class="wtabs">'+(wsIsAdmin()?[['sales','Vendas'],['orders','Pedidos'+(WS.pay.pending?' ('+WS.pay.pending+')':'')],['prices','Preços e pacotes'],['plans','Planos VIP'],['coupons','Cupons'],['pay','Pagamentos'],['creators','Criadores']]:[['sales','Vendas'],['creators','Criadores']]).map(function(t){return '<button class="wtab'+(B.tab===t[0]?' on':'')+'" data-a="w_btab" data-v="'+t[0]+'">'+t[1]+'</button>'}).join('')+'</div>';
  if(B.tab==='sales')return h+wsSales();
@@ -3149,6 +3198,137 @@ function wsAct6(a,v,t){
    wsBuyDo('/admin/packs',{name:nm,coins:co,price:pr},'Pacote criado');return true}
   case 'w_pkdel':wsAsk({title:'Apagar pacote',body:'O pacote sai da loja. Vendas já feitas continuam no extrato.',need:0,ok:'Apagar',danger:1,run:function(){return api('DELETE','/admin/packs/'+v).then(function(r){toast('Pacote apagado');WS.modal=null;if(B.com)B.com.catalog=r.catalog}).catch(function(e){toast(e.message)}).then(wsRender)}});return true;
  }
+ return wsAct7(a,v,t);
+}
+
+/* ---------- painel: Configurações (identidade, cadastro, moderação, chat, economia, notificações, regras, lançamento) ---------- */
+WSI.gear='<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/>';
+WS.cfg={tab:'geral',data:null,plat:null,rules:null,defRules:null,reset:null,busy:0,dirty:0};
+var CFG_TABS=[['geral','Geral'],['signup','Cadastro e login'],['mod','Moderação'],['chat','Chat e comunidade'],['economy','Moedas e economia'],['push','Notificações'],['rules','Regras e aparelhos'],['launch','Lançamento e dados']];
+var CFG_PLAT=[['name','Nome da plataforma','text',40,'Aparece no topo do app e nas mensagens.'],['tagline','Frase de apresentação','text',80,'Uma linha curta, ex.: Jogue. Crie. Compartilhe.'],['supportEmail','E-mail de suporte','text',120,'Para onde os jogadores escrevem quando precisam de ajuda.'],['termsUrl','Link dos termos de uso','text',200,'Precisa começar com https://'],['privacyUrl','Link da política de privacidade','text',200,'Precisa começar com https://'],['welcome','Mensagem de boas-vindas','area',300,'Mostrada para quem acabou de criar a conta.']];
+function wsCfgField(f,v,cats){
+ var id='wsCf_'+f.key,h=f.help?'<span class="mut wfh">'+esc(f.help)+'</span>':'';
+ if(f.type==='bool')return '<div class="wfield wsw"><label class="wswl"><input type="checkbox" id="'+id+'"'+(v?' checked':'')+'><b>'+esc(f.label)+'</b></label>'+h+'</div>';
+ if(f.type==='int')return '<div class="wfield"><label class="f" for="'+id+'">'+esc(f.label)+'</label><input class="in" id="'+id+'" inputmode="numeric" value="'+esc(v)+'" autocomplete="off">'+h+'<span class="mut wfh">De '+f.min+' a '+f.max+'</span></div>';
+ if(f.type==='list')return '<div class="wfield wide"><label class="f" for="'+id+'">'+esc(f.label)+'</label><textarea class="in" id="'+id+'" rows="5" autocomplete="off" spellcheck="false">'+esc((v||[]).join('\n'))+'</textarea>'+h+'</div>';
+ if(f.type==='time')return '<div class="wfield"><label class="f" for="'+id+'">'+esc(f.label)+'</label><input class="in" type="time" id="'+id+'" value="'+esc(v)+'">'+h+'</div>';
+ if(f.type==='cats'){var on={};(v||[]).forEach(function(k){on[k]=1});
+  return '<div class="wfield wide"><label class="f">'+esc(f.label)+'</label><div class="wcats">'+Object.keys(cats||{}).map(function(k){var c=cats[k];return '<label class="wcat'+(c.locked?' lock':'')+'"><input type="checkbox" id="wsCfc_'+k+'"'+(on[k]?' checked':'')+(c.locked?' disabled':'')+'><span>'+esc(c.name)+(c.locked?' <i>(sempre ligada)</i>':'')+'</span></label>'}).join('')+'</div>'+h+'</div>'}
+ return '<div class="wfield wide"><label class="f" for="'+id+'">'+esc(f.label)+'</label><input class="in" id="'+id+'" maxlength="'+f.max+'" value="'+esc(v)+'" autocomplete="off">'+h+'</div>';
+}
+function wsCfgGroup(gid){
+ var D=WS.cfg.data,g=D.groups.filter(function(x){return x.id===gid})[0];if(!g)return '';
+ var fs=D.fields.filter(function(f){return f.group===gid});
+ var bools=fs.filter(function(f){return f.type==='bool'}),rest=fs.filter(function(f){return f.type!=='bool'});
+ return '<div class="wcard"><div class="wch"><h3>'+esc(g.name)+'</h3></div><div class="wpb"><p class="mut" style="margin:0 0 10px">'+esc(g.desc)+'</p><div class="wfgrid">'
+  +bools.concat(rest).map(function(f){return wsCfgField(f,D.values[f.key],D.cats)}).join('')+'</div></div></div>';
+}
+function wsCfgSaveBar(label){return '<div class="wact" style="margin-top:12px"><button class="btn" data-a="w_cfgsave">'+(label||'Salvar alterações')+'</button><span class="mut">Cada mudança fica registrada na Auditoria, com o valor de antes e o de depois.</span></div>'}
+function wsCfgGeral(){
+ var P=WS.cfg.plat;
+ return '<div class="wcfg2"><div class="wcard"><div class="wch"><h3>Identidade da plataforma</h3></div><div class="wpb"><div class="wfgrid">'
+  +CFG_PLAT.map(function(f){var id='wsPl_'+f[0];return '<div class="wfield'+(f[2]==='area'?' wide':'')+'"><label class="f" for="'+id+'">'+f[1]+'</label>'+(f[2]==='area'?'<textarea class="in" id="'+id+'" rows="3" maxlength="'+f[3]+'">'+esc(P[f[0]]||'')+'</textarea>':'<input class="in" id="'+id+'" maxlength="'+f[3]+'" value="'+esc(P[f[0]]||'')+'" autocomplete="off">')+'<span class="mut wfh">'+f[4]+'</span></div>'}).join('')
+  +'</div></div></div>'+wsCfgGroup('app')+'</div>'+wsCfgSaveBar();
+}
+/* regras e aparelhos */
+function wsRuCollect(){
+ var R=WS.cfg.rules;if(!R)return;var g=function(id){var e=document.getElementById(id);return e?e.value:null};
+ var i=g('wsRu_intro');if(i!==null)R.intro=i;
+ R.sections.forEach(function(s,k){var t=g('wsRs_t_'+k),b=g('wsRs_b_'+k);if(t!==null)s.title=t;if(b!==null)s.body=b});
+ R.devices.forEach(function(d,k){['n','r','c','o'].forEach(function(p){var v=g('wsRd_'+p+'_'+k);if(v!==null)d[{n:'name',r:'req',c:'rec',o:'note'}[p]]=v})});
+}
+function wsCfgRules(){
+ var R=WS.cfg.rules;
+ var secs=R.sections.map(function(s,k){return '<div class="wrule"><div class="wrh"><b>Regra '+(k+1)+'</b><span><button class="btn ghost sm" data-a="w_rsup" data-v="'+k+'"'+(k?'':' disabled')+'>↑</button><button class="btn ghost sm" data-a="w_rsdn" data-v="'+k+'"'+(k<R.sections.length-1?'':' disabled')+'>↓</button><button class="btn ghost sm danger" data-a="w_rsdel" data-v="'+k+'">Remover</button></span></div>'
+  +'<input class="in" id="wsRs_t_'+k+'" maxlength="60" value="'+esc(s.title)+'" placeholder="Título" autocomplete="off"><textarea class="in" id="wsRs_b_'+k+'" rows="3" maxlength="1200" placeholder="Texto da regra">'+esc(s.body)+'</textarea></div>'}).join('');
+ var devs=R.devices.map(function(d,k){return '<div class="wrule"><div class="wrh"><b>Requisito '+(k+1)+'</b><button class="btn ghost sm danger" data-a="w_rddel" data-v="'+k+'">Remover</button></div><input class="in" id="wsRd_n_'+k+'" maxlength="40" value="'+esc(d.name)+'" placeholder="Item (ex.: Android)" autocomplete="off"><div class="wpair"><div><label class="f">Mínimo</label><input class="in" id="wsRd_r_'+k+'" maxlength="100" value="'+esc(d.req)+'" autocomplete="off"></div><div><label class="f">Recomendado</label><input class="in" id="wsRd_c_'+k+'" maxlength="100" value="'+esc(d.rec)+'" autocomplete="off"></div></div><label class="f">Observação</label><textarea class="in" id="wsRd_o_'+k+'" rows="2" maxlength="240">'+esc(d.note)+'</textarea></div>'}).join('');
+ return '<div class="wnote">Isto é o que os jogadores veem em <b>Configurações → Regras e requisitos</b>, no celular e no computador. Salve para publicar.'+(R.updated_at?' Última edição: '+wsDT(String(R.updated_at).replace('T',' ')):' Texto padrão ainda não editado.')+'</div>'
+  +'<div class="wcfg2"><div class="wcard"><div class="wch"><h3>Regras de uso</h3><button class="btn ghost sm" data-a="w_rsadd"'+(R.sections.length>=20?' disabled':'')+'>+ Nova regra</button></div><div class="wpb">'
+  +'<label class="f" for="wsRu_intro">Texto de abertura</label><textarea class="in" id="wsRu_intro" rows="2" maxlength="400">'+esc(R.intro)+'</textarea>'+secs+'</div></div>'
+  +'<div class="wcard"><div class="wch"><h3>Requisitos do aparelho</h3><button class="btn ghost sm" data-a="w_rdadd"'+(R.devices.length>=20?' disabled':'')+'>+ Nova linha</button></div><div class="wpb">'+devs+''
+  +'<p class="mut" style="margin:10px 0 0">Android 7.0 (API 24) é o mínimo real do aplicativo instalado. Mantenha essa informação em dia ao mudar a versão mínima.</p></div></div></div>'
+  +'<div class="wact" style="margin-top:12px"><button class="btn" data-a="w_rsave">Publicar regras e requisitos</button><button class="btn ghost" data-a="w_rreset">Restaurar o texto padrão</button></div>';
+}
+/* lançamento e formatação */
+function wsCfgLaunch(){
+ var Z=WS.cfg.reset;if(!Z)return '<div class="wempty">Carregando…</div>';
+ var L=Z.launched,dt=L?wsDate(String(L.at||'')):'';
+ var sc=Object.keys(Z.scopes).map(function(k){var s=Z.scopes[k];return '<label class="wscope"><input type="checkbox" id="wsRz_'+k+'"'+(k!=='audit'?' checked':'')+(L?' disabled':'')+'><span><b>'+esc(s.name)+'</b> <i class="wchip">'+wsFmtN(s.rows)+' registro(s)</i><em>'+esc(s.desc)+'</em></span></label>'}).join('');
+ var reset=L?'<div class="wnote wwarn">A plataforma foi lançada em <b>'+dt+'</b>'+(L.by?' por '+esc(L.by):'')+'. A formatação ficou desativada para sempre e não pode ser religada por aqui.</div>'
+  :'<p class="mut" style="margin:0 0 10px">Use antes do lançamento para zerar compras e atividades de teste. Um <b>backup é feito automaticamente</b> antes de apagar. Contas, jogos, amizades e configurações não são tocados.</p><div class="wscopes">'+sc+'</div>'
+  +'<div class="wpair" style="margin-top:12px"><div><label class="f" for="wsRzPass">Sua senha de administrador</label><input class="in" id="wsRzPass" type="password" autocomplete="current-password"></div><div><label class="f" for="wsRzPhr">Digite exatamente: <b>'+esc(Z.phrase)+'</b></label><input class="in" id="wsRzPhr" autocomplete="off" placeholder="'+esc(Z.phrase)+'"></div></div>'
+  +'<div class="wact" style="margin-top:12px"><button class="btn danger" data-a="w_rzgo">Formatar o que está marcado</button></div>';
+ var launch=L?'<div class="wnote">Lançada. A partir de agora compras e atividade são de verdade.</div>'
+  :'<p class="mut" style="margin:0 0 10px">Quando tudo estiver pronto, marque a plataforma como <b>lançada</b>. Isso desliga a formatação para sempre. Faça a última formatação antes.</p>'
+  +'<div class="wpair"><div><label class="f" for="wsLcPass">Sua senha de administrador</label><input class="in" id="wsLcPass" type="password" autocomplete="current-password"></div><div><label class="f" for="wsLcPhr">Digite exatamente: <b>LANÇAR</b></label><input class="in" id="wsLcPhr" autocomplete="off" placeholder="LANÇAR"></div></div>'
+  +'<div class="wact" style="margin-top:12px"><button class="btn danger" data-a="w_lcgo">Lançar a plataforma</button></div>';
+ return '<div class="wcfg2"><div class="wcard"><div class="wch"><h3>Formatar compras e atividade</h3>'+(L?'<span class="wchip suspended">desativado</span>':'<span class="wchip active">disponível</span>')+'</div><div class="wpb">'+reset+'</div></div>'
+  +'<div class="wcard"><div class="wch"><h3>Lançamento global</h3>'+(L?'<span class="wchip active">lançada</span>':'<span class="wchip">ainda não lançada</span>')+'</div><div class="wpb">'+launch+'</div></div></div>';
+}
+function wsCfg(){
+ var C=WS.cfg;
+ var tabs='<div class="wtabs wtabsw">'+CFG_TABS.map(function(t){return '<button class="wtab'+(C.tab===t[0]?' on':'')+'" data-a="w_cftab" data-v="'+t[0]+'">'+t[1]+'</button>'}).join('')+'</div>';
+ if(!C.data||!C.plat||!C.rules)return tabs+'<div class="wempty">'+(C.busy?'Carregando…':'Não foi possível carregar.')+'</div>';
+ var body;
+ if(C.tab==='geral')body=wsCfgGeral();
+ else if(C.tab==='rules')body=wsCfgRules();
+ else if(C.tab==='launch')body=wsCfgLaunch();
+ else body='<div class="wcol1">'+wsCfgGroup(C.tab)+'</div>'+(C.tab==='push'?'<div class="wnote">Cada pessoa ainda escolhe as próprias preferências em Configurações → Notificações. Estes são os limites e padrões da plataforma.</div>':'')+wsCfgSaveBar();
+ return tabs+'<div class="wcfgbody">'+body+'</div>';
+}
+async function wsLoadCfg(){
+ var C=WS.cfg;C.busy=1;wsRender();
+ try{var r=await Promise.all([api('GET','/admin/config'),api('GET','/admin/platform'),api('GET','/admin/reset')]);
+  C.data=r[0];C.plat=r[1].platform;C.rules=JSON.parse(JSON.stringify(r[1].rules));C.defRules=r[1].defaults.rules;C.reset=r[2]}catch(e){toast(e.message)}
+ C.busy=0;wsRender();
+}
+function wsCfgRead(gids){
+ var D=WS.cfg.data,body={},bad='';
+ D.fields.filter(function(f){return gids.indexOf(f.group)>=0}).forEach(function(f){
+  if(f.type==='cats'){body[f.key]=Object.keys(D.cats).filter(function(k){var e=document.getElementById('wsCfc_'+k);return e&&e.checked&&!D.cats[k].locked});return}
+  var e=document.getElementById('wsCf_'+f.key);if(!e)return;
+  if(f.type==='bool')body[f.key]=e.checked;
+  else if(f.type==='int'){var n=Number(String(e.value).trim());if(e.value.trim()===''||!Number.isInteger(n)||n<f.min||n>f.max){bad=bad||f.label+': use um número de '+f.min+' a '+f.max}body[f.key]=n}
+  else body[f.key]=e.value;
+ });
+ return {body:body,bad:bad};
+}
+function wsCfgGo(tab){WS.cfg.tab=tab;if(!WS.cfg.data)wsLoadCfg();else wsRender()}
+/* links das outras seções para as configurações */
+var CFG_LINKS={sec:['signup','Cadastro, senha mínima e e-mails bloqueados'],mod:['mod','Palavras proibidas e limites de denúncia'],ntf:['push','Categorias, limite diário e horário silencioso padrão'],msg:['push','Limites e padrões das notificações'],buy:['economy','Bônus diário, boas-vindas, Premium e parte do criador']};
+function wsBody(){
+ var s=WS.sec,b;
+ if(s==='cfg'&&wsIsAdmin())return wsCfg();
+ b=wsBody0();
+ if(wsIsAdmin()&&CFG_LINKS[s])b='<div class="wcfglink"><span>Mais ajustes: <b>'+CFG_LINKS[s][1]+'</b></span><button class="btn ghost sm" data-a="w_cfgo" data-v="'+CFG_LINKS[s][0]+'">Abrir em Configurações</button></div>'+b;
+ return b;
+}
+function wsAct7(a,v,t){
+ var C=WS.cfg,g=function(id){var e=document.getElementById(id);return e?e.value:''};
+ switch(a){
+  case 'w_cfgo':WS.sec='cfg';C.tab=v;wsMsgKeep();wsRender();wsLoadCfg();return true;
+  case 'w_cftab':wsRuCollect();C.tab=v;wsRender();return true;
+  case 'w_cfgsave':{
+   var gids=C.tab==='geral'?['app']:[C.tab],rd=wsCfgRead(gids);if(rd.bad){toast(rd.bad);return true}
+   var jobs=[api('POST','/admin/config',rd.body)];
+   if(C.tab==='geral'){var pb={};CFG_PLAT.forEach(function(f){pb[f[0]]=g('wsPl_'+f[0])});jobs.push(api('POST','/admin/platform',pb))}
+   Promise.all(jobs).then(function(r){var un=r.every(function(x){return x.unchanged});C.data.values=r[0].values;if(r[1])C.plat=r[1].platform;toast(un?'Nada mudou':'Configurações salvas');wsRender()}).catch(function(e){toast(e.message)});return true}
+  case 'w_rsadd':wsRuCollect();C.rules.sections.push({title:'',body:''});wsRender();return true;
+  case 'w_rsdel':wsRuCollect();C.rules.sections.splice(Number(v),1);wsRender();return true;
+  case 'w_rsup':case 'w_rsdn':{wsRuCollect();var i=Number(v),j=a==='w_rsup'?i-1:i+1,S2=C.rules.sections;if(j>=0&&j<S2.length){var tmp=S2[i];S2[i]=S2[j];S2[j]=tmp}wsRender();return true}
+  case 'w_rdadd':wsRuCollect();C.rules.devices.push({name:'',req:'',rec:'',note:''});wsRender();return true;
+  case 'w_rddel':wsRuCollect();C.rules.devices.splice(Number(v),1);wsRender();return true;
+  case 'w_rsave':wsRuCollect();
+   api('POST','/admin/rules',{intro:C.rules.intro,sections:C.rules.sections,devices:C.rules.devices}).then(function(r){C.rules=JSON.parse(JSON.stringify(r.rules));toast('Regras e requisitos publicados');wsRender()}).catch(function(e){toast(e.message)});return true;
+  case 'w_rreset':wsAsk({title:'Restaurar o texto padrão',body:'As regras e os requisitos voltam ao texto original do app. O que você escreveu se perde.',need:0,ok:'Restaurar',danger:1,run:function(){return api('POST','/admin/rules',{reset:true}).then(function(r){C.rules=JSON.parse(JSON.stringify(r.rules));WS.modal=null;toast('Texto padrão restaurado')}).catch(function(e){toast(e.message)}).then(wsRender)}});return true;
+  case 'w_rzgo':{
+   var Z=C.reset,sel=Object.keys(Z.scopes).filter(function(k){var e=document.getElementById('wsRz_'+k);return e&&e.checked}),pw=g('wsRzPass'),ph=g('wsRzPhr');
+   if(!sel.length){toast('Marque o que será apagado');return true}if(!pw){toast('Digite sua senha');return true}if(ph.trim()!==Z.phrase){toast('Digite exatamente: '+Z.phrase);return true}
+   wsAsk({title:'Formatar agora?',body:'Vai apagar: '+sel.map(function(k){return Z.scopes[k].name}).join(', ')+'. É feito um backup antes. Não dá para desfazer sem restaurar esse backup.',need:0,ok:'Formatar',danger:1,run:function(){return api('POST','/admin/reset',{scopes:sel,password:pw,phrase:ph}).then(function(r){WS.modal=null;Z.scopes=r.scopes;WS.loaded={};toast('Formatado. Backup: '+r.backup)}).catch(function(e){WS.modal=null;toast(e.message)}).then(wsRender)}});return true}
+  case 'w_lcgo':{
+   var lp=g('wsLcPass'),lh=g('wsLcPhr');if(!lp){toast('Digite sua senha');return true}if(lh.trim()!=='LANÇAR'){toast('Digite exatamente: LANÇAR');return true}
+   wsAsk({title:'Lançar a plataforma?',body:'Isso desliga a formatação para sempre. Compras e atividades passam a ser de verdade e não poderão mais ser zeradas por aqui.',need:0,ok:'Lançar',danger:1,run:function(){return api('POST','/admin/launch',{password:lp,phrase:lh}).then(function(r){WS.modal=null;C.reset.launched=r.launched;toast('Plataforma lançada')}).catch(function(e){WS.modal=null;toast(e.message)}).then(wsRender)}});return true}
+ }
  return false;
 }
 
@@ -3537,7 +3717,7 @@ function homeShort(){
  var l=shList();
  return '<div class="sec"><h2>Atalhos</h2><button data-a="sub" data-v="uiprefs">Editar</button></div>'+(l.length?'<div class="shorts">'+l.map(function(s){var b=s.badge?s.badge():0;return '<button class="sct" data-a="'+s.a+'"'+(s.v?' data-v="'+s.v+'"':'')+'>'+(b?'<i class="nb">'+b+'</i>':'')+'<span class="sci">'+ic(s.i)+'</span><span>'+esc(s.l)+'</span></button>'}).join('')+'</div>':'<div class="empty" style="padding:14px">Nenhum atalho. Toque em Editar para escolher.</div>');
 }
-var HB=[['hero','Banner de boas-vindas'],['short','Atalhos'],['upd','Atualizações de jogos'],['cats','Categorias'],['rel','Jogos lançados'],['early','Acesso antecipado']];
+var HB=[['hero','Banner de boas-vindas'],['share','Jogue e compartilhe'],['short','Atalhos'],['upd','Atualizações de jogos'],['cats','Categorias'],['rel','Jogos lançados'],['early','Acesso antecipado']];
 function uiSlider(k,label,min,max,hint){
  var v=k==='g'?uiClamp(S.ui.g,80,uiMax()):S.ui[k];if(k==='g')max=uiMax();
  return '<div class="uis"><div class="row" style="margin:0"><label for="ui_'+k+'"><b>'+label+'</b>'+(hint?'<span class="note" style="display:block;margin:1px 0 0">'+hint+'</span>':'')+'</label><span class="uiv" id="uiv_'+k+'">'+v+'%</span></div><input type="range" id="ui_'+k+'" data-ui="'+k+'" min="'+min+'" max="'+max+'" step="5" value="'+v+'"></div>';
@@ -3815,8 +3995,11 @@ function gpAct(a,v,t){
    if(v==='uiprefs'){goSub(v);return true}
    if(v==='notifprefs'){goSub(v);npLoad().then(function(){render(true)});return true}
    if(v==='upd'){S.ncat='';return false}
+   if(v==='rules'){goSub(v);rulesLoad();return true}
    return false;
   case 'uireload':location.reload();return true;
+  case 'sharego':shareApp();return true;
+  case 'noticex':try{sessionStorage.setItem('gp_notice_x',(S.plat&&S.plat.notice)||'')}catch(e){}render(true);return true;
   case 'payopen':payOpen(S.pay&&S.pay.url);return true;
   case 'payverify':payCheck({},false);return true;
   case 'paycopy':try{navigator.clipboard.writeText(v).then(function(){toast('Copiado')},function(){toast('Segure o texto para copiar')})}catch(e){toast('Segure o texto para copiar')}return true;
@@ -3855,6 +4038,54 @@ function gpAct(a,v,t){
 }
 
 uiApply();
+
+/* ---------- identidade da plataforma, aviso na tela inicial, "Jogue e compartilhe" e Regras e requisitos ---------- */
+S.plat=ld('gp_plat',null);S.rulesD=ld('gp_rulesD',null);
+function platLoad(){
+ return api('GET','/platform').then(function(r){S.plat={name:r.platform.name,tagline:r.platform.tagline,supportEmail:r.platform.supportEmail,termsUrl:r.platform.termsUrl,privacyUrl:r.platform.privacyUrl,welcome:r.platform.welcome,notice:r.notice||'',launched:!!r.launched};save('plat');if(S.tab==='home'&&!S.sub)render(true)}).catch(function(){});
+}
+function platTag(){return (S.plat&&S.plat.tagline)||'Jogue. Crie. Compartilhe.'}
+function platNotice(){
+ var n=S.plat&&S.plat.notice;if(!n)return '';
+ try{if(sessionStorage.getItem('gp_notice_x')===n)return ''}catch(e){}
+ return '<div class="warnbar notice">'+ic('bell')+'<div><b>Aviso</b>'+esc(n)+'</div><button class="ib" data-a="noticex" aria-label="Fechar aviso" style="font-size:20px;line-height:1">×</button></div>';
+}
+function shareUrl(){return (S.srv||OFFICIAL_SERVER).replace(/\/+$/,'')}
+function shareApp(){
+ var u=shareUrl(),txt='Vem jogar comigo no '+((S.plat&&S.plat.name)||'Game Platform')+'!';
+ try{if(navigator.share){navigator.share({title:(S.plat&&S.plat.name)||'Game Platform',text:txt,url:u}).catch(function(){});return}}catch(e){}
+ try{navigator.clipboard.writeText(txt+' '+u).then(function(){toast('Link copiado. Cole no WhatsApp ou onde quiser.')},function(){toast(u)})}catch(e){toast(u)}
+}
+function homeShare(){
+ if(!uiShow('share'))return '';
+ var tiles=[['play','Jogar agora','Escolha um jogo e entre na hora','playnow',''],
+  [studioOn()?'studio':'star',studioOn()?'Publicar um jogo':'Ver planos',studioOn()?'Crie no Studio e mostre para todo mundo':'Desbloqueie o Game Studio',studioOn()?'go':'plans',studioOn()?'studio':''],
+  ['users','Chamar amigos','Compartilhe o link do app','sharego',''],
+  ['chat','Comunidade','Grupos, feed e conversas','go','community']];
+ return '<div class="sec"><h2>Jogue e compartilhe</h2></div><div class="sharep">'+tiles.map(function(t){return '<button class="shr" data-a="'+t[3]+'"'+(t[4]?' data-v="'+t[4]+'"':'')+'>'+ic(t[0])+'<b>'+t[1]+'</b><span>'+t[2]+'</span></button>'}).join('')+'</div>';
+}
+function rulesLoad(){
+ return api('GET','/rules').then(function(r){S.rulesD=r.rules;save('rulesD');render(true)}).catch(function(){render(true)});
+}
+function devInfo(){
+ var ua=navigator.userAgent||'',am=ua.match(/Android\s([\d.]+)/),cm=ua.match(/Chrome\/(\d+)/),mem=navigator.deviceMemory;
+ var a=am?parseFloat(am[1]):0,c=cm?+cm[1]:0,rows=[],bad=0;
+ if(am){rows.push(['Android',am[1],a>=7?1:0]);if(a<7)bad=1}else rows.push(['Sistema',/iPhone|iPad/.test(ua)?'iOS':/Windows/.test(ua)?'Windows':/Mac/.test(ua)?'macOS':/Linux/.test(ua)?'Linux':'Desconhecido',1]);
+ if(c){rows.push(['Navegador / WebView','Chrome '+c,c>=100?1:0]);if(c<100)bad=1}
+ if(mem){rows.push(['Memória (aprox.)',(mem>=8?'8 GB ou mais':mem+' GB'),mem>=2?1:0]);if(mem<2)bad=1}
+ return {rows:rows,bad:bad};
+}
+function rulesView(){
+ var R=S.rulesD,P=S.plat||{};
+ if(!R)return subhead('Regras e requisitos')+'<div class="empty">Carregando…</div>';
+ var di=devInfo();
+ var me='<div class="panel"><div class="row"><b>Seu aparelho</b><span class="chipok '+(di.bad?'bad':'ok')+'">'+(di.bad?'Pode ter problemas':'Compatível')+'</span></div>'+di.rows.map(function(r){return '<div class="payrow"><span>'+r[0]+'</span><b>'+esc(r[1])+'</b><em style="font-style:normal;font-weight:800;color:var(--'+(r[2]?'ok':'warn')+',#fbbf24)">'+(r[2]?'✓':'!')+'</em></div>'}).join('')+'<p class="note" style="margin-top:8px">Esta leitura vem do navegador e pode não ser exata. Veja os requisitos abaixo.</p></div>';
+ var devs=(R.devices||[]).map(function(d){return '<div class="panel reqc"><b>'+esc(d.name)+'</b><div class="payrow"><span>Mínimo</span><b>'+esc(d.req)+'</b></div>'+(d.rec?'<div class="payrow"><span>Recomendado</span><b>'+esc(d.rec)+'</b></div>':'')+(d.note?'<p class="note" style="margin:6px 0 0">'+esc(d.note)+'</p>':'')+'</div>'}).join('');
+ var secs=(R.sections||[]).map(function(x,i){return '<div class="panel rulec"><b>'+(i+1)+'. '+esc(x.title)+'</b><p class="note" style="margin:6px 0 0;white-space:pre-wrap">'+esc(x.body)+'</p></div>'}).join('');
+ var links=(P.supportEmail?'<div class="payrow"><span>Suporte</span><b class="wr">'+esc(P.supportEmail)+'</b><button class="btn ghost sm" data-a="paycopy" data-v="'+esc(P.supportEmail)+'">Copiar</button></div>':'')+(P.termsUrl?'<div class="payrow"><span>Termos de uso</span><a class="wr" href="'+esc(P.termsUrl)+'" target="_blank" rel="noopener">Abrir</a></div>':'')+(P.privacyUrl?'<div class="payrow"><span>Privacidade</span><a class="wr" href="'+esc(P.privacyUrl)+'" target="_blank" rel="noopener">Abrir</a></div>':'');
+ return subhead('Regras e requisitos')+'<div class="rulesg"><div><div class="sec tight"><h2>Regras de uso</h2></div>'+(R.intro?'<p class="note">'+esc(R.intro)+'</p>':'')+secs+'</div><div><div class="sec tight"><h2>Requisitos do aparelho</h2></div>'+me+devs+(links?'<div class="panel">'+links+'</div>':'')+(R.updated_at?'<p class="note">Atualizado em '+esc(String(R.updated_at).slice(8,10)+'/'+String(R.updated_at).slice(5,7)+'/'+String(R.updated_at).slice(0,4))+'</p>':'')+'</div></div>';
+}
+setTimeout(function(){try{platLoad()}catch(e){}},1500);
 
 /* ---------- player ---------- */
 var cur=null;
