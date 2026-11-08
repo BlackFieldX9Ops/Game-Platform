@@ -56,7 +56,7 @@ export function mountAccounts(c) {
   }));
   app.post('/api/auth/reset', authLimiter, wrap((req, res) => {
     const email = str(req.body.email, 'E-mail', 5, 120).toLowerCase();
-    const password = str(req.body.password, 'Senha', 8, 100);
+    const password = str(req.body.password, 'Senha', c.cfg ? c.cfg.val('minPassword') : 8, 100);
     const u = get('SELECT * FROM users WHERE email = ? AND status = ?', email, 'active');
     if (!u) bad('Código inválido ou vencido', 400);
     checkCode(email, 'reset', req.body.code);

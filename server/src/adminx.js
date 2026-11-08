@@ -1,6 +1,8 @@
 // Configurações gerais do administrador: identidade da plataforma, regras de uso e aparelhos compatíveis,
 // lançamento global e formatação protegida (compras e atividade) com senha, frase e backup antes.
 import bcrypt from 'bcryptjs';
+import { CATS } from './push.js';
+import { GROUPS, FIELDS } from './settings.js';
 
 export const RULES_DEF = {
   intro: 'Estas regras valem para todo mundo que usa o Game Platform. Quem quebrar as regras pode ter jogos removidos, a conta suspensa ou banida.',
@@ -24,14 +26,14 @@ export const RULES_DEF = {
 export const PLATFORM_DEF = { name: 'Game Platform', tagline: 'Jogue. Crie. Compartilhe.', supportEmail: '', termsUrl: '', privacyUrl: '', welcome: '' };
 
 export function mountAdminX(c) {
-  const { app, auth, adminOnly, wrap, bad, get, all, run, db, logAct, confirmCheck, parseJ, runBackup } = c;
+  const { app, auth, adminOnly, wrap, bad, get, all, run, db, logAct, confirmCheck, parseJ, runBackup, cfg } = c;
   const kv = (k, def) => { const r = get('SELECT value FROM settings WHERE key = ?', k); return r ? { ...def, ...parseJ(r.value, {}) } : { ...def }; };
   const put = (k, v) => run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value', k, JSON.stringify(v));
   const txt = (v, max) => String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, max);
   const url = (v, nm) => { const t = txt(v, 200); if (t && !/^https:\/\/[^\s]+$/.test(t)) bad(nm + ' deve começar com https://'); return t; };
 
   // ---------- identidade e regras (públicas para leitura) ----------
-  app.get('/api/platform', (_req, res) => res.json({ platform: kv('platform', PLATFORM_DEF), launched: !!get("SELECT 1 FROM settings WHERE key = 'launched'") }));
+  app.get('/api/platform', (_req, res) => res.json({ platform: kv('platform', PLATFORM_DEF), launched: !!get("SELECT 1 FROM settings WHERE key = 'launched'"), notice: cfg.val('homeNotice') }));
   app.get('/api/rules', (_req, res) => { const r = kv('rules', RULES_DEF); res.json({ rules: { intro: r.intro, sections: r.sections, devices: r.devices, updated_at: r.updated_at || null } }); });
   app.get('/api/admin/platform', auth, adminOnly, (_req, res) => res.json({ platform: kv('platform', PLATFORM_DEF), rules: kv('rules', RULES_DEF), defaults: { rules: RULES_DEF } }));
   app.post('/api/admin/platform', auth, adminOnly, wrap((req, res) => {
@@ -60,6 +62,15 @@ export function mountAdminX(c) {
     put('rules', next);
     logAct(req, 'Regras de uso e aparelhos editados', `${sections.length} regra(s) · ${devices.length} requisito(s)`);
     res.json({ ok: true, rules: next });
+  }));
+
+  // ---------- configurações do administrador (cadastro único, desenhado pelo painel) ----------
+  app.get('/api/admin/config', auth, adminOnly, (_req, res) => res.json({ groups: GROUPS, fields: FIELDS, values: cfg.values(), cats: Object.fromEntries(Object.entries(CATS).map(([k, v]) => [k, { name: v.name, locked: !!v.locked }])) }));
+  app.post('/api/admin/config', auth, adminOnly, wrap((req, res) => {
+    const notes = cfg.save(req.body || {}, bad, CATS);
+    if (!notes.length) return res.json({ ok: true, unchanged: true, values: cfg.values() });
+    logAct(req, 'Configurações alteradas', notes.join(' · ').slice(0, 480));
+    res.json({ ok: true, values: cfg.values() });
   }));
 
   // ---------- lançamento global e formatação ----------

@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node test/smoke.js && node test/social.js && node test/accounts.js && node test/store.js && node test/admin.js && node test/commerce.js && node test/games-admin.js && node test/messages.js && node test/security.js && node test/appver.js && node test/push.js && node test/pay.js && node test/adminx.js",
+    "test": "node test/smoke.js && node test/social.js && node test/accounts.js && node test/store.js && node test/admin.js && node test/commerce.js && node test/games-admin.js && node test/messages.js && node test/security.js && node test/appver.js && node test/push.js && node test/pay.js && node test/adminx.js && node test/config.js",
     "test:app": "node test/app-e2e.js && node test/social-e2e.js && node test/missions-e2e.js && node test/accounts-e2e.js && node test/store-e2e.js && node test/ws-e2e.js",
     "test:browser": "node test/gp-browser.js",
     "test:zip": "node test/bundle.js && node test/update-check.js"

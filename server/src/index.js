@@ -17,6 +17,7 @@ import { mountSecurity } from './security.js';
 import { mountAppVer } from './appver.js';
 import { mountPush } from './push.js';
 import { mountAdminX } from './adminx.js';
+import { makeCfg } from './settings.js';
 import { mountStore, hasStudio, hasPremium, fmtUid, itemName } from './store.js';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -56,7 +57,7 @@ const int = (v, name) => { const n = Number(v); if (!Number.isInteger(n) || n < 
 const parseFav = v => { try { const a = JSON.parse(v || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string').slice(0, 8) : []; } catch { return []; } };
 const PLATFORMS = ['', 'celular', 'pc', 'console', 'todos'];
 const publicUser = u => ({ id: u.id, uid: fmtUid(u), name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '', bannerImg: u.banner_img || null, favGames: parseFav(u.fav_games), platform: u.platform || '', studio: hasStudio(u), premium: hasPremium(u), coins: u.coins || 0, frame: u.frame || null, banner: u.banner || null, title: u.title || null, titleName: itemName(u.title), ncolor: u.ncolor || null, theme: u.theme || null, bubble: u.bubble || null , perms: permsOf(u) });
-const sign = u => jwt.sign({ id: u.id, v: u.token_ver || 0 }, SECRET, { expiresIn: '30d' });
+const sign = u => jwt.sign({ id: u.id, v: u.token_ver || 0 }, SECRET, { expiresIn: `${cfg.val('sessionDays')}d` });
 
 function userFromToken(token) {
   try {
@@ -98,6 +99,7 @@ const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.descript
   (SELECT ROUND(AVG(stars),1) FROM reviews r WHERE r.game_id = g.id) AS rating,
   (SELECT COUNT(*) FROM reviews r WHERE r.game_id = g.id) AS review_count`;
 const parseJ = (s, d) => { try { return JSON.parse(s); } catch { return d; } };
+const cfg = makeCfg({ get, run, parseJ });
 const shapeGame = g => ({ ...g, featured: !!g.featured, ai: !!g.ai, libs: parseJ(g.libs, []), tags: parseJ(g.tags, []), settings: parseJ(g.settings, {}) });
 const categories = () => { const r = get("SELECT value FROM settings WHERE key = 'categories'"); try { return r ? JSON.parse(r.value) : DEFAULT_CATEGORIES; } catch { return DEFAULT_CATEGORIES; } };
 // Aviso fixo para todos os administradores (aparece em Avisos e no painel).
@@ -196,13 +198,18 @@ app.post('/api/auth/register', authLimiter, wrap((req, res) => {
   if (!/^[\p{L}\p{N}_.-]+$/u.test(name)) bad('O nome só pode ter letras, números, _ . e -');
   const email = str(req.body.email, 'E-mail', 5, 120).toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) bad('E-mail inválido');
-  const password = str(req.body.password, 'Senha', 8, 100);
+  if (!cfg.val('signupOpen')) bad('Os cadastros estão fechados no momento. Tente mais tarde.', 403);
+  const password = str(req.body.password, 'Senha', cfg.val('minPassword'), 100);
+  if (cfg.val('blockedDomains').includes(email.split('@')[1])) bad('Este tipo de e-mail não pode ser usado para criar conta', 403);
+  if (cfg.badWord(name)) bad('Esse nome não é permitido');
   if (get('SELECT 1 FROM users WHERE email = ?', email)) bad('Esse e-mail já está cadastrado', 409);
   if (get('SELECT 1 FROM users WHERE name = ?', name)) bad('Esse nome já está em uso', 409);
   const role = ADMIN_EMAIL && email === ADMIN_EMAIL ? 'admin' : 'user';
   const r = run('INSERT INTO users (name, email, pass_hash, role) VALUES (?,?,?,?)', name, email, bcrypt.hashSync(password, 10), role);
   const u = get('SELECT * FROM users WHERE id = ?', r.lastInsertRowid);
   notify(u.id, 'Bem-vindo à Game Platform', 'Jogue, crie e compartilhe seus jogos.');
+  const wc = cfg.val('welcomeCoins');
+  if (wc > 0) { run('UPDATE users SET coins = coins + ? WHERE id = ?', wc, u.id); run('INSERT INTO coin_log (user_id, delta, note) VALUES (?,?,?)', u.id, wc, 'Boas-vindas'); u.coins = (u.coins || 0) + wc; }
   res.status(201).json({ token: sign(u), user: publicUser(u) });
 }));
 app.post('/api/auth/login', authLimiter, wrap((req, res) => {
@@ -225,6 +232,7 @@ app.patch('/api/me', auth, wrap((req, res) => {
   if (b.bio !== undefined) {
     if (typeof b.bio !== 'string') bad('Texto inválido');
     bio = b.bio.trim().slice(0, 120);
+    if (cfg.badWord(bio)) bad('Sua bio tem uma palavra que não é permitida.');
   }
   if ('avatar' in b) {
     if (b.avatar === null || b.avatar === '') avatar = null;
@@ -348,6 +356,7 @@ app.post('/api/games/:id/reviews', auth, wrap((req, res) => {
   const g = loadGame(int(req.params.id, 'id'), req.user);
   const stars = Number(req.body.stars); if (!Number.isInteger(stars) || stars < 1 || stars > 5) bad('A nota deve ir de 1 a 5');
   const text = typeof req.body.text === 'string' ? req.body.text.trim().slice(0, 300) : '';
+  if (cfg.badWord(text)) bad('Sua avaliação tem uma palavra que não é permitida.');
   run('INSERT INTO reviews (game_id, user_id, stars, text) VALUES (?,?,?,?) ON CONFLICT(game_id, user_id) DO UPDATE SET stars=excluded.stars, text=excluded.text', g.id, req.user.id, stars, text);
   if (g.owner_id !== req.user.id) notify(g.owner_id, 'Nova avaliação', `${req.user.name} avaliou ${g.title} com ${stars} estrelas.`, 'game:' + g.id);
   res.status(201).json({ ok: true });
@@ -422,9 +431,10 @@ app.post('/api/reports', auth, wrap((req, res) => {
   const id = int(req.body.targetId, 'targetId'), reason = str(req.body.reason, 'Motivo', 3, 200);
   const table = { game: 'games', post: 'posts', user: 'users' }[type];
   if (!get(`SELECT 1 FROM ${table} WHERE id = ?`, id)) bad('Conteúdo não encontrado', 404);
+  if (get("SELECT COUNT(*) AS n FROM reports WHERE reporter_id = ? AND created_at > datetime('now','-1 hour')", req.user.id).n >= cfg.val('reportsPerHour')) bad('Você enviou muitas denúncias em pouco tempo. Tente mais tarde.', 429);
   run('INSERT INTO reports (reporter_id, target_type, target_id, reason) VALUES (?,?,?,?)', req.user.id, type, id, reason);
   const open = get("SELECT COUNT(*) AS n FROM reports WHERE target_type = ? AND target_id = ? AND status = 'open'", type, id).n;
-  if (open === 3) alertAdmins('Denúncias em excesso', `${{ game: 'Um jogo', post: 'Uma publicação', user: 'Um jogador' }[type]} (#${id}) chegou a 3 denúncias abertas. Abra o painel para analisar.`);
+  if (cfg.val('reportsToAlert') > 0 && open === cfg.val('reportsToAlert')) alertAdmins('Denúncias em excesso', `${{ game: 'Um jogo', post: 'Uma publicação', user: 'Um jogador' }[type]} (#${id}) chegou a ${open} denúncias abertas. Abra o painel para analisar.`);
   res.status(201).json({ ok: true });
 }));
 
@@ -523,14 +533,14 @@ app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
 /* ---------- contas: Google, recuperar senha, verificar e-mail, progresso ---------- */
 const sec = mountSecurity({ app, auth, adminOnly, wrap, bad, get, all, run, db, logAct, notify, HttpError, dbFile: process.env.DB_FILE || './data/app.db', PROD });
 const confirmCheck = sec.need;
-Object.assign(hub, mountPush({ app, auth, adminOnly, staffCan, permsOf, wrap, bad, int, get, all, run, logAct, confirmCheck, parseJ, isOnline, pushTo, PROD }));
+Object.assign(hub, mountPush({ cfg, app, auth, adminOnly, staffCan, permsOf, wrap, bad, int, get, all, run, logAct, confirmCheck, parseJ, isOnline, pushTo, PROD }));
 mountAdmin({ hub, confirmCheck, alertAdmins, staffCan, permsOf, PERMS, app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance });
-mountAdminX({ app, auth, adminOnly, wrap, bad, get, all, run, db, logAct, confirmCheck, parseJ, runBackup: sec.runBackup });
-mountStore({ confirmCheck, alertAdmins, staffCan, app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
-mountAccounts({ hub, app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
+mountAdminX({ cfg, app, auth, adminOnly, wrap, bad, get, all, run, db, logAct, confirmCheck, parseJ, runBackup: sec.runBackup });
+mountStore({ cfg, confirmCheck, alertAdmins, staffCan, app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
+mountAccounts({ cfg, hub, app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 
 /* ---------- chat e comunidade ---------- */
-mountSocial({ hub, app, auth, softAuth, wrap, bad, str, int, get, all, run, areFriends, pushTo, isOnline, publicUser, loadGame, COVER_RE, userFromToken, categories });
+mountSocial({ cfg, hub, app, auth, softAuth, wrap, bad, str, int, get, all, run, areFriends, pushTo, isOnline, publicUser, loadGame, COVER_RE, userFromToken, categories });
 
 /* ---------- app estático (opcional) e erros ---------- */
 const here = path.dirname(fileURLToPath(import.meta.url));

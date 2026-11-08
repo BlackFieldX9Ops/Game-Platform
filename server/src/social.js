@@ -4,6 +4,15 @@ import { catOfKind } from './push.js';
 const withSkin = r => ({ ...r, author_titleName: itemName(r.author_title) });
 export function mountSocial(c) {
   const { app, auth, softAuth, wrap, bad, str, int, get, all, run, areFriends, pushTo, isOnline, publicUser, loadGame, COVER_RE } = c;
+  const cfg = c.cfg;
+  const lastMsg = new Map();
+  // regras de conversa: palavra proibida, tamanho, intervalo entre mensagens e imagens
+  const chatRules = (userId, text, img) => {
+    const w = cfg.badWord(text); if (w) bad('Sua mensagem tem uma palavra que não é permitida.');
+    if (img && !cfg.val('allowImages')) bad('O envio de imagens está desligado no momento.', 403);
+    const gap = cfg.val('slowModeSec') * 1000;
+    if (gap) { const t = lastMsg.get(userId) || 0, left = t + gap - Date.now(); if (left > 0) bad(`Espere ${Math.ceil(left / 1000)} s para enviar outra mensagem.`, 429); lastMsg.set(userId, Date.now()); }
+  };
 
   const notifyK = (userId, title, body, kind, ref = '') => c.hub && c.hub.emit
     ? c.hub.emit(userId, title, body, { kind, ref })
@@ -94,7 +103,8 @@ export function mountSocial(c) {
     res.json({ posts: rows.map(r => withSkin({ ...r, liked: !!r.liked, following: !!r.following })) });
   }));
   app.post('/api/posts', auth, wrap((req, res) => {
-    const text = str(req.body.text, 'Texto', 1, 500);
+    const text = str(req.body.text, 'Texto', 1, cfg.val('maxPostLen'));
+    if (cfg.badWord(text)) bad('Sua publicação tem uma palavra que não é permitida.');
     let gameId = null;
     if (req.body.gameId) gameId = loadGame(int(req.body.gameId, 'gameId'), req.user).id;
     let spaceId = null;
@@ -118,6 +128,7 @@ export function mountSocial(c) {
     if (!p) bad('Post não encontrado', 404);
     if (p.space_id) { loadSpace(p.space_id, req.user); if (!member(p.space_id, req.user.id)) bad('Entre para comentar', 403); }
     const text = str(req.body.text, 'Comentário', 1, 300);
+    if (cfg.badWord(text)) bad('Seu comentário tem uma palavra que não é permitida.');
     const r = run('INSERT INTO comments (post_id, user_id, text) VALUES (?,?,?)', p.id, req.user.id, text);
     if (p.user_id !== req.user.id) notifyK(p.user_id, 'Nova resposta', `${req.user.name} respondeu sua publicação.`, 'reply', 'post:' + p.id);
     mentions(text, req.user, 'post:' + p.id, 'em um comentário');
@@ -166,10 +177,11 @@ export function mountSocial(c) {
     const to = int(req.body.to, 'to');
     if (!areFriends(req.user.id, to)) bad('Só é possível conversar com amigos', 403);
     const img = image(req.body.image);
-    const text = typeof req.body.text === 'string' ? req.body.text.trim().slice(0, 300) : '';
+    const text = typeof req.body.text === 'string' ? req.body.text.trim().slice(0, cfg.val('maxMsgLen')) : '';
     let gid = null;
     if (req.body.gameId) gid = loadGame(int(req.body.gameId, 'gameId'), req.user).id;
     if (!text && !img && !gid) bad('Escreva uma mensagem');
+    chatRules(req.user.id, text, img);
     const r = run('INSERT INTO messages (from_id, to_id, text, image, game_id) VALUES (?,?,?,?,?)', req.user.id, to, text, img, gid);
     const msg = dmRow(r.lastInsertRowid);
     pushTo(to, { type: 'message', message: { ...msg, from_name: req.user.name } });
@@ -221,6 +233,7 @@ export function mountSocial(c) {
   app.post('/api/spaces', auth, wrap((req, res) => {
     const b = req.body, kind = b.kind;
     if (!ACCESS[kind]) bad('Tipo inválido');
+    if (!cfg.val('allowSpaceCreate') && !['admin', 'mod'].includes(req.user.role)) bad('A criação de grupos e comunidades está desligada no momento.', 403);
     const name = str(b.name, 'Nome', 3, 40);
     const description = typeof b.description === 'string' ? b.description.trim().slice(0, 300) : '';
     const rules = typeof b.rules === 'string' ? b.rules.trim().slice(0, 600) : '';
@@ -361,10 +374,11 @@ export function mountSocial(c) {
     const s = loadSpace(int(req.params.id, 'id'), req.user);
     if (!member(s.id, req.user.id)) bad('Entre para conversar', 403);
     const img = image(req.body.image);
-    const text = typeof req.body.text === 'string' ? req.body.text.trim().slice(0, 300) : '';
+    const text = typeof req.body.text === 'string' ? req.body.text.trim().slice(0, cfg.val('maxMsgLen')) : '';
     let gid = null;
     if (req.body.gameId) gid = loadGame(int(req.body.gameId, 'gameId'), req.user).id;
     if (!text && !img && !gid) bad('Escreva uma mensagem');
+    chatRules(req.user.id, text, img);
     const r = run('INSERT INTO room_msgs (space_id, user_id, text, image, game_id) VALUES (?,?,?,?,?)', s.id, req.user.id, text, img, gid);
     const msg = withSkin(roomRow(r.lastInsertRowid));
     run('INSERT INTO room_reads (user_id, space_id, last_id) VALUES (?,?,?) ON CONFLICT(user_id, space_id) DO UPDATE SET last_id = MAX(last_id, excluded.last_id)', req.user.id, s.id, msg.id);

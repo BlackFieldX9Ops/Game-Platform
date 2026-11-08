@@ -66,7 +66,7 @@ export function mountStore(c) {
   const useCoupon = (userId, cp) => { run('INSERT INTO coupon_uses (code, user_id) VALUES (?,?)', cp.code, userId); run('UPDATE coupons SET used = used + 1 WHERE code = ?', cp.code); };
   const priceWith = (item, cp) => cp && cp.kind === 'percent' ? Math.max(0, Math.round(item.price * (100 - cp.value) / 100)) : item.price;
   const owned = id => all('SELECT item_id FROM user_items WHERE user_id = ?', id).map(r => r.item_id);
-  const dailyReward = u => hasPremium(u) ? 30 : 10;
+  const dailyReward = u => hasPremium(u) ? c.cfg.val('dailyCoinsPremium') : c.cfg.val('dailyCoins');
   const dailyWait = u => u.daily_at ? Math.max(0, new Date(u.daily_at).getTime() + 20 * 3600_000 - Date.now()) : 0;
   const state = u => {
     const f = get('SELECT * FROM users WHERE id = ?', u.id);
@@ -301,7 +301,7 @@ export function mountStore(c) {
       notifyK(u.id, plan.kind === 'premium' ? 'Premium ativo' : 'Studio liberado', plan.kind === 'premium' ? `${plan.name} ativo. Aproveite o bônus diário e os itens exclusivos.` : `${plan.name} ativo. Você já pode publicar jogos.`, 'premium');
       return { got: 0 };
     }
-    const got = Math.floor((hasPremium(u) ? Math.floor(pack.coins * 1.1) : pack.coins) * (cp && cp.kind === 'bonus' ? 1 + cp.value / 100 : 1));
+    const got = Math.floor((hasPremium(u) ? Math.floor(pack.coins * (1 + c.cfg.val('premiumBonusPct') / 100)) : pack.coins) * (cp && cp.kind === 'bonus' ? 1 + cp.value / 100 : 1));
     run('UPDATE users SET coins = coins + ? WHERE id = ?', got, u.id);
     clog(u.id, got, 'Pacote ' + pack.name + (live ? '' : ' (teste)'));
     sale(u.id, 'coins', pack.id, pack.name, { cents, coins: got, coupon: cp ? cp.code : null }); if (cp) useCoupon(u.id, cp);
@@ -354,7 +354,7 @@ export function mountStore(c) {
     if (get('SELECT 1 FROM purchases WHERE user_id = ? AND game_id = ?', req.user.id, g.id)) bad('Você já comprou este jogo', 409);
     const u = get('SELECT * FROM users WHERE id = ?', req.user.id);
     if (u.coins < price) bad('Moedas insuficientes', 402);
-    const cut = Math.floor(price * GAME_SHARE);
+    const cut = Math.floor(price * c.cfg.val('creatorSharePct') / 100);
     run('UPDATE users SET coins = coins - ? WHERE id = ?', price, u.id);
     run('UPDATE users SET coins = coins + ? WHERE id = ?', cut, g.owner_id);
     clog(u.id, -price, 'Jogo: ' + g.title, 'buy:' + g.id);

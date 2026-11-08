@@ -93,7 +93,7 @@ export function mountPush(c) {
   }
 
   // ---- preferências ----
-  const defPrefs = () => ({ enabled: true, cats: {}, sound: true, vibrate: true, priority: [], quiet: { on: false, from: '22:00', to: '07:00' } });
+  const defPrefs = () => ({ enabled: true, cats: {}, sound: true, vibrate: true, priority: [], quiet: { on: c.cfg ? c.cfg.val('quietDefault') : false, from: c.cfg ? c.cfg.val('quietFrom') : '22:00', to: c.cfg ? c.cfg.val('quietTo') : '07:00' } });
   const prefsOf = uid => { const r = get('SELECT data FROM notif_prefs WHERE user_id = ?', uid); const d = defPrefs(), s = r ? parseJ(r.data, {}) : {}; return { ...d, ...s, quiet: { ...d.quiet, ...(s.quiet || {}) }, cats: s.cats || {}, priority: Array.isArray(s.priority) ? s.priority : [] }; };
   const catOn = (pf, cat) => !CATS[cat] || CATS[cat].locked || (pf.cats[cat] === undefined ? CATS[cat].def : !!pf.cats[cat]);
   const inQuiet = (pf, tz, at = Date.now()) => {
@@ -112,6 +112,11 @@ export function mountPush(c) {
       const pf = prefsOf(uid);
       if (!pf.enabled && !CATS[cat].locked) continue;
       if (!catOn(pf, cat)) continue;
+      if (c.cfg && !CATS[cat].locked) {
+        if (c.cfg.val('pushOffCats').includes(cat)) continue;
+        const lim = c.cfg.val('pushDailyLimit');
+        if (lim > 0 && cat !== 'maintenance' && get("SELECT COUNT(DISTINCT notif_id) AS n FROM push_queue WHERE user_id = ? AND created_at > datetime('now','-1 day')", uid).n >= lim) continue;
+      }
       const devs = all('SELECT id, tz, kind FROM push_devices WHERE user_id = ? AND active = 1', uid);
       if (!devs.length) continue;
       const prio = pf.priority.includes(cat) || CATS[cat].locked || !!n.important;
