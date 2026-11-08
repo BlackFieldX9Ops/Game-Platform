@@ -45,7 +45,15 @@ jobs:
         run: sed -i "s|<meta name=\"gp-build\" content=\"\">|<meta name=\"gp-build\" content=\"$BUILD\">|; s|<meta name=\"gp-repo\" content=\"[^\"]*\">|<meta name=\"gp-repo\" content=\"${{ github.repository }}\">|" www/index.html
 
       - name: Instalar dependências
-        run: npm install
+        run: |
+          # O download do binário do sharp (GitHub) às vezes dá 504; tenta de novo antes de desistir.
+          for i in 1 2 3 4; do
+            npm install && exit 0
+            echo "npm install falhou (tentativa $i); aguardando para tentar de novo"
+            rm -rf node_modules/sharp
+            sleep $((i * 20))
+          done
+          exit 1
 
       - name: Notificações externas (Firebase) — opcional
         id: fcm
