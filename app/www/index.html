@@ -668,8 +668,108 @@ button.ck.rv.ok svg{color:#34d399}
 .ttl.sm{align-self:flex-start;display:inline-flex;width:fit-content;max-width:100%}
 .ph .body .ttl.sm{margin:2px 0 0}
 .nc-rainbow{display:inline-block;background-size:100% 100%}
+
+/* ---------- painel de gestão (telas largas) ---------- */
+html.ws #app{display:none}
+#ws{position:fixed;inset:0;z-index:20;display:flex;background:var(--bg);font-size:13.5px}
+#ws[hidden]{display:none}
+#ws .mut{color:var(--muted);font-size:12px}
+#ws .wside{width:224px;flex:none;display:flex;flex-direction:column;gap:6px;padding:16px 12px;background:var(--surface);border-right:1px solid var(--line)}
+#ws .wbrand{padding:2px 8px 14px;display:flex;flex-direction:column;gap:2px}
+#ws .wbrand b{font-size:15px;letter-spacing:.2px}
+#ws .wbrand span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.9px}
+#ws .wnavs{display:flex;flex-direction:column;gap:2px;flex:1;overflow:auto}
+#ws .wsep{height:1px;background:var(--line);margin:8px 6px}
+#ws .wnav{display:flex;align-items:center;gap:10px;width:100%;min-height:38px;padding:0 10px;border-radius:10px;color:var(--muted);font-weight:600;font-size:13px;text-align:left;transition:background .12s,color .12s}
+#ws .wnav svg{width:17px;height:17px;flex:none}
+#ws .wnav span{flex:1;white-space:nowrap}
+#ws .wnav:hover{background:var(--surface2);color:var(--fg)}
+#ws .wnav.on{background:var(--soft2);color:#fff}
+#ws .wnav.soon{opacity:.6}
+#ws .wnav em{font-style:normal;font-size:10px;color:var(--muted);border:1px solid var(--line2);border-radius:99px;padding:1px 7px}
+#ws .wnav b{font-size:11px;background:var(--bad);color:#2a0a0a;border-radius:99px;padding:1px 7px}
+#ws .wme{display:flex;align-items:center;gap:10px;padding:10px 8px;border-top:1px solid var(--line);margin-top:6px}
+#ws .wme b{display:block;font-size:12.5px}
+#ws .wme span{font-size:11px;color:var(--muted)}
+#ws .wmain{flex:1;min-width:0;display:flex;flex-direction:column}
+#ws .wtop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px 12px}
+#ws .wtop h1{margin:0;font-size:20px}
+#ws .wtop span{color:var(--muted);font-size:12.5px}
+#ws .wbody{flex:1;min-height:0;display:flex;gap:16px;padding:0 24px 20px}
+#ws .wcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;overflow:auto}
+#ws .wbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#ws .wbar .in{width:auto;min-height:36px;font-size:13px;border-radius:10px}
+#ws .wsearch{position:relative;flex:1;min-width:220px;display:block}
+#ws .wsearch svg{position:absolute;left:11px;top:50%;width:15px;height:15px;transform:translateY(-50%);color:var(--muted)}
+#ws .wsearch .in{width:100%;padding-left:34px}
+#ws .btn svg{width:15px;height:15px}
+#ws .btn[disabled]{opacity:.4;pointer-events:none}
+#ws .wcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+#ws .wcard.wfill{flex:1;min-height:0}
+#ws .wch{padding:12px 16px;border-bottom:1px solid var(--line)}
+#ws .wch h3{margin:0;font-size:13.5px}
+#ws .wscroll{flex:1;min-height:0;overflow:auto}
+#ws .wfoot{padding:8px 16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+#ws .wt{width:100%;border-collapse:collapse}
+#ws .wt th{position:sticky;top:0;background:var(--surface2);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);padding:9px 14px;white-space:nowrap;z-index:1}
+#ws .wt td{padding:9px 14px;border-top:1px solid var(--line);vertical-align:middle}
+#ws .wt .num{text-align:right}
+#ws .wt .chk{width:36px;padding-right:0}
+#ws .wt .wtext{max-width:420px;overflow-wrap:anywhere}
+#ws .wt .wbtns{white-space:nowrap}
+#ws .wt tbody tr:first-child td{border-top:0}
+#ws .wrow{cursor:pointer}
+#ws .wrow:hover td{background:var(--surface2)}
+#ws .wrow.on td{background:var(--soft)}
+#ws .wu{display:flex;align-items:center;gap:10px}
+#ws .wu div{display:flex;flex-direction:column;min-width:0}
+#ws .avatar.xs{width:30px;height:30px;font-size:13px;flex:none}
+#ws .avatar.lg{width:60px;height:60px;font-size:24px;flex:none}
+#ws .wchip,#ws .wrole{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;border:1px solid var(--line2);color:var(--muted);white-space:nowrap}
+#ws .wchip.active{color:var(--ok);border-color:#34d39955}
+#ws .wchip.suspended{color:var(--warn);border-color:#fbbf2466}
+#ws .wchip.banned{color:var(--bad);border-color:#f8717166}
+#ws .wrole.admin{color:#c4b5fd;border-color:#8b5cf666}
+#ws .wrole.mod{color:#7dd3fc;border-color:#38bdf866}
+#ws .wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+#ws .wstat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+#ws .wstat span{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+#ws .wstat b{font-size:26px;font-variant-numeric:tabular-nums}
+#ws .wstat i{font-style:normal;font-size:11.5px;color:var(--ok)}
+#ws .wtabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+#ws .wtab{padding:9px 14px;font-weight:700;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+#ws .wtab.on{color:#fff;border-bottom-color:var(--accent)}
+#ws .wempty{padding:36px 16px;text-align:center;color:var(--muted);line-height:1.8}
+#ws .wdrawer{width:380px;flex:none;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
+#ws .wdh{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 10px 16px;border-bottom:1px solid var(--line)}
+#ws .wdh .ib svg{width:16px;height:16px}
+#ws .wdb{flex:1;min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+#ws .wprof{display:flex;gap:14px;align-items:center}
+#ws .wprof h2{margin:0 0 2px;font-size:17px;overflow-wrap:anywhere}
+#ws .wtags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+#ws .wbio{margin:0;color:var(--muted);overflow-wrap:anywhere}
+#ws .wnote{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:var(--muted);font-size:12.5px}
+#ws .wmini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#ws .wmini div{background:var(--surface2);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column}
+#ws .wmini b{font-size:16px}
+#ws .wmini span{font-size:11px;color:var(--muted)}
+#ws .wkv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+#ws .wkv dt{color:var(--muted)}
+#ws .wkv dd{margin:0;text-align:right}
+#ws .wact{display:flex;gap:8px;flex-wrap:wrap}
+#ws h4{margin:6px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+#ws .wl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+#ws .wl li{background:var(--surface2);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+#ws .wmodal{position:absolute;inset:0;z-index:30;background:#05060fcc;display:grid;place-items:center}
+#ws .wbox{width:min(440px,92vw);background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}
+#ws .wbox h3{margin:0;font-size:16px}
+#ws .wbox p{margin:0 0 4px;color:var(--muted)}
+#ws .wbox textarea.in{padding:10px 14px;resize:vertical;min-height:84px;font-family:inherit}
+#ws .wbox .wbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+#ws .wbox .f{margin-top:4px}
 </style>
 
+<div id="ws" hidden></div>
 </head>
 <body>
 <div id="app">
@@ -1463,7 +1563,8 @@ function settings(){
  +'<div class="row" style="margin-top:10px"><span class="note" style="margin:0"><span class="sd '+(S.srvOk?'on':'')+'"></span> '+(S.srvOk?'Servidor conectado':'Sem conexão')+'</span><button class="btn ghost sm" data-a="srvsave">Salvar e testar</button></div>'
  +(on()?'<div class="row" style="margin-top:14px"><span>Conectado como <b>'+esc(S.user.name)+'</b></span><button class="btn ghost sm" data-a="logout">Sair</button></div>':'<button class="btn sm" style="margin-top:14px" data-a="sub" data-v="auth">Entrar ou criar conta</button>')+'</div>'+verifyPanel()
  +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação nos jogos</div><div class="seg">'+[['auto','O jogo decide'],['portrait','Sempre em pé'],['landscape','Sempre deitado']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">Fora dos jogos o app fica sempre em pé. Ao abrir um jogo, ele gira sozinho para a posição que o jogo pede (retrato ou paisagem). '+(native()?'Recursos do Android ativos.':'Neste navegador a rotação depende do aparelho.')+'</p></div>'
- +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (local)','admin'))+'</div>'+admBox()
+ +(wsIsStaff()&&wsWide()?'<div class="panel" style="margin-top:14px"><div class="row"><span><b>Painel de gestão</b><span class="note" style="display:block;margin:2px 0 0">Tela grande com menu lateral e tabelas.</span></span><button class="btn ghost sm" data-a="w_enter">Abrir painel</button></div></div>':'')
++'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (local)','admin'))+'</div>'+admBox()
  +updBanner()+updPanel()
  +'<dl class="panel kv" style="margin-top:12px"><dt>Tema</dt><dd>Escuro</dd><dt>Idioma</dt><dd>Português (Brasil)</dd><dt>Versão</dt><dd>1.2'+(curBuild()?' (build '+curBuild()+')':'')+'</dd></dl>'
  +'<div class="sec"><h2>Dados deste aparelho</h2></div>'
@@ -1553,6 +1654,8 @@ function navItems(){var a=[['home','Início','home'],['store','Loja','store'],['
 function chatBadge(){return on()?(S.cun||0)+(typeof socUnseen==='function'?socUnseen():0):0}
 function render(keep){
  if(!S.studio)S.studio=newStudio();
+ if(typeof wsOn==='function'&&wsOn()){wsShow();return}
+ if(typeof wsOff==='function')wsOff();
  if(S.tab==='studio'&&!studioOn())S.tab='home';
  var NV=navItems();$('#nav').style.gridTemplateColumns='repeat('+NV.length+',1fr)';
  $('#nav').innerHTML=NV.map(function(n){var b=n[0]==='chat'?chatBadge():0;return '<button data-a="go" data-v="'+n[0]+'"'+(S.tab===n[0]?' aria-current="page"':'')+'>'+ic(n[2])+(b?'<i class="nb">'+(b>9?'9+':b)+'</i>':'')+'<span>'+n[1]+'</span></button>'}).join('');
@@ -1910,6 +2013,281 @@ function misAct(a,v){
  if(a==='macc'){var g0=mGames().filter(function(g){return String(v).split('|')[0]===g.id})[0];if(!g0)return true;var st=mState();st.acc[v]={ts:Date.now(),p:mPlays(g0),s:mSecs(g0)};sv('gp_mis',S.mis);misClaim();toast('Missão aceita');render(true);return true}
  if(a==='mdrop'){delete mState().acc[v];sv('gp_mis',S.mis);toast('Missão abandonada');render(true);return true}
  return false;
+}
+
+/* ---------- painel de gestão (telas largas: administradores e moderadores) ---------- */
+var WS={sec:'over',ov:null,ovErr:'',users:{q:'',status:'',role:'',plan:'',list:[],total:0,busy:0,sel:null,det:null,detBusy:0},
+ ct:{kind:'comment',q:'',items:[],more:false,busy:0,pick:{}},rep:{list:[],busy:0},au:{q:'',list:[],more:false,busy:0},modal:null,loaded:{},tm:0};
+var WSI={
+ grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2A6.5 6.5 0 0 1 21.5 20"/>',
+ shield:'<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8 7.5 9.5 4.3-1.5 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
+ chat:'<path d="M4 5h16v11H9l-5 4z"/>',
+ flag:'<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>',
+ log:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/>',
+ cart:'<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h3l2.4 11h10l2-8H7"/>',
+ pad:'<path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-3.9 3.1l-1.4 6.5A3 3 0 0 0 5.8 18l2.2-2h8l2.2 2a3 3 0 0 0 4.4-3.4l-1.4-6.5A4 4 0 0 0 17.3 5z"/>',
+ mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+ tool:'<path d="m14 4 6 6-9 9H5v-6z"/><path d="m13 5 6 6"/>',
+ out:'<path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/>',
+ x:'<path d="M6 6l12 12M18 6 6 18"/>',
+ sync:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/>',
+ lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'
+};
+function wi(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(WSI[n]||'')+'</svg>'}
+function wsIsStaff(){return on()&&(S.user.role==='admin'||S.user.role==='mod')}
+function wsIsAdmin(){return on()&&S.user.role==='admin'}
+function wsWide(){try{return window.matchMedia('(min-width:1000px)').matches}catch(e){return false}}
+function wsPref(){try{return localStorage.getItem('gp_ws_off')!=='1'}catch(e){return true}}
+function wsOn(){return wsIsStaff()&&wsWide()&&wsPref()}
+function wsDate(s){s=String(s||'');return s?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):''}
+function wsDT(s){s=String(s||'');return s?wsDate(s)+' '+s.slice(11,16):''}
+var WS_ROLE={admin:'Administrador',mod:'Moderador',user:'Jogador'};
+var WS_ST={active:'Ativa',suspended:'Suspensa',banned:'Banida'};
+function wsChip(st,until){return '<span class="wchip '+st+'">'+WS_ST[st]+(st==='suspended'&&until?' até '+wsDate(until):'')+'</span>'}
+function wsNav(){
+ var a=wsIsAdmin(),n=WS.ov?WS.ov.openReports:0;
+ var items=[['over','Visão geral','grid'],['users','Usuários','users'],['mod','Moderação','chat'],['rep','Denúncias','flag',n],a?['audit','Auditoria','log']:null,
+  null,['buy','Compras','cart','soon'],['games','Jogos','pad','soon'],['msg','Mensagens','mail','soon'],['studio','Studio','tool','soon']];
+ return items.map(function(i){
+  if(!i)return '<div class="wsep"></div>';
+  var soon=i[3]==='soon';
+  return '<button class="wnav'+(WS.sec===i[0]?' on':'')+(soon?' soon':'')+'" data-a="w_sec" data-v="'+i[0]+'">'+wi(i[2])+'<span>'+i[1]+'</span>'+(soon?'<em>em breve</em>':(i[3]?'<b>'+i[3]+'</b>':''))+'</button>';
+ }).join('');
+}
+function wsStat(l,v,s){return '<div class="wstat"><span>'+l+'</span><b>'+(v===undefined||v===null?'—':v)+'</b>'+(s?'<i>'+s+'</i>':'')+'</div>'}
+function wsOver(){
+ var o=WS.ov;
+ if(!o)return '<div class="wempty">'+(WS.ovErr?esc(WS.ovErr):'Carregando…')+'</div>';
+ var a=wsIsAdmin();
+ var rec=(o.recent||[]).map(function(l){return '<tr><td class="mut">'+esc(rel(l.created_at))+'</td><td>'+esc(l.actor||'')+'</td><td><b>'+esc(l.action)+'</b> <span class="mut">'+esc(l.detail||'')+'</span></td></tr>'}).join('');
+ return '<div class="wgrid">'
+  +wsStat('Usuários',o.users,'+'+(o.newUsers7d||0)+' em 7 dias')+wsStat('Online agora',o.online)+wsStat('Jogos',o.games)+wsStat('Partidas',o.plays)
+  +wsStat('Denúncias abertas',o.openReports)+wsStat('Suspensos',o.suspended)+wsStat('Banidos',o.banned)+wsStat('Equipe',o.staff)
+  +wsStat('Avaliações',o.reviews)+wsStat('Publicações',o.posts)+wsStat('Comentários',o.comments)
+  +(a?wsStat('Moedas em circulação',o.coinsInCirculation)+wsStat('Vendas',o.sales):'')
+  +'</div><div class="wcard"><div class="wch"><h3>Atividade recente da equipe</h3></div>'
+  +(rec?'<table class="wt"><tbody>'+rec+'</tbody></table>':'<div class="wempty">Nada registrado ainda.</div>')+'</div>';
+}
+function wsUsers(){
+ var U=WS.users,a=wsIsAdmin();
+ var rows=U.list.map(function(u){
+  return '<tr class="wrow'+(U.sel===u.id?' on':'')+'" data-a="w_uopen" data-v="'+u.id+'"><td><div class="wu">'+avatarEl(u.avatar,u.name,'xs')+'<div><b>'+esc(u.name)+'</b><span class="mut">#'+esc(u.uidFmt||u.uid)+(a&&u.email?' · '+esc(u.email):'')+'</span></div></div></td>'
+   +'<td><span class="wrole '+u.role+'">'+WS_ROLE[u.role]+'</span></td><td>'+wsChip(u.status,u.status_until)+'</td><td class="num">'+(u.games||0)+'</td><td class="num">'+(u.xp||0)+'</td><td class="mut">'+wsDate(u.created_at)+'</td></tr>';
+ }).join('');
+ var f='<div class="wbar"><label class="wsearch">'+wi('search')+'<input class="in" id="wsUq" data-w="uq" value="'+esc(U.q)+'" placeholder="Buscar por nome'+(a?', e-mail':'')+' ou #número" autocomplete="off"></label>'
+  +'<select class="in" data-w="ust"><option value="">Todos os status</option><option value="active"'+(U.status==='active'?' selected':'')+'>Ativos</option><option value="suspended"'+(U.status==='suspended'?' selected':'')+'>Suspensos</option><option value="banned"'+(U.status==='banned'?' selected':'')+'>Banidos</option></select>'
+  +'<select class="in" data-w="url"><option value="">Todos os perfis</option><option value="user"'+(U.role==='user'?' selected':'')+'>Jogadores</option><option value="mod"'+(U.role==='mod'?' selected':'')+'>Moderadores</option><option value="admin"'+(U.role==='admin'?' selected':'')+'>Administradores</option></select>'
+  +'<select class="in" data-w="upl"><option value="">Todos os planos</option><option value="studio"'+(U.plan==='studio'?' selected':'')+'>Com Studio</option></select>'
+  +'</div>';
+ return f+'<div class="wcard wfill"><div class="wscroll"><table class="wt"><thead><tr><th>Usuário</th><th>Perfil</th><th>Conta</th><th class="num">Jogos</th><th class="num">XP</th><th>Entrou em</th></tr></thead><tbody>'
+  +(rows||'<tr><td colspan="6"><div class="wempty">'+(U.busy?'Carregando…':'Nenhum usuário encontrado.')+'</div></td></tr>')+'</tbody></table></div>'
+  +'<div class="wfoot">'+U.list.length+' de '+U.total+' usuários</div></div>';
+}
+function wsDrawer(){
+ var U=WS.users;if(U.sel===null)return '';
+ var d=U.det,h='<aside class="wdrawer"><div class="wdh"><b>Detalhes do usuário</b><button class="ib" data-a="w_uclose" aria-label="Fechar">'+wi('x')+'</button></div><div class="wdb">';
+ if(!d){h+='<div class="wempty">'+(U.detBusy?'Carregando…':'Não foi possível carregar.')+'</div></div></aside>';return h}
+ var a=wsIsAdmin(),mine=d.id===S.user.id,locked=mine||d.role==='admin'||(d.role==='mod'&&!a);
+ h+='<div class="wprof">'+avatarEl(d.avatar,d.name,'lg')+'<div><h2>'+esc(d.name)+'</h2><span class="mut">#'+esc(d.uidFmt||d.uid)+(a&&d.email?' · '+esc(d.email):'')+'</span><div class="wtags"><span class="wrole '+d.role+'">'+WS_ROLE[d.role]+'</span>'+wsChip(d.status,d.status_until)+'</div></div></div>';
+ if(d.bio)h+='<p class="wbio">'+esc(d.bio)+'</p>';
+ if(d.status!=='active'&&d.status_reason)h+='<div class="wnote">Motivo: '+esc(d.status_reason)+'</div>';
+ var c=d.counts||{};
+ h+='<div class="wmini"><div><b>'+c.games+'</b><span>Jogos</span></div><div><b>'+c.library+'</b><span>Biblioteca</span></div><div><b>'+c.posts+'</b><span>Posts</span></div><div><b>'+c.comments+'</b><span>Comentários</span></div><div><b>'+c.reviews+'</b><span>Avaliações</span></div><div><b>'+c.reportsAgainst+'</b><span>Denúncias</span></div></div>';
+ if(a){h+='<dl class="wkv"><dt>Moedas</dt><dd>'+(d.coins||0)+'</dd><dt>Studio até</dt><dd>'+(wsDate(d.studio_until)||'—')+'</dd><dt>Plano até</dt><dd>'+(wsDate(d.premium_until)||'—')+'</dd><dt>E-mail</dt><dd>'+(d.emailVerified?'verificado':'não verificado')+(d.google?' · Google':'')+'</dd><dt>Entrou em</dt><dd>'+wsDate(d.created_at)+'</dd></dl>'}
+ else h+='<dl class="wkv"><dt>Entrou em</dt><dd>'+wsDate(d.created_at)+'</dd></dl>';
+ h+='<div class="wact">';
+ if(locked)h+='<div class="wnote">'+(mine?'Esta é a sua conta.':d.role==='admin'?'Contas de administrador não podem ser suspensas aqui.':'Só o administrador altera moderadores.')+'</div>';
+ else{
+  if(d.status==='active')h+='<button class="btn ghost sm" data-a="w_ustatus" data-v="'+d.id+':suspended">Suspender</button>';
+  if(d.status==='suspended')h+='<button class="btn ghost sm" data-a="w_ustatus" data-v="'+d.id+':active">Reativar</button><button class="btn ghost sm" data-a="w_ustatus" data-v="'+d.id+':suspended">Mudar prazo</button>';
+  if(a&&d.status!=='banned')h+='<button class="btn danger sm" data-a="w_ustatus" data-v="'+d.id+':banned">Banir</button>';
+  if(a&&d.status==='banned')h+='<button class="btn sm" data-a="w_ustatus" data-v="'+d.id+':active">Desbanir</button>';
+  if(a&&d.role==='user')h+='<button class="btn ghost sm" data-a="w_urole" data-v="'+d.id+':mod">Tornar moderador</button>';
+  if(a&&d.role==='mod')h+='<button class="btn ghost sm" data-a="w_urole" data-v="'+d.id+':user">Remover moderação</button>';
+ }
+ h+='<button class="btn ghost sm" data-a="w_uconteudo" data-v="'+d.id+'">Ver conteúdo</button></div>';
+ var gm=(d.games||[]).map(function(g){return '<li><b>'+esc(g.title)+'</b><span class="mut">'+g.plays+' partidas · '+esc(g.status)+'</span></li>'}).join('');
+ if(gm)h+='<h4>Jogos publicados</h4><ul class="wl">'+gm+'</ul>';
+ var rc=d.recent||{},txt=function(l,t){return (l||[]).map(function(x){return '<li><span>'+esc(x.text||'')+'</span><span class="mut">'+(t==='r'?x.stars+'★ · '+esc(x.game)+' · ':'')+rel(x.created_at)+'</span></li>'}).join('')};
+ var pp=txt(rc.posts),cc=txt(rc.comments),rr=txt(rc.reviews,'r');
+ if(pp)h+='<h4>Publicações recentes</h4><ul class="wl">'+pp+'</ul>';
+ if(cc)h+='<h4>Comentários recentes</h4><ul class="wl">'+cc+'</ul>';
+ if(rr)h+='<h4>Avaliações recentes</h4><ul class="wl">'+rr+'</ul>';
+ if(a&&(d.purchases||[]).length)h+='<h4>Compras</h4><ul class="wl">'+d.purchases.map(function(p){return '<li><b>'+esc(p.title)+'</b><span class="mut">'+wsDate(p.created_at)+'</span></li>'}).join('')+'</ul>';
+ var hs=(d.history||[]).map(function(l){return '<li><span><b>'+esc(l.action)+'</b> '+esc(l.detail||'')+'</span><span class="mut">'+esc(l.actor||'')+' · '+wsDT(l.created_at)+'</span></li>'}).join('');
+ h+='<h4>Histórico de moderação</h4>'+(hs?'<ul class="wl">'+hs+'</ul>':'<div class="mut">Sem ações registradas.</div>');
+ return h+'</div></aside>';
+}
+function wsMod(){
+ var C=WS.ct,tabs=[['comment','Comentários'],['review','Avaliações'],['post','Publicações']];
+ var n=Object.keys(C.pick).length;
+ var rows=C.items.map(function(i){
+  return '<tr><td class="chk"><input type="checkbox" data-a="w_cpick" data-v="'+i.kind+':'+i.id+'"'+(C.pick[i.kind+':'+i.id]?' checked':'')+' aria-label="Selecionar"></td>'
+   +'<td><b>'+esc(i.author)+'</b><span class="mut" style="display:block">'+rel(i.created_at)+'</span></td>'
+   +'<td class="wtext">'+(i.stars?'<span class="mut">'+i.stars+'★ </span>':'')+esc(i.text||'')+(i.reports?' <span class="wchip suspended">'+i.reports+' denúncia(s)</span>':'')+'</td>'
+   +'<td class="mut">'+esc(i.target||'')+'</td>'
+   +'<td><button class="btn ghost sm" data-a="w_cone" data-v="'+i.kind+':'+i.id+'">'+wi('x')+'Remover</button></td></tr>';
+ }).join('');
+ return '<div class="wtabs">'+tabs.map(function(t){return '<button class="wtab'+(C.kind===t[0]?' on':'')+'" data-a="w_ctab" data-v="'+t[0]+'">'+t[1]+'</button>'}).join('')+'</div>'
+  +'<div class="wbar"><label class="wsearch">'+wi('search')+'<input class="in" id="wsCq" data-w="cq" value="'+esc(C.q)+'" placeholder="Buscar por texto ou autor" autocomplete="off"></label>'
+  
+  +'<button class="btn danger sm" data-a="w_cbulk"'+(n?'':' disabled')+'>Remover selecionados'+(n?' ('+n+')':'')+'</button></div>'
+  +'<div class="wcard wfill"><div class="wscroll"><table class="wt"><thead><tr><th class="chk"><input type="checkbox" data-a="w_call" aria-label="Selecionar todos"'+(C.items.length&&n===C.items.length?' checked':'')+'></th><th>Autor</th><th>Texto</th><th>Em</th><th></th></tr></thead><tbody>'
+  +(rows||'<tr><td colspan="5"><div class="wempty">'+(C.busy?'Carregando…':'Nada por aqui.')+'</div></td></tr>')+'</tbody></table>'
+  +(C.more?'<div style="padding:12px;text-align:center"><button class="btn ghost sm" data-a="w_cmore">Carregar mais</button></div>':'')+'</div></div>';
+}
+function wsRep(){
+ var R=WS.rep;
+ var rows=R.list.map(function(m){
+  var k={game:'Jogo',post:'Post',user:'Jogador'}[m.target_type]||m.target_type;
+  return '<tr><td><span class="wchip active">'+k+'</span></td><td><b>'+esc(m.target_title||'#'+m.target_id)+'</b></td><td class="wtext">'+esc(m.reason)+'</td><td class="mut">'+esc(m.reporter)+'<span style="display:block">'+rel(m.created_at)+'</span></td>'
+   +'<td class="wbtns"><button class="btn ghost sm" data-a="w_rres" data-v="'+m.id+':dismiss">Dispensar</button><button class="btn danger sm" data-a="w_rres" data-v="'+m.id+':remove">'+(m.target_type==='user'?'Suspender':'Remover')+'</button></td></tr>';
+ }).join('');
+ return '<div class="wcard wfill"><div class="wscroll"><table class="wt"><thead><tr><th>Tipo</th><th>Alvo</th><th>Motivo</th><th>Denunciante</th><th></th></tr></thead><tbody>'
+  +(rows||'<tr><td colspan="5"><div class="wempty">'+(R.busy?'Carregando…':'Nenhuma denúncia aberta.')+'</div></td></tr>')+'</tbody></table></div></div>';
+}
+function wsAudit(){
+ var A=WS.au;
+ if(!wsIsAdmin())return '<div class="wempty">Área restrita a administradores.</div>';
+ var rows=A.list.map(function(l){return '<tr><td class="mut">'+wsDT(l.created_at)+'</td><td><b>'+esc(l.actor||'')+'</b><span class="wrole '+(l.role||'user')+'" style="margin-left:6px">'+esc(WS_ROLE[l.role]||l.role||'')+'</span></td><td>'+esc(l.action)+'</td><td class="wtext">'+esc(l.detail||'')+'</td><td>'+(l.target_id?'<button class="btn ghost sm" data-a="w_uopen2" data-v="'+l.target_id+'">#'+l.target_id+'</button>':'')+'</td></tr>'}).join('');
+ return '<div class="wbar"><label class="wsearch">'+wi('search')+'<input class="in" id="wsAq" data-w="aq" value="'+esc(A.q)+'" placeholder="Buscar ação, detalhe ou autor" autocomplete="off"></label></div>'
+  +'<div class="wcard wfill"><div class="wscroll"><table class="wt"><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhe</th><th>Alvo</th></tr></thead><tbody>'
+  +(rows||'<tr><td colspan="5"><div class="wempty">'+(A.busy?'Carregando…':'Sem registros.')+'</div></td></tr>')+'</tbody></table>'
+  +(A.more?'<div style="padding:12px;text-align:center"><button class="btn ghost sm" data-a="w_amore">Carregar mais</button></div>':'')+'</div></div>';
+}
+function wsSoon(t,d){return '<div class="wcard"><div class="wempty"><b>'+t+'</b><br>'+d+'<br><span class="wchip active">em breve</span></div></div>'}
+function wsModal(){
+ var m=WS.modal;if(!m)return '';
+ var days=m.days?'<label class="f">Por quanto tempo</label><select class="in" id="wsMDays">'+m.days.map(function(d){return '<option value="'+d+'"'+(d===m.dflt?' selected':'')+'>'+d+(d===1?' dia':' dias')+'</option>'}).join('')+'</select>':'';
+ var reason=m.need?'<label class="f">Motivo'+(m.need>0?' (obrigatório)':'')+'</label><textarea class="in" id="wsMReason" rows="3" maxlength="140" placeholder="Explique o motivo — fica registrado na auditoria e o jogador é avisado">'+esc(m.text||'')+'</textarea>':'';
+ return '<div class="wmodal"><div class="wbox"><h3>'+esc(m.title)+'</h3><p>'+esc(m.body)+'</p>'+days+reason+'<div class="wbtns"><button class="btn ghost sm" data-a="w_mcancel">Cancelar</button><button class="btn sm'+(m.danger?' danger':'')+'" data-a="w_mok">'+esc(m.ok)+'</button></div></div></div>';
+}
+var WS_TITLES={over:['Visão geral','Resumo da plataforma agora'],users:['Usuários','Busque, filtre e gerencie contas'],mod:['Moderação','Comentários, avaliações e publicações'],rep:['Denúncias','Fila de denúncias abertas'],audit:['Auditoria','Tudo que a equipe fez, com autor e motivo'],
+ buy:['Compras','Vendas e tabela de preços'],games:['Jogos','Biblioteca, quem jogou e quem está online'],msg:['Mensagens','Avisos globais, por grupo ou por usuário'],studio:['Studio','Editor grande com prévia ao lado']};
+function wsBody(){
+ var s=WS.sec;
+ if(s==='over')return wsOver();if(s==='users')return wsUsers();if(s==='mod')return wsMod();if(s==='rep')return wsRep();if(s==='audit')return wsAudit();
+ var d={buy:'Compras e tabela de preços editável, com a tela de planos VIP.',games:'Quantas pessoas têm cada jogo, quem jogou e quem está online.',msg:'Mensagem global, por segmento ou para um usuário.',studio:'O Studio em tela grande, com o código e a prévia lado a lado.'};
+ return wsSoon(WS_TITLES[s][0],d[s]||'');
+}
+function wsRender(){
+ var el=document.getElementById('ws');if(!el)return;
+ var ae=document.activeElement,fid=ae&&ae.id&&el.contains(ae)?ae.id:'',ss=fid&&ae.selectionStart!==undefined?ae.selectionStart:0;
+ var sc=el.querySelector('.wscroll'),st=sc?sc.scrollTop:0,ds=el.querySelector('.wdb'),dt=ds?ds.scrollTop:0;
+ var u=S.user,t=WS_TITLES[WS.sec]||['',''];
+ el.hidden=false;document.documentElement.classList.add('ws');
+ el.innerHTML='<nav class="wside"><div class="wbrand"><b>Game Platform</b><span>Painel de gestão</span></div><div class="wnavs">'+wsNav()+'</div>'
+  +'<div class="wme">'+avatarEl(u.avatar,u.name,'xs')+'<div><b>'+esc(u.name)+'</b><span>'+WS_ROLE[u.role]+'</span></div></div>'
+  +'<button class="wnav" data-a="w_exit">'+wi('out')+'<span>Voltar ao app</span></button></nav>'
+  +'<main class="wmain"><header class="wtop"><div><h1>'+t[0]+'</h1><span>'+t[1]+'</span></div><button class="btn ghost sm" data-a="w_refresh">'+wi('sync')+'Atualizar</button></header><section class="wbody'+(WS.sec==='users'&&WS.users.sel!==null?' wopen':'')+'"><div class="wcol">'+wsBody()+'</div>'+(WS.sec==='users'?wsDrawer():'')+'</section></main>'+wsModal();
+ if(fid){var n=document.getElementById(fid);if(n){n.focus();try{n.setSelectionRange(ss,ss)}catch(e){}}}
+ sc=el.querySelector('.wscroll');if(sc)sc.scrollTop=st;ds=el.querySelector('.wdb');if(ds)ds.scrollTop=dt;
+}
+function wsOff(){var el=document.getElementById('ws');if(el){el.hidden=true;el.innerHTML=''}document.documentElement.classList.remove('ws')}
+/* ---- carregamento ---- */
+async function wsLoad(sec,force){
+ sec=sec||WS.sec;
+ try{
+  if(sec==='over'){try{WS.ov=await api('GET','/admin/overview');WS.ovErr=''}catch(e){WS.ovErr=e.message}}
+  if(sec==='users'){var U=WS.users;U.busy=1;wsRender();var q=['limit=200'];if(U.q)q.push('q='+encodeURIComponent(U.q));if(U.status)q.push('status='+U.status);if(U.role)q.push('role='+U.role);if(U.plan)q.push('plan='+U.plan);
+   var r=await api('GET','/admin/users?'+q.join('&'));U.list=r.users;U.total=r.total;U.busy=0}
+  if(sec==='mod'){await wsContent(true)}
+  if(sec==='rep'){WS.rep.busy=1;wsRender();var rr=await api('GET','/admin/reports');WS.rep.list=rr.reports;WS.rep.busy=0;if(WS.ov)WS.ov.openReports=rr.reports.length}
+  if(sec==='audit'&&wsIsAdmin()){await wsAuditLoad(true)}
+  WS.loaded[sec]=1;
+ }catch(e){WS.users.busy=0;WS.rep.busy=0;WS.ct.busy=0;WS.au.busy=0;toast(e.message)}
+ wsRender();
+}
+async function wsContent(reset){
+ var C=WS.ct;C.busy=1;if(reset){C.items=[];C.pick={}}wsRender();
+ var q=['kind='+C.kind,'limit=50'];if(C.q)q.push('q='+encodeURIComponent(C.q));if(!reset&&C.items.length)q.push('before='+C.items[C.items.length-1].id);if(C.user)q.push('user='+C.user);
+ var r=await api('GET','/admin/content?'+q.join('&'));C.items=reset?r.items:C.items.concat(r.items);C.more=r.more;C.busy=0;
+}
+async function wsAuditLoad(reset){
+ var A=WS.au;A.busy=1;wsRender();var q=[];if(A.q)q.push('q='+encodeURIComponent(A.q));if(A.target)q.push('target='+A.target);if(!reset&&A.list.length)q.push('before='+A.list[A.list.length-1].id);
+ var r=await api('GET','/admin/audit'+(q.length?'?'+q.join('&'):''));A.list=reset?r.logs:A.list.concat(r.logs);A.more=r.more;A.busy=0;
+}
+async function wsOpenUser(id){
+ var U=WS.users;U.sel=id;U.det=null;U.detBusy=1;wsRender();
+ try{var r=await api('GET','/admin/users/'+id);if(U.sel===id)U.det=r.user}catch(e){toast(e.message)}
+ U.detBusy=0;wsRender();
+}
+function wsAsk(m){WS.modal=m;wsRender();var n=document.getElementById('wsMReason');if(n)n.focus()}
+async function wsDo(path,body,ok){
+ try{await api('POST',path,body);toast(ok);WS.modal=null;
+  var U=WS.users;if(U.sel!==null){var id=U.sel;await wsOpenUser(id)}
+  if(WS.sec==='users')wsLoad('users');else wsRender();
+  api('GET','/admin/overview').then(function(o){WS.ov=o;wsRender()}).catch(function(){});
+ }catch(e){toast(e.message);wsRender()}
+}
+/* ---- ações ---- */
+function wsAct(a,v,t){
+ if(a.slice(0,2)!=='w_')return false;
+ var U=WS.users,C=WS.ct;
+ switch(a){
+  case 'w_sec':WS.sec=v;if(v==='users'||v==='mod'||v==='rep'||v==='audit'||v==='over'){wsRender();wsLoad(v)}else wsRender();break;
+  case 'w_exit':try{localStorage.setItem('gp_ws_off','1')}catch(e){}wsOff();render();toast('Modo app ativado. Para voltar ao painel: Configurações → Painel de gestão');break;
+  case 'w_enter':try{localStorage.removeItem('gp_ws_off')}catch(e){}S.sub=null;render();toast('Painel de gestão ativado');break;
+  case 'w_refresh':wsLoad(WS.sec);break;
+  case 'w_uload':wsLoad('users');break;
+  case 'w_uopen':case 'w_uopen2':if(a==='w_uopen2'){WS.sec='users'}wsOpenUser(Number(v));if(a==='w_uopen2'&&!U.list.length)wsLoad('users');break;
+  case 'w_uclose':U.sel=null;U.det=null;wsRender();break;
+  case 'w_uconteudo':C.user=Number(v);C.q='';C.kind='comment';WS.sec='mod';wsLoad('mod');break;
+  case 'w_ustatus':{
+   var p=v.split(':'),id=Number(p[0]),st=p[1],d=U.det,nm=d?d.name:'este usuário',adm=wsIsAdmin();
+   if(st==='suspended')wsAsk({title:'Suspender '+nm,body:'A pessoa não consegue entrar até o prazo acabar. O motivo fica na auditoria.',days:adm?[1,3,7,14,30,90,365]:[1,3,7,14,30],dflt:7,need:1,ok:'Suspender',danger:1,run:function(r,dd){return wsDo('/admin/users/'+id+'/status',{status:'suspended',days:dd,reason:r},'Conta suspensa')}});
+   else if(st==='banned')wsAsk({title:'Banir '+nm,body:'O banimento não tem prazo. Só um administrador pode desfazer.',need:1,ok:'Banir',danger:1,run:function(r){return wsDo('/admin/users/'+id+'/status',{status:'banned',reason:r},'Conta banida')}});
+   else wsAsk({title:(d&&d.status==='banned'?'Desbanir ':'Reativar ')+nm,body:'A conta volta a funcionar na hora.',need:0,ok:'Confirmar',run:function(r){return wsDo('/admin/users/'+id+'/status',{status:'active',reason:r},'Conta ativa')}});
+   break}
+  case 'w_urole':{
+   var q=v.split(':'),rid=Number(q[0]),rl=q[1],dn=U.det?U.det.name:'este usuário';
+   wsAsk({title:rl==='mod'?'Tornar '+dn+' moderador':'Remover moderação de '+dn,body:rl==='mod'?'Moderadores veem usuários, denúncias e conteúdo; suspendem de 1 a 30 dias. Não veem dinheiro nem banem.':'A pessoa volta a ser jogador comum.',need:0,ok:'Confirmar',run:function(){return wsDo('/admin/users/'+rid+'/role',{role:rl},rl==='mod'?'Agora é moderador':'Moderação removida')}});break}
+  case 'w_mcancel':WS.modal=null;wsRender();break;
+  case 'w_mok':{
+   var m=WS.modal;if(!m)break;
+   var rn=document.getElementById('wsMReason'),dd=document.getElementById('wsMDays'),r=rn?rn.value.trim():'';
+   if(m.need&&r.length<5&&m.need>0){toast('Escreva o motivo (mínimo 5 letras)');break}
+   m.text=r;m.run(r,dd?Number(dd.value):undefined);break}
+  case 'w_ctab':C.kind=v;C.pick={};wsLoad('mod');break;
+  case 'w_cload':C.user=null;wsLoad('mod');break;
+  case 'w_cmore':wsContent(false).then(wsRender).catch(function(e){toast(e.message);wsRender()});break;
+  case 'w_cpick':if(C.pick[v])delete C.pick[v];else C.pick[v]=1;wsRender();break;
+  case 'w_call':{var all=C.items.length&&Object.keys(C.pick).length===C.items.length;C.pick={};if(!all)C.items.forEach(function(i){C.pick[i.kind+':'+i.id]=1});wsRender();break}
+  case 'w_cone':C.pick={};C.pick[v]=1;wsRemoveAsk();break;
+  case 'w_cbulk':wsRemoveAsk();break;
+  case 'w_rres':{
+   var z=v.split(':'),rid2=Number(z[0]),act=z[1];
+   if(act==='dismiss'){api('POST','/admin/reports/'+rid2+'/resolve',{action:'dismiss'}).then(function(){toast('Denúncia dispensada');wsLoad('rep')}).catch(function(e){toast(e.message)})}
+   else wsAsk({title:'Aplicar a denúncia',body:'O conteúdo é removido (ou o jogador é suspenso). Isso não pode ser desfeito.',need:0,ok:'Confirmar',danger:1,run:function(){WS.modal=null;return api('POST','/admin/reports/'+rid2+'/resolve',{action:'remove'}).then(function(){toast('Denúncia resolvida');wsLoad('rep')}).catch(function(e){toast(e.message);wsRender()})}});
+   break}
+  case 'w_aload':wsLoad('audit');break;
+  case 'w_amore':wsAuditLoad(false).then(wsRender).catch(function(e){toast(e.message);wsRender()});break;
+ }
+ return true;
+}
+function wsRemoveAsk(){
+ var C=WS.ct,keys=Object.keys(C.pick);if(!keys.length)return;
+ wsAsk({title:'Remover '+keys.length+(keys.length===1?' item':' itens'),body:'Os autores são avisados com o motivo. Isso não pode ser desfeito.',need:1,ok:'Remover',danger:1,run:function(r){
+  var items=keys.map(function(k){var p=k.split(':');return{kind:p[0],id:Number(p[1])}});
+  return api('POST','/admin/content/delete',{items:items,reason:r}).then(function(x){toast(x.removed+' removido(s)');WS.modal=null;C.pick={};return wsLoad('mod')}).catch(function(e){toast(e.message);wsRender()});
+ }});
+}
+function wsInput(t){
+ var w=t.dataset&&t.dataset.w;if(!w)return false;
+ var U=WS.users,C=WS.ct,A=WS.au;
+ if(w==='uq')U.q=t.value;else if(w==='ust')U.status=t.value;else if(w==='url')U.role=t.value;else if(w==='upl')U.plan=t.value;else if(w==='cq'){C.q=t.value;C.user=null}else if(w==='aq')A.q=t.value;
+ var sec=w[0]==='u'?'users':w[0]==='c'?'mod':'audit';
+ clearTimeout(WS.tm);WS.tm=setTimeout(function(){wsLoad(sec)},t.tagName==='SELECT'?0:320);
+ return true;
+}
+document.addEventListener('input',function(e){if(e.target.tagName==='INPUT')wsInput(e.target)});
+document.addEventListener('change',function(e){if(e.target.tagName==='SELECT')wsInput(e.target)});
+try{var wsMq=window.matchMedia('(min-width:1000px)');var wsCh=function(){if(typeof render==='function'&&on()){render(true)}};if(wsMq.addEventListener)wsMq.addEventListener('change',wsCh);else if(wsMq.addListener)wsMq.addListener(wsCh)}catch(e){}
+function wsShow(){
+ if(!WS.loaded.over&&!WS.loading){WS.loading=1;wsLoad('over').then(function(){WS.loading=0})}
+ wsRender();
 }
 
 /* ---------- player ---------- */
@@ -2288,6 +2666,7 @@ async function authGo(){
 }
 async function act(a,v,t){
  var g;
+ if(wsAct(a,v,t))return;
  if(misAct(a,v,t))return;
  if(socHandles(a,v)){await socAct(a,v,t);return}
  if(!on()&&!admLocal()&&({gfeat:1,gnotif:1,catadd:1,catrm:1,gdel:1,modok:1,modrm:1,usertg:1,admedit:1,admpub:1,admadd:1})[a]){toast('Desbloqueie o modo administrador em Configurações');return}

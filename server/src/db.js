@@ -109,6 +109,12 @@ CREATE TABLE IF NOT EXISTS logs (
 `);
 // Migração simples para bancos criados antes de capa e destaque existirem.
 const userCols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+if (!userCols.includes('status_until')) db.exec('ALTER TABLE users ADD COLUMN status_until TEXT');
+if (!userCols.includes('status_reason')) db.exec("ALTER TABLE users ADD COLUMN status_reason TEXT NOT NULL DEFAULT ''");
+const logCols = db.prepare('PRAGMA table_info(logs)').all().map(c => c.name);
+if (!logCols.includes('target_id')) db.exec('ALTER TABLE logs ADD COLUMN target_id INTEGER');
+if (!logCols.includes('role')) db.exec("ALTER TABLE logs ADD COLUMN role TEXT NOT NULL DEFAULT ''");
+db.exec('CREATE INDEX IF NOT EXISTS logs_target ON logs(target_id, id)');
 if (!userCols.includes('avatar')) db.exec('ALTER TABLE users ADD COLUMN avatar TEXT');
 if (!userCols.includes('bio')) db.exec("ALTER TABLE users ADD COLUMN bio TEXT NOT NULL DEFAULT ''");
 const gameCols = db.prepare('PRAGMA table_info(games)').all().map(c => c.name);

@@ -227,3 +227,17 @@ Além do APK do Android, o repositório gera um app para Linux, a mesma platafor
 Atalhos: **F11** tela cheia, **F5** recarrega, **Ctrl +** e **Ctrl −** aumentam e diminuem o zoom, **Ctrl 0** volta ao normal. Sua conta, jogos e moedas são os mesmos do celular (o servidor é o mesmo). A janela pode ser redimensionada.
 
 O app confere sozinho se há versão nova (build do Linux) e mostra o aviso, com botão para baixar o instalador. O workflow `build-linux.yml` roda o teste rápido do app e só então gera os instaladores. Rodar em desenvolvimento: `cd desktop && npm install && npm start`.
+
+## Painel de gestão (computador / tela larga)
+Em telas com 1000 px ou mais (navegador no PC ou app Linux) quem é **administrador ou moderador** ganha um painel de gestão: menu lateral, tabelas e uma gaveta de detalhes. É o mesmo link e o mesmo app; no celular nada muda. Jogadores comuns nunca veem o painel. O botão **Voltar ao app** do menu troca para o visual de celular, e em **Configurações → Painel de gestão** dá para reabrir.
+
+- **Visão geral:** usuários, online agora, jogos, partidas, denúncias, suspensos, banidos, equipe e atividade recente (moedas e vendas só para o administrador).
+- **Usuários:** busca por nome, e-mail (admin) ou `#número`; filtros de conta, perfil e plano. A gaveta mostra o perfil, contadores, jogos, posts, comentários e avaliações recentes, compras (admin) e o histórico de moderação daquela pessoa.
+- **Suspender / banir / reativar:** suspender pede prazo (1 a 365 dias, moderador até 30) e motivo; banir é só do administrador e também pede motivo. Suspensão vencida é encerrada sozinha. O login mostra o motivo.
+- **Perfis:** `user`, `mod` (usuários, denúncias e conteúdo; não vê dinheiro e não bane) e `admin`. O administrador promove e rebaixa moderadores na gaveta do usuário.
+- **Moderação:** comentários, avaliações e publicações com busca, seleção em massa e remoção com motivo (o autor é avisado).
+- **Denúncias:** fila com dispensar / aplicar.
+- **Auditoria (só admin):** quem fez o quê, em quem, quando e por quê.
+- **Em breve:** Compras e tabela de preços, Jogos e jogadores, Mensagens globais e Studio em tela grande.
+
+Depois de atualizar o app, o servidor no Render precisa ser reimplantado para ter os novos endpoints `/api/admin/*`.

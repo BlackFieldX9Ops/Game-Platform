@@ -12,6 +12,7 @@ import { WebSocketServer } from 'ws';
 import { all, get, run } from './db.js';
 import { mountSocial } from './social.js';
 import { mountAccounts } from './accounts.js';
+import { mountAdmin } from './admin.js';
 import { mountStore, hasStudio, hasPremium, fmtUid, itemName } from './store.js';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -31,6 +32,10 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: ORIGINS.length ? ORIGINS : true }));
+// Suspensões com prazo terminam sozinhas (verifica no máximo a cada 10 s).
+let lastSweep = 0;
+const sweep = () => { const t = Date.now(); if (t - lastSweep < 10_000) return; lastSweep = t; run("UPDATE users SET status = 'active', status_until = NULL, status_reason = '' WHERE status = 'suspended' AND status_until IS NOT NULL AND status_until <= datetime('now')"); };
+app.use('/api', (_req, _res, next) => { try { sweep(); } catch {} next(); });
 app.use(express.json({ limit: '30mb' }));
 
 /* ---------- utilidades ---------- */
@@ -65,6 +70,7 @@ function softAuth(req, _res, next) {
   req.user = h.startsWith('Bearer ') ? userFromToken(h.slice(7)) || undefined : undefined; next();
 }
 const adminOnly = (req, _res, next) => req.user.role === 'admin' ? next() : next(new HttpError(403, 'Acesso restrito a administradores'));
+const staffOnly = (req, _res, next) => ['admin', 'mod'].includes(req.user.role) ? next() : next(new HttpError(403, 'Acesso restrito à equipe'));
 const notify = (userId, title, body = '', ref = '') => run('INSERT INTO notifications (user_id, title, body, kind, ref) VALUES (?,?,?,?,?)', userId, title, body, ref ? 'game' : 'sys', ref);
 
 const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.description, g.category, g.age, g.dim, g.libs, g.plays, g.created_at, g.updated_at, g.owner_id, g.status, g.ai, g.tags, g.version, g.visibility, g.settings,
@@ -74,7 +80,7 @@ const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.descript
 const parseJ = (s, d) => { try { return JSON.parse(s); } catch { return d; } };
 const shapeGame = g => ({ ...g, featured: !!g.featured, ai: !!g.ai, libs: parseJ(g.libs, []), tags: parseJ(g.tags, []), settings: parseJ(g.settings, {}) });
 const categories = () => { const r = get("SELECT value FROM settings WHERE key = 'categories'"); try { return r ? JSON.parse(r.value) : DEFAULT_CATEGORIES; } catch { return DEFAULT_CATEGORIES; } };
-const logAct = (req, action, detail = '') => run('INSERT INTO logs (actor_id, actor, action, detail) VALUES (?,?,?,?)', req.user.id, req.user.name, action, String(detail).slice(0, 160));
+const logAct = (req, action, detail = '', targetId = null) => run('INSERT INTO logs (actor_id, actor, action, detail, target_id, role) VALUES (?,?,?,?,?,?)', req.user.id, req.user.name, action, String(detail).slice(0, 200), targetId, req.user.role);
 const COVER_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 // Quem pode ver o jogo: todos (publicado e não privado), ou o dono e os administradores em qualquer estado.
 function loadGame(id, user) {
@@ -169,7 +175,7 @@ app.post('/api/auth/login', authLimiter, wrap((req, res) => {
   const email = str(req.body.email, 'E-mail', 5, 120).toLowerCase();
   const u = get('SELECT * FROM users WHERE email = ?', email);
   if (!u || !bcrypt.compareSync(String(req.body.password ?? ''), u.pass_hash)) bad('E-mail ou senha incorretos', 401);
-  if (u.status !== 'active') bad('Conta suspensa', 403);
+  if (u.status !== 'active') bad(u.status === 'banned' ? 'Conta banida. Fale com a administração.' : 'Conta suspensa' + (u.status_until ? ' até ' + u.status_until.slice(0, 10).split('-').reverse().join('/') : '') + (u.status_reason ? ': ' + u.status_reason : ''), 403);
   res.json({ token: sign(u), user: publicUser(u) });
 }));
 app.get('/api/me', auth, (req, res) => res.json({ user: { ...publicUser(req.user), email: req.user.email, emailVerified: !!req.user.email_verified, google: !!req.user.google_id } }));
@@ -378,21 +384,32 @@ app.get('/api/creator/stats', auth, (req, res) => {
 });
 
 /* ---------- administração ---------- */
-app.get('/api/admin/overview', auth, adminOnly, (_req, res) => {
+app.get('/api/admin/overview', auth, staffOnly, (req, res) => {
+  const n = (sql, ...p) => get(sql, ...p).n;
   res.json({
-    users: get('SELECT COUNT(*) AS n FROM users').n,
-    games: get("SELECT COUNT(*) AS n FROM games WHERE status='published'").n,
-    openReports: get("SELECT COUNT(*) AS n FROM reports WHERE status='open'").n,
-    plays: get('SELECT COALESCE(SUM(plays),0) AS n FROM games').n
+    users: n('SELECT COUNT(*) AS n FROM users'),
+    games: n("SELECT COUNT(*) AS n FROM games WHERE status='published'"),
+    openReports: n("SELECT COUNT(*) AS n FROM reports WHERE status='open'"),
+    plays: n('SELECT COALESCE(SUM(plays),0) AS n FROM games'),
+    newUsers7d: n("SELECT COUNT(*) AS n FROM users WHERE created_at >= datetime('now','-7 days')"),
+    suspended: n("SELECT COUNT(*) AS n FROM users WHERE status = 'suspended'"),
+    banned: n("SELECT COUNT(*) AS n FROM users WHERE status = 'banned'"),
+    staff: n("SELECT COUNT(*) AS n FROM users WHERE role IN ('admin','mod')"),
+    reviews: n('SELECT COUNT(*) AS n FROM reviews'),
+    posts: n('SELECT COUNT(*) AS n FROM posts'),
+    comments: n('SELECT COUNT(*) AS n FROM comments'),
+    online: online.size,
+    recent: all('SELECT id, actor, action, detail, created_at FROM logs ORDER BY id DESC LIMIT 8'),
+    ...(req.user.role === 'admin' ? { coinsInCirculation: n('SELECT COALESCE(SUM(coins),0) AS n FROM users'), sales: n("SELECT COUNT(*) AS n FROM purchases") } : {})
   });
 });
-app.get('/api/admin/reports', auth, adminOnly, (_req, res) => {
+app.get('/api/admin/reports', auth, staffOnly, (_req, res) => {
   res.json({ reports: all(`SELECT r.id, r.target_type, r.target_id, r.reason, r.created_at, u.name AS reporter,
     CASE r.target_type WHEN 'game' THEN (SELECT title FROM games WHERE id = r.target_id)
       WHEN 'user' THEN (SELECT name FROM users WHERE id = r.target_id)
       WHEN 'post' THEN (SELECT substr(text, 1, 60) FROM posts WHERE id = r.target_id) END AS target_title FROM reports r JOIN users u ON u.id = r.reporter_id WHERE r.status = 'open' ORDER BY r.id`) });
 });
-app.post('/api/admin/reports/:id/resolve', auth, adminOnly, wrap((req, res) => {
+app.post('/api/admin/reports/:id/resolve', auth, staffOnly, wrap((req, res) => {
   const r = get("SELECT * FROM reports WHERE id = ? AND status = 'open'", int(req.params.id, 'id'));
   if (!r) bad('Denúncia não encontrada', 404);
   const action = req.body.action;
@@ -404,17 +421,6 @@ app.post('/api/admin/reports/:id/resolve', auth, adminOnly, wrap((req, res) => {
   }
   run("UPDATE reports SET status = ? WHERE id = ?", action === 'remove' ? 'actioned' : 'dismissed', r.id);
   logAct(req, action === 'remove' ? 'Conteúdo removido' : 'Denúncia mantida', `${r.target_type} #${r.target_id} · ${r.reason}`);
-  res.json({ ok: true });
-}));
-app.get('/api/admin/users', auth, adminOnly, (_req, res) => {
-  res.json({ users: all('SELECT id, uid, name, email, role, status, xp, created_at, studio_until, (SELECT COUNT(*) FROM games WHERE owner_id = users.id) AS games FROM users ORDER BY id DESC LIMIT 200') });
-});
-app.post('/api/admin/users/:id/status', auth, adminOnly, wrap((req, res) => {
-  const id = int(req.params.id, 'id'), status = req.body.status;
-  if (!['active', 'suspended'].includes(status)) bad('Status inválido');
-  if (id === req.user.id) bad('Você não pode alterar a própria conta');
-  run('UPDATE users SET status = ? WHERE id = ?', status, id);
-  logAct(req, status === 'suspended' ? 'Usuário suspenso' : 'Usuário reativado', (get('SELECT name FROM users WHERE id = ?', id) || {}).name || '#' + id);
   res.json({ ok: true });
 }));
 app.post('/api/admin/notify', auth, adminOnly, wrap((req, res) => {
@@ -457,6 +463,7 @@ app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
 });
 
 /* ---------- contas: Google, recuperar senha, verificar e-mail, progresso ---------- */
+mountAdmin({ app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid });
 mountStore({ app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
 mountAccounts({ app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 

@@ -50,7 +50,7 @@ function serveWww(req) {
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 500, height: 920, minWidth: 360, minHeight: 560,
+    width: 1180, height: 800, minWidth: 360, minHeight: 560,
     title: 'Game Platform',
     backgroundColor: '#0a1133',
     autoHideMenuBar: true,
