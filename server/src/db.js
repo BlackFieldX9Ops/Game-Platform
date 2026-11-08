@@ -127,6 +127,50 @@ if (!gameCols.includes('visibility')) db.exec("ALTER TABLE games ADD COLUMN visi
 if (!gameCols.includes('settings')) db.exec("ALTER TABLE games ADD COLUMN settings TEXT NOT NULL DEFAULT '{}'");
 if (!gameCols.includes('featured')) db.exec('ALTER TABLE games ADD COLUMN featured INTEGER NOT NULL DEFAULT 0');
 
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS trash (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,
+  ref_id INTEGER NOT NULL,
+  user_id INTEGER,
+  author TEXT NOT NULL DEFAULT '',
+  data TEXT NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  actor TEXT NOT NULL DEFAULT '',
+  restored_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS trash_kind ON trash(kind, id);
+CREATE TABLE IF NOT EXISTS coupons (
+  code TEXT PRIMARY KEY COLLATE NOCASE,
+  kind TEXT NOT NULL,
+  value INTEGER NOT NULL,
+  scope TEXT NOT NULL DEFAULT 'all',
+  max_uses INTEGER NOT NULL DEFAULT 0,
+  used INTEGER NOT NULL DEFAULT 0,
+  ends_at TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS coupon_uses (
+  code TEXT NOT NULL COLLATE NOCASE,
+  user_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (code, user_id)
+);
+CREATE TABLE IF NOT EXISTS plays_daily (
+  day TEXT PRIMARY KEY,
+  plays INTEGER NOT NULL DEFAULT 0
+);
+`);
+const addC = (t, c, def) => { if (!db.prepare(`PRAGMA table_info(${t})`).all().some(x => x.name === c)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} ${def}`); };
+addC('users', 'token_ver', 'INTEGER NOT NULL DEFAULT 0');
+addC('users', 'last_seen', 'TEXT');
+addC('users', 'last_ip', 'TEXT');
+addC('users', 'last_ua', 'TEXT');
+addC('users', 'perms', 'TEXT');
+
 export const all = (sql, ...p) => db.prepare(sql).all(...p);
 export const get = (sql, ...p) => db.prepare(sql).get(...p);
 export const run = (sql, ...p) => db.prepare(sql).run(...p);
@@ -324,7 +368,7 @@ CREATE TABLE IF NOT EXISTS broadcasts (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 `);
-
+addCol('sales', 'coupon', 'TEXT');
 
 addCol('users', 'title', 'TEXT');
 addCol('users', 'ncolor', 'TEXT');

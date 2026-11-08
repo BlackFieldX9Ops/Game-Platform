@@ -1,13 +1,9 @@
 name: Gerar app Linux
 
+# Desligado: o computador usa a versão web (o mesmo link do Render) e o Android usa o APK.
+# Para gerar o app Linux de novo, rode este workflow manualmente em Actions.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'app/www/**'
-      - 'desktop/**'
-      - '.github/workflows/build-linux.yml'
 
 permissions:
   contents: write

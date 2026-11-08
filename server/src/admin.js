@@ -1,13 +1,13 @@
 // Área de gestão: usuários, suspensão e banimento, perfis de acesso e moderação de conteúdo.
 // Perfis: admin (tudo), mod (usuários, denúncias e conteúdo, sem dinheiro e sem banir) e user.
 export function mountAdmin(c) {
-  const { app, auth, staffOnly, adminOnly, wrap, bad, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance } = c;
+  const { app, auth, staffOnly, adminOnly, wrap, bad, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance, confirmCheck, alertAdmins, staffCan, permsOf, PERMS } = c;
   const isAdmin = u => u.role === 'admin';
   const dateBR = s => String(s || '').slice(0, 10).split('-').reverse().join('/');
   const esc = s => String(s).replace(/[%_\\]/g, m => '\\' + m);
 
   // ---------- usuários ----------
-  app.get('/api/admin/users', auth, staffOnly, (req, res) => {
+  app.get('/api/admin/users', auth, staffCan('users'), (req, res) => {
     const q = req.query, w = [], p = [];
     if (q.q) {
       const t = String(q.q).trim().slice(0, 60), asId = /^#?\d{1,6}$/.test(t) ? Number(t.replace('#', '')) : null;
@@ -27,7 +27,7 @@ export function mountAdmin(c) {
     res.json({ users: users.map(u => ({ ...u, uidFmt: fmtUid(u) })), total });
   });
 
-  app.get('/api/admin/users/:id', auth, staffOnly, wrap((req, res) => {
+  app.get('/api/admin/users/:id', auth, staffCan('users'), wrap((req, res) => {
     const id = int(req.params.id, 'id'), adm = isAdmin(req.user);
     const u = get('SELECT * FROM users WHERE id = ?', id);
     if (!u) bad('Usuário não encontrado', 404);
@@ -50,7 +50,8 @@ export function mountAdmin(c) {
         comments: all('SELECT id, substr(text,1,140) AS text, created_at FROM comments WHERE user_id = ? ORDER BY id DESC LIMIT 5', id),
         reviews: all('SELECT r.id, r.stars, substr(r.text,1,140) AS text, r.created_at, g.title AS game FROM reviews r JOIN games g ON g.id = r.game_id WHERE r.user_id = ? ORDER BY r.id DESC LIMIT 5', id)
       },
-      history: all('SELECT id, actor, role, action, detail, created_at FROM logs WHERE target_id = ? ORDER BY id DESC LIMIT 30', id)
+      history: all('SELECT id, actor, role, action, detail, created_at FROM logs WHERE target_id = ? ORDER BY id DESC LIMIT 30', id),
+      perms: permsOf(u), lastSeen: u.last_seen || null
     };
     if (adm) {
       out.email = u.email; out.emailVerified = !!u.email_verified; out.google = !!u.google_id;
@@ -60,7 +61,7 @@ export function mountAdmin(c) {
     res.json({ user: out });
   }));
 
-  app.post('/api/admin/users/:id/status', auth, staffOnly, wrap((req, res) => {
+  app.post('/api/admin/users/:id/status', auth, staffCan('users'), wrap((req, res) => {
     const id = int(req.params.id, 'id'), status = req.body.status, adm = isAdmin(req.user);
     if (!['active', 'suspended', 'banned'].includes(status)) bad('Status inválido');
     const t = get('SELECT * FROM users WHERE id = ?', id);
@@ -71,6 +72,7 @@ export function mountAdmin(c) {
     const reason = typeof req.body.reason === 'string' ? req.body.reason.trim().slice(0, 140) : '';
     const days = req.body.days === undefined || req.body.days === null || req.body.days === '' ? null : Number(req.body.days);
     if (days !== null && (!Number.isInteger(days) || days < 1 || days > 365)) bad('Prazo inválido (1 a 365 dias)');
+    if (status === 'banned' || t.status === 'banned') confirmCheck(req);
     if (status === 'banned') {
       if (!adm) bad('Só o administrador pode banir', 403);
       if (reason.length < 5) bad('Escreva o motivo do banimento (mínimo 5 letras)');
@@ -92,6 +94,7 @@ export function mountAdmin(c) {
 
   // Perfil de acesso: só o administrador promove ou rebaixa moderadores.
   app.post('/api/admin/users/:id/role', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
     const id = int(req.params.id, 'id'), role = req.body.role;
     if (!['user', 'mod'].includes(role)) bad('Perfil inválido');
     const t = get('SELECT * FROM users WHERE id = ?', id);
@@ -110,7 +113,7 @@ export function mountAdmin(c) {
     comment: { table: 'comments', label: 'comentário' },
     post: { table: 'posts', label: 'publicação' }
   };
-  app.get('/api/admin/content', auth, staffOnly, wrap((req, res) => {
+  app.get('/api/admin/content', auth, staffCan('content'), wrap((req, res) => {
     const kind = req.query.kind;
     if (!KINDS[kind]) bad('Tipo inválido');
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50)), before = Number(req.query.before) || 0;
@@ -129,7 +132,7 @@ export function mountAdmin(c) {
     res.json({ items: items.slice(0, limit).map(i => ({ ...i, kind })), more });
   }));
 
-  app.post('/api/admin/content/delete', auth, staffOnly, wrap((req, res) => {
+  app.post('/api/admin/content/delete', auth, staffCan('content'), wrap((req, res) => {
     const list = Array.isArray(req.body.items) ? req.body.items.slice(0, 100) : [];
     if (!list.length) bad('Nada selecionado');
     const reason = typeof req.body.reason === 'string' ? req.body.reason.trim().slice(0, 100) : '';
@@ -141,6 +144,8 @@ export function mountAdmin(c) {
       const row = get(`SELECT t.id, t.text, t.user_id, u.name, u.role FROM ${k.table} t JOIN users u ON u.id = t.user_id WHERE t.id = ?`, id);
       if (!row) continue;
       if (row.role === 'admin' && !isAdmin(req.user)) continue;
+      const full = get(`SELECT * FROM ${k.table} WHERE id = ?`, id);
+      run('INSERT INTO trash (kind, ref_id, user_id, author, data, reason, actor) VALUES (?,?,?,?,?,?,?)', it.kind, id, row.user_id, row.name, JSON.stringify(full), reason, req.user.name);
       run(`DELETE FROM ${k.table} WHERE id = ?`, id);
       logAct(req, `Removido: ${k.label}`, `${row.name} · "${String(row.text || '').replace(/\s+/g, ' ').slice(0, 80)}" · ${reason}`, row.user_id);
       notify(row.user_id, `Sua ${k.label} foi removida`, reason);
@@ -152,7 +157,7 @@ export function mountAdmin(c) {
   // ---------- jogos e jogadores ----------
   const playersNow = () => { const out = {}; for (const [uid, p] of playing) { if (Date.now() - p.at > PLAY_TTL || !isOnline(uid)) { playing.delete(uid); continue; } (out[p.gid] = out[p.gid] || []).push(uid); } return out; };
 
-  app.get('/api/admin/games/stats', auth, staffOnly, (req, res) => {
+  app.get('/api/admin/games/stats', auth, staffCan('games'), (req, res) => {
     const q = req.query, w = ["g.status != 'removed'"], p = [];
     if (['published', 'unpublished'].includes(q.status)) { w.push('g.status = ?'); p.push(q.status); }
     if (q.q) { w.push("(LOWER(g.title) LIKE ? ESCAPE '\\' OR LOWER(u.name) LIKE ? ESCAPE '\\')"); const l = `%${esc(String(q.q).trim().slice(0, 40).toLowerCase())}%`; p.push(l, l); }
@@ -171,7 +176,7 @@ export function mountAdmin(c) {
       library: rows.reduce((s, g) => s + g.library, 0), playingNow: Object.values(now).reduce((s, l) => s + l.length, 0) } });
   });
 
-  app.get('/api/admin/games/:id/players', auth, staffOnly, wrap((req, res) => {
+  app.get('/api/admin/games/:id/players', auth, staffCan('games'), wrap((req, res) => {
     const id = int(req.params.id, 'id'), adm = isAdmin(req.user);
     const g = get('SELECT g.id, g.title, g.category, g.dim, g.status, g.visibility, g.featured, g.plays, g.version, g.created_at, g.updated_at, g.settings, u.id AS owner_id, u.name AS developer FROM games g JOIN users u ON u.id = g.owner_id WHERE g.id = ?', id);
     if (!g) bad('Jogo não encontrado', 404);
@@ -189,7 +194,7 @@ export function mountAdmin(c) {
   }));
 
   // Despublicar / republicar: moderador e administrador, sempre com motivo ao despublicar.
-  app.post('/api/admin/games/:id/status', auth, staffOnly, wrap((req, res) => {
+  app.post('/api/admin/games/:id/status', auth, staffCan('games'), wrap((req, res) => {
     const id = int(req.params.id, 'id'), status = req.body.status;
     if (!['published', 'unpublished'].includes(status)) bad('Estado inválido');
     const g = get("SELECT * FROM games WHERE id = ? AND status != 'removed'", id);
@@ -221,7 +226,7 @@ export function mountAdmin(c) {
   app.get('/api/admin/broadcasts', auth, adminOnly, (_req, res) => {
     res.json({ broadcasts: all('SELECT b.id, b.actor, b.audience, b.user_id, u.name AS to_name, b.title, b.body, b.important, b.count, b.created_at FROM broadcasts b LEFT JOIN users u ON u.id = b.user_id ORDER BY b.id DESC LIMIT 40').map(b => ({ ...b, important: !!b.important, audienceName: b.audience === 'user' ? (b.to_name || 'Usuário') : (AUD[b.audience] || {}).name || b.audience })) });
   });
-  app.post('/api/admin/broadcast', auth, staffOnly, wrap((req, res) => {
+  app.post('/api/admin/broadcast', auth, staffCan('msgs'), wrap((req, res) => {
     const b = req.body, aud = String(b.audience || '');
     const title = typeof b.title === 'string' ? b.title.trim() : '', body = typeof b.body === 'string' ? b.body.trim() : '';
     if (title.length < 2 || title.length > 60) bad('Título de 2 a 60 letras');
@@ -234,6 +239,7 @@ export function mountAdmin(c) {
       run('INSERT INTO notifications (user_id, title, body, kind) VALUES (?,?,?,?)', target.id, title, body, kind); ids = [target.id];
     } else {
       if (!isAdmin(req.user)) bad('Só o administrador envia para grupos', 403);
+      confirmCheck(req);
       if (!AUD[aud]) bad('Público inválido');
       ids = audIds(aud);
       if (aud === 'all') run('INSERT INTO notifications (user_id, title, body, kind) VALUES (NULL,?,?,?)', title, body, kind);
@@ -250,7 +256,9 @@ export function mountAdmin(c) {
   app.post('/api/admin/maintenance', auth, adminOnly, wrap((req, res) => {
     const on = !!req.body.on, msg = typeof req.body.msg === 'string' ? req.body.msg.trim().slice(0, 140) : '';
     if (on && msg.length < 3) bad('Escreva o aviso que os jogadores vão ver');
+    confirmCheck(req);
     setMaintenance({ on, msg });
+    alertAdmins(on ? 'Manutenção ligada' : 'Manutenção desligada', `${req.user.name}${msg ? ': ' + msg : ''}`);
     logAct(req, on ? 'Manutenção ligada' : 'Manutenção desligada', msg);
     res.json({ ok: true, on, msg });
   }));
@@ -277,8 +285,68 @@ export function mountAdmin(c) {
   });
 
 
+  // ---------- permissões por pessoa ----------
+  app.post('/api/admin/users/:id/perms', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
+    const id = int(req.params.id, 'id'), t = get('SELECT * FROM users WHERE id = ?', id);
+    if (!t) bad('Usuário não encontrado', 404);
+    if (t.role !== 'mod') bad('Só moderadores têm permissões ajustáveis', 400);
+    const list = Array.isArray(req.body.perms) ? [...new Set(req.body.perms.map(String))].filter(k => PERMS[k]) : null;
+    if (!list) bad('Lista de permissões inválida');
+    run('UPDATE users SET perms = ? WHERE id = ?', JSON.stringify(list), id);
+    logAct(req, 'Permissões alteradas', `${t.name} · ${list.map(k => PERMS[k]).join(', ') || 'nenhuma'}`, id);
+    notify(id, 'Suas permissões mudaram', list.length ? 'Você pode: ' + list.map(k => PERMS[k]).join(', ') : 'Você ficou sem permissões no painel.');
+    res.json({ ok: true, perms: list });
+  }));
+  app.get('/api/admin/perms', auth, adminOnly, (_req, res) => res.json({ perms: PERMS }));
+
+  // ---------- lixeira (desfazer remoções de conteúdo) ----------
+  app.get('/api/admin/trash', auth, staffCan('content'), (req, res) => {
+    const rows = all("SELECT id, kind, ref_id, user_id, author, data, reason, actor, created_at FROM trash WHERE restored_at IS NULL AND created_at >= datetime('now','-30 days') ORDER BY id DESC LIMIT 100");
+    res.json({ items: rows.map(r => { const d = parseJ(r.data, {}); return { id: r.id, kind: r.kind, label: (KINDS[r.kind] || {}).label || r.kind, author: r.author, user_id: r.user_id, text: String(d.text || '').slice(0, 160), stars: d.stars || null, reason: r.reason, actor: r.actor, created_at: r.created_at }; }) });
+  });
+  app.post('/api/admin/trash/:id/restore', auth, staffCan('content'), wrap((req, res) => {
+    const r = get('SELECT * FROM trash WHERE id = ? AND restored_at IS NULL', int(req.params.id, 'id'));
+    if (!r) bad('Item não encontrado na lixeira', 404);
+    const k = KINDS[r.kind], d = parseJ(r.data, null);
+    if (!k || !d) bad('Item inválido', 400);
+    const cols = Object.keys(d);
+    try { run(`INSERT INTO ${k.table} (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, ...cols.map(c => d[c])); }
+    catch (e) { bad(/UNIQUE/i.test(e.message) ? 'Este item já existe de novo' : 'Não dá para restaurar: o conteúdo de origem não existe mais', 409); }
+    run("UPDATE trash SET restored_at = datetime('now') WHERE id = ?", r.id);
+    logAct(req, `Restaurado: ${k.label}`, `${r.author} · "${String(d.text || '').replace(/\s+/g, ' ').slice(0, 80)}"`, r.user_id);
+    if (r.user_id) notify(r.user_id, `Sua ${k.label} foi restaurada`, 'A moderação reviu a remoção.');
+    res.json({ ok: true });
+  }));
+  setInterval(() => { try { run("DELETE FROM trash WHERE created_at < datetime('now','-30 days')"); } catch {} }, 6 * 3600e3).unref();
+
+  // ---------- gráficos ----------
+  app.get('/api/admin/charts', auth, staffOnly, (req, res) => {
+    const days = Math.min(60, Math.max(7, Number(req.query.days) || 14)), adm = req.user.role === 'admin';
+    const list = []; for (let i = days - 1; i >= 0; i--) list.push(new Date(Date.now() - i * 86400e3).toISOString().slice(0, 10));
+    const series = (sql, ...p) => { const m = {}; for (const r of all(sql, ...p)) m[r.d] = r.n; return list.map(d => m[d] || 0); };
+    const from = list[0];
+    const out = { days: list,
+      users: series("SELECT date(created_at) AS d, COUNT(*) AS n FROM users WHERE date(created_at) >= ? GROUP BY d", from),
+      plays: series('SELECT day AS d, plays AS n FROM plays_daily WHERE day >= ?', from),
+      games: series("SELECT date(created_at) AS d, COUNT(*) AS n FROM games WHERE status != 'removed' AND date(created_at) >= ? GROUP BY d", from),
+      reports: series('SELECT date(created_at) AS d, COUNT(*) AS n FROM reports WHERE date(created_at) >= ? GROUP BY d', from) };
+    if (adm || permsOf(req.user).includes('finance')) out.sales = series('SELECT date(created_at) AS d, COUNT(*) AS n FROM sales WHERE refunded_at IS NULL AND date(created_at) >= ? GROUP BY d', from);
+    if (adm || permsOf(req.user).includes('finance')) out.revenue = series('SELECT date(created_at) AS d, COALESCE(SUM(cents),0) AS n FROM sales WHERE refunded_at IS NULL AND date(created_at) >= ? GROUP BY d', from);
+    res.json(out);
+  });
+
+  // ---------- exportar auditoria (CSV) ----------
+  const csvCell = v => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+  app.get('/api/admin/audit.csv', auth, staffCan('audit'), (req, res) => {
+    const rows = all('SELECT id, created_at, actor, role, action, detail, target_id FROM logs ORDER BY id DESC LIMIT 5000');
+    const body = ['id,quando,quem,perfil,acao,detalhe,alvo', ...rows.map(r => [r.id, r.created_at, r.actor, r.role || '', r.action, r.detail, r.target_id || ''].map(csvCell).join(','))].join('\r\n');
+    res.set({ 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="auditoria.csv"' }).send('﻿' + body);
+  });
+
+
   // ---------- auditoria ----------
-  app.get('/api/admin/audit', auth, adminOnly, (req, res) => {
+  app.get('/api/admin/audit', auth, staffCan('audit'), (req, res) => {
     const q = req.query, w = [], p = [];
     if (q.target) { w.push('target_id = ?'); p.push(int(q.target, 'target')); }
     if (q.actor) { w.push('actor_id = ?'); p.push(int(q.actor, 'actor')); }

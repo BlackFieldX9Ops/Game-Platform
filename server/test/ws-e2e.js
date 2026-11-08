@@ -12,7 +12,7 @@ try { ({ JSDOM } = require('jsdom')); } catch { console.log('jsdom não instalad
 
 const PORT = 3995, URL_ = `http://localhost:${PORT}/`;
 const dir = mkdtempSync(path.join(tmpdir(), 'gp-ws-')), dbf = path.join(dir, 's.db');
-const srv = spawn('node', ['--disable-warning=ExperimentalWarning', 'src/index.js'], { env: { ...process.env, PORT, DB_FILE: dbf, ADMIN_EMAIL: 'adm@x.com', JWT_SECRET: 't', STUDIO_GATE: 'off' }, stdio: ['ignore', 'ignore', 'inherit'] });
+const srv = spawn('node', ['--disable-warning=ExperimentalWarning', 'src/index.js'], { env: { ...process.env, PORT, DB_FILE: dbf, ADMIN_EMAIL: 'adm@x.com', JWT_SECRET: 't', STUDIO_GATE: 'off', CONFIRM_GATE: 'off', BACKUP_AUTO: 'off' }, stdio: ['ignore', 'ignore', 'inherit'] });
 const html = readFileSync(existsSync('www/index.html') ? 'www/index.html' : '../app/www/index.html', 'utf8');
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => { c ? pass++ : fail++; console.log(`${c ? 'OK   ' : 'FALHA'} ${n}${c ? '' : ' ' + x}`); };
@@ -161,13 +161,13 @@ async function main() {
   ok('despublicar jogo pelo painel', await until(async () => (await api('GET', '/admin/games/' + gm.id + '/players', null, adm.token)).game.status === 'unpublished', 4000));
 
   // moderador
-  const M = open({ gp_clean: 2, gp_token: bia.token, gp_user: { ...bia.user, role: 'mod' } });
+  const M = open({ gp_clean: 2, gp_token: bia.token, gp_user: { ...bia.user, role: 'mod', perms: ['users', 'content', 'reports', 'games', 'msgs'] } });
   ok('moderador vê o painel', await until(() => !M.ws().hidden));
   ok('moderador não vê Auditoria', !/Auditoria/.test(M.ws().querySelector('.wnavs').textContent));
   M.click('[data-a="w_sec"][data-v="users"]');
   ok('moderador vê usuários sem e-mail', await until(() => M.d.querySelectorAll('.wrow').length === 4) && !/@x\.com/.test(M.wtext()));
   [...M.d.querySelectorAll('.wrow')].find(r => /Ana/.test(r.textContent)).click();
-  ok('moderador vê Compras e Studio só como em breve', (M.ws().querySelector('.wnavs').textContent.match(/em breve/g) || []).length === 2 && !!M.$('[data-a="w_sec"][data-v="games"]'));
+  ok('moderador não vê Compras (sem a permissão) e Studio só como em breve', (M.ws().querySelector('.wnavs').textContent.match(/em breve/g) || []).length === 1 && !M.$('[data-a="w_sec"][data-v="buy"]') && !!M.$('[data-a="w_sec"][data-v="games"]'));
   M.click('[data-a="w_sec"][data-v="games"]');
   ok('moderador abre Jogos', await until(() => /Jogando agora|Corrida Neon/.test(M.wtext())));
   M.click('[data-a="w_sec"][data-v="msg"]');
@@ -188,6 +188,43 @@ async function main() {
   ok('a prévia continua rodando ao trocar de aba', !!A.$('.wprev'));
   A.click('[data-a="w_sstop"]');
   ok('Parar remove a prévia', !A.$('.wprev') && !!A.$('#wsPrevSlot'));
+
+
+  // gráficos, lixeira, permissões, cupons, busca Ctrl+K
+  A.click('[data-a="w_sec"][data-v="over"]');
+  ok('Visão geral mostra os gráficos', await until(() => A.d.querySelectorAll('#ws .wchart').length >= 4));
+  const np = await api('POST', '/posts', { text: 'Texto para a lixeira' }, adm.token);
+  await api('POST', '/admin/content/delete', { items: [{ kind: 'post', id: (np.post || np).id }], reason: 'teste da lixeira' }, adm.token);
+  A.click('[data-a="w_sec"][data-v="mod"]');
+  ok('aba Lixeira existe', await until(() => A.$('[data-a="w_ctab"][data-v="trash"]')));
+  A.click('[data-a="w_ctab"][data-v="trash"]');
+  ok('Lixeira lista o item removido', await until(() => A.$('[data-a="w_trrest"]') && /Texto para a lixeira/.test(A.wtext())));
+  const nTr = A.d.querySelectorAll('[data-a="w_trrest"]').length;
+  A.click('[data-a="w_trrest"]');
+  ok('Restaurar tira o item da lixeira', await until(() => A.d.querySelectorAll('[data-a="w_trrest"]').length === nTr - 1 && !/Texto para a lixeira/.test(A.wtext())));
+  A.click('[data-a="w_ctab"][data-v="comment"]');
+  A.click('[data-a="w_sec"][data-v="users"]');
+  ok('Usuários carregam de novo', await until(() => [...A.d.querySelectorAll('#ws .wrow')].some(r => /Bia/.test(r.textContent))));
+  [...A.d.querySelectorAll('#ws .wrow')].find(r => /Bia/.test(r.textContent)).click();
+  ok('gaveta de moderador mostra as permissões', await until(() => A.$('.wperms') && A.d.querySelectorAll('.wperms input').length === 7));
+  A.click('[data-a="w_perm"][data-v$=":audit"]');
+  A.click('[data-a="w_permsave"]');
+  ok('salvar permissões grava no servidor', await until(async () => (((await api('GET', '/admin/users/' + bia.user.id, null, adm.token)).user || {}).perms || []).includes('audit'), 4000));
+  A.click('[data-a="w_sec"][data-v="buy"]');
+  ok('Compras tem abas Cupons e Criadores', await until(() => A.$('[data-a="w_btab"][data-v="coupons"]') && A.$('[data-a="w_btab"][data-v="creators"]')));
+  A.click('[data-a="w_btab"][data-v="coupons"]');
+  ok('formulário de cupom aparece', await until(() => A.$('#wsCpCode')));
+  A.$('#wsCpCode').value = 'teste10'; A.$('#wsCpCode').dispatchEvent(new A.w.Event('input', { bubbles: true }));
+  A.click('[data-a="w_cpnew"]');
+  ok('cupom criado aparece na lista', await until(() => A.$('[data-a="w_cptog"]') && /TESTE10/.test(A.wtext())));
+  A.click('[data-a="w_btab"][data-v="creators"]');
+  ok('aba Criadores abre', await until(() => /Ganho dos criadores|Nenhuma venda de jogo pago/.test(A.wtext())));
+  A.d.dispatchEvent(new A.w.KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+  ok('Ctrl+K abre a busca', await until(() => A.d.getElementById('wsKq')));
+  const kq = A.d.getElementById('wsKq'); kq.value = 'Ana'; kq.dispatchEvent(new A.w.Event('input', { bubbles: true }));
+  ok('busca encontra o usuário', await until(() => [...A.d.querySelectorAll('#wsx .wki')].some(b => /Ana/.test(b.textContent) && /#/.test(b.textContent)), 5000));
+  A.d.dispatchEvent(new A.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  ok('Esc fecha a busca', await until(() => !A.d.getElementById('wsKq')));
 
   // sair do painel e voltar
   A.click('[data-a="w_exit"]');

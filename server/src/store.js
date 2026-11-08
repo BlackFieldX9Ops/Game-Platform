@@ -33,7 +33,7 @@ export const itemName = id => (ITEMS.find(i => i.id === id) || {}).name || null;
 export const GAME_SHARE = 0.7; // parte do preço que fica com o criador
 
 export function mountStore(c) {
-  const { app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ } = c;
+  const { app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ, confirmCheck, alertAdmins, staffCan } = c;
   const notifyK = (userId, title, body, kind, ref = '') => run('INSERT INTO notifications (user_id, title, body, kind, ref) VALUES (?,?,?,?,?)', userId, title, body, kind, ref);
   const clog = (userId, delta, note, ref = null) => run('INSERT INTO coin_log (user_id, delta, note, ref) VALUES (?,?,?,?)', userId, delta, note, ref);
   // Preços e textos editáveis pelo administrador ficam em settings('price_ov'); o resto vem dos padrões acima.
@@ -45,8 +45,23 @@ export function mountStore(c) {
     const strip = x => { if (all_) return x; const { base, edited, active, ...r } = x; return r; };
     return { plans: merged(PLANS, ov).filter(keep).map(strip), packs: merged(PACKS, ov).filter(keep).map(strip), items: merged(ITEMS, ov).filter(keep).map(strip) };
   };
-  const sale = (userId, kind, ref, name, o = {}) => run('INSERT INTO sales (user_id, kind, ref, name, cents, coins, cut, owner_id, days) VALUES (?,?,?,?,?,?,?,?,?)', userId, kind, ref, name, o.cents || 0, o.coins || 0, o.cut || 0, o.owner || null, o.days || 0);
+  const sale = (userId, kind, ref, name, o = {}) => run('INSERT INTO sales (user_id, kind, ref, name, cents, coins, cut, owner_id, days, coupon) VALUES (?,?,?,?,?,?,?,?,?,?)', userId, kind, ref, name, o.cents || 0, o.coins || 0, o.cut || 0, o.owner || null, o.days || 0, o.coupon || null);
   const brl = c => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
+  // Cupons: desconto em % no preço (planos e pacotes) ou bônus em % de moedas (pacotes). Um uso por jogador.
+  const couponFor = (userId, codeIn, item, kind) => {
+    const code = String(codeIn || '').trim(); if (!code) return null;
+    const cp = get('SELECT * FROM coupons WHERE code = ?', code);
+    if (!cp || !cp.active) bad('Cupom inválido', 400);
+    if (cp.ends_at && cp.ends_at < new Date().toISOString().slice(0, 10)) bad('Este cupom venceu', 400);
+    if (cp.max_uses && cp.used >= cp.max_uses) bad('Este cupom esgotou', 400);
+    if (get('SELECT 1 FROM coupon_uses WHERE code = ? AND user_id = ?', cp.code, userId)) bad('Você já usou este cupom', 409);
+    const okScope = cp.scope === 'all' || cp.scope === item.id || (cp.scope === 'plans' && kind === 'plan') || (cp.scope === 'packs' && kind === 'pack');
+    if (!okScope) bad('Este cupom não vale para este item', 400);
+    if (cp.kind === 'bonus' && kind !== 'pack') bad('Este cupom só vale para pacotes de moedas', 400);
+    return cp;
+  };
+  const useCoupon = (userId, cp) => { run('INSERT INTO coupon_uses (code, user_id) VALUES (?,?)', cp.code, userId); run('UPDATE coupons SET used = used + 1 WHERE code = ?', cp.code); };
+  const priceWith = (item, cp) => cp && cp.kind === 'percent' ? Math.max(0, Math.round(item.price * (100 - cp.value) / 100)) : item.price;
   const owned = id => all('SELECT item_id FROM user_items WHERE user_id = ?', id).map(r => r.item_id);
   const dailyReward = u => hasPremium(u) ? 30 : 10;
   const dailyWait = u => u.daily_at ? Math.max(0, new Date(u.daily_at).getTime() + 20 * 3600_000 - Date.now()) : 0;
@@ -64,6 +79,13 @@ export function mountStore(c) {
   app.get('/api/store/log', auth, (req, res) => res.json({ log: all('SELECT id, delta, note, created_at FROM coin_log WHERE user_id = ? ORDER BY id DESC LIMIT 50', req.user.id) }));
   app.get('/api/store', auth, (req, res) => res.json({ ...catalog(), test: true, ...state(req.user) }));
 
+  app.post('/api/store/coupon', auth, wrap((req, res) => {
+    const cat = catalog(), id = String(req.body.id || ''), plan = cat.plans.find(p => p.id === id), pack = cat.packs.find(p => p.id === id), item = plan || pack;
+    if (!item) bad('Item não encontrado', 404);
+    const cp = couponFor(req.user.id, req.body.coupon, item, plan ? 'plan' : 'pack');
+    if (!cp) bad('Digite o cupom', 400);
+    res.json({ ok: true, code: cp.code, kind: cp.kind, value: cp.value, price: priceWith(item, cp), bonusCoins: cp.kind === 'bonus' ? Math.floor(item.coins * cp.value / 100) : 0 });
+  }));
   app.post('/api/store/daily', auth, wrap((req, res) => {
     const u = get('SELECT * FROM users WHERE id = ?', req.user.id);
     if (dailyWait(u) > 0) bad('O bônus de hoje já foi coletado. Volte mais tarde.', 429);
@@ -78,18 +100,19 @@ export function mountStore(c) {
     const u = get('SELECT * FROM users WHERE id = ?', req.user.id);
     const cat = catalog(), plan = cat.plans.find(p => p.id === id), pack = cat.packs.find(p => p.id === id), item = cat.items.find(p => p.id === id);
     if (!plan && !pack && !item && [...PLANS, ...PACKS, ...ITEMS].some(p => p.id === id)) bad('Este item não está à venda agora', 410);
+    const cp = plan ? couponFor(u.id, req.body.coupon, plan, 'plan') : pack ? couponFor(u.id, req.body.coupon, pack, 'pack') : null;
     if (plan) {
       const col = plan.kind === 'premium' ? 'premium_until' : 'studio_until';
       if (u[col] === FOREVER) bad('Você já tem este plano liberado sem prazo.', 409);
       const base = u[col] && u[col] > now() ? new Date(u[col]).getTime() : Date.now();
       run(`UPDATE users SET ${col} = ? WHERE id = ?`, new Date(base + plan.days * 86_400_000).toISOString(), u.id);
-      sale(u.id, plan.kind, plan.id, plan.name, { cents: plan.price, days: plan.days });
+      sale(u.id, plan.kind, plan.id, plan.name, { cents: priceWith(plan, cp), days: plan.days, coupon: cp ? cp.code : null }); if (cp) useCoupon(u.id, cp);
       notifyK(u.id, plan.kind === 'premium' ? 'Premium ativo' : 'Studio liberado', plan.kind === 'premium' ? `${plan.name} ativo. Aproveite o bônus diário e os itens exclusivos.` : `${plan.name} ativo. Você já pode publicar jogos.`, 'premium');
     } else if (pack) {
-      const got = hasPremium(u) ? Math.floor(pack.coins * 1.1) : pack.coins;
+      const got = Math.floor((hasPremium(u) ? Math.floor(pack.coins * 1.1) : pack.coins) * (cp && cp.kind === 'bonus' ? 1 + cp.value / 100 : 1));
       run('UPDATE users SET coins = coins + ? WHERE id = ?', got, u.id);
       clog(u.id, got, 'Pacote ' + pack.name + ' (teste)');
-      sale(u.id, 'coins', pack.id, pack.name, { cents: pack.price, coins: got });
+      sale(u.id, 'coins', pack.id, pack.name, { cents: priceWith(pack, cp), coins: got, coupon: cp ? cp.code : null }); if (cp) useCoupon(u.id, cp);
     } else if (item) {
       if (owned(u.id).includes(item.id)) bad('Você já tem este item', 409);
       if (item.premium && !hasPremium(u)) bad('Item exclusivo de quem tem o Premium', 403);
@@ -142,7 +165,7 @@ export function mountStore(c) {
   const KIND = { studio: 'Plano Studio', premium: 'Premium', coins: 'Moedas', item: 'Skin', game: 'Jogo' };
   const sumOf = (where, ...p) => get(`SELECT COUNT(*) AS n, COALESCE(SUM(cents),0) AS cents, COALESCE(SUM(coins),0) AS coins FROM sales WHERE refunded_at IS NULL ${where}`, ...p);
 
-  app.get('/api/admin/commerce', auth, adminOnly, (req, res) => {
+  app.get('/api/admin/commerce', auth, staffCan('finance'), (req, res) => {
     const kinds = all("SELECT kind, COUNT(*) AS n, COALESCE(SUM(cents),0) AS cents, COALESCE(SUM(coins),0) AS coins FROM sales WHERE refunded_at IS NULL GROUP BY kind");
     const top = all("SELECT name, kind, COUNT(*) AS n, COALESCE(SUM(cents),0) AS cents, COALESCE(SUM(coins),0) AS coins FROM sales WHERE refunded_at IS NULL GROUP BY kind, ref ORDER BY n DESC LIMIT 6");
     res.json({
@@ -154,19 +177,20 @@ export function mountStore(c) {
     });
   });
 
-  app.get('/api/admin/sales', auth, adminOnly, wrap((req, res) => {
+  app.get('/api/admin/sales', auth, staffCan('finance'), wrap((req, res) => {
     const w = [], p = [], q = req.query;
     if (KIND[q.kind]) { w.push('s.kind = ?'); p.push(q.kind); }
     if (q.user) { w.push('s.user_id = ?'); p.push(int(q.user, 'user')); }
     if (q.q) { const like = '%' + String(q.q).trim().slice(0, 60).toLowerCase().replace(/[%_\\]/g, m => '\\' + m) + '%'; w.push("(LOWER(s.name) LIKE ? ESCAPE '\\' OR LOWER(u.name) LIKE ? ESCAPE '\\')"); p.push(like, like); }
     if (Number(q.before)) { w.push('s.id < ?'); p.push(Number(q.before)); }
-    const rows = all(`SELECT s.id, s.user_id, u.name AS buyer, s.kind, s.ref, s.name, s.cents, s.coins, s.cut, s.days, s.refunded_at, s.created_at FROM sales s JOIN users u ON u.id = s.user_id ${w.length ? 'WHERE ' + w.join(' AND ') : ''} ORDER BY s.id DESC LIMIT 81`, ...p);
+    const rows = all(`SELECT s.id, s.user_id, u.name AS buyer, s.kind, s.ref, s.name, s.cents, s.coins, s.cut, s.days, s.coupon, s.refunded_at, s.created_at FROM sales s JOIN users u ON u.id = s.user_id ${w.length ? 'WHERE ' + w.join(' AND ') : ''} ORDER BY s.id DESC LIMIT 81`, ...p);
     res.json({ sales: rows.slice(0, 80).map(r => ({ ...r, kindName: KIND[r.kind] || r.kind })), more: rows.length > 80 });
   }));
 
   const reasonOf = (b, min = 5) => { const r = typeof b.reason === 'string' ? b.reason.trim().slice(0, 140) : ''; if (r.length < min) bad(`Escreva o motivo (mínimo ${min} letras)`); return r; };
 
   app.post('/api/admin/prices', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
     const b = req.body, id = String(b.id || ''), base = [...PLANS, ...PACKS, ...ITEMS].find(p => p.id === id);
     if (!base) bad('Item não encontrado', 404);
     const isItem = ITEMS.includes(base), field = isItem ? 'coins' : 'price';
@@ -191,6 +215,7 @@ export function mountStore(c) {
   }));
 
   app.post('/api/admin/prices/reset', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
     const id = String(req.body.id || ''), base = [...PLANS, ...PACKS, ...ITEMS].find(p => p.id === id);
     if (!base) bad('Item não encontrado', 404);
     const ov = overrides(); delete ov[id]; saveOv(ov);
@@ -199,6 +224,7 @@ export function mountStore(c) {
   }));
 
   app.post('/api/admin/users/:id/coins', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
     const id = int(req.params.id, 'id'), t = get('SELECT * FROM users WHERE id = ?', id);
     if (!t) bad('Usuário não encontrado', 404);
     const delta = Number(req.body.delta), reason = reasonOf(req.body);
@@ -212,6 +238,7 @@ export function mountStore(c) {
   }));
 
   app.post('/api/admin/users/:id/plan', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
     const id = int(req.params.id, 'id'), t = get('SELECT * FROM users WHERE id = ?', id);
     if (!t) bad('Usuário não encontrado', 404);
     const kind = req.body.kind, days = Number(req.body.days), reason = reasonOf(req.body);
@@ -227,6 +254,7 @@ export function mountStore(c) {
   }));
 
   app.post('/api/admin/sales/:id/refund', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
     const s = get('SELECT * FROM sales WHERE id = ?', int(req.params.id, 'id'));
     if (!s) bad('Compra não encontrada', 404);
     if (s.refunded_at) bad('Esta compra já foi estornada', 409);
@@ -253,6 +281,41 @@ export function mountStore(c) {
     logAct(req, 'Compra estornada', `${u.name} · ${s.name}${s.cents ? ' · ' + brl(s.cents) : s.coins ? ' · ' + s.coins + ' moedas' : ''} · ${reason}`, u.id);
     res.json({ ok: true });
   }));
+
+  // ---------- cupons, ganhos dos criadores e exportação ----------
+  app.get('/api/admin/coupons', auth, adminOnly, (_req, res) => res.json({ coupons: all('SELECT code, kind, value, scope, max_uses, used, ends_at, active, created_at FROM coupons ORDER BY created_at DESC').map(c => ({ ...c, active: !!c.active })) }));
+  app.post('/api/admin/coupons', auth, adminOnly, wrap((req, res) => {
+    const b = req.body, code = String(b.code || '').trim().toUpperCase();
+    if (!/^[A-Z0-9_-]{3,20}$/.test(code)) bad('Código de 3 a 20 letras, números, - ou _');
+    const kind = b.kind === 'bonus' ? 'bonus' : 'percent', value = Number(b.value);
+    if (!Number.isInteger(value) || value < 1 || value > (kind === 'percent' ? 90 : 100)) bad(kind === 'percent' ? 'Desconto de 1 a 90%' : 'Bônus de 1 a 100%');
+    const scope = String(b.scope || 'all'), valid = ['all', 'plans', 'packs', ...PLANS.map(p => p.id), ...PACKS.map(p => p.id)];
+    if (!valid.includes(scope)) bad('Alcance inválido');
+    if (kind === 'bonus' && !(scope === 'all' || scope === 'packs' || PACKS.some(p => p.id === scope))) bad('Bônus só vale para pacotes de moedas');
+    const max = Math.max(0, Math.min(100000, Number(b.max_uses) || 0)), ends = /^\d{4}-\d{2}-\d{2}$/.test(String(b.ends_at || '')) ? b.ends_at : null;
+    if (get('SELECT 1 FROM coupons WHERE code = ?', code)) bad('Já existe um cupom com este código', 409);
+    run('INSERT INTO coupons (code, kind, value, scope, max_uses, ends_at) VALUES (?,?,?,?,?,?)', code, kind, value, scope, max, ends);
+    logAct(req, 'Cupom criado', `${code} · ${kind === 'percent' ? value + '% de desconto' : '+' + value + '% de moedas'} · ${scope}${max ? ' · ' + max + ' usos' : ''}${ends ? ' · até ' + ends : ''}`);
+    res.json({ ok: true });
+  }));
+  app.post('/api/admin/coupons/:code/toggle', auth, adminOnly, wrap((req, res) => {
+    const cp = get('SELECT * FROM coupons WHERE code = ?', String(req.params.code));
+    if (!cp) bad('Cupom não encontrado', 404);
+    run('UPDATE coupons SET active = ? WHERE code = ?', cp.active ? 0 : 1, cp.code);
+    logAct(req, cp.active ? 'Cupom desativado' : 'Cupom reativado', cp.code);
+    res.json({ ok: true, active: !cp.active });
+  }));
+  app.get('/api/admin/creators', auth, staffCan('finance'), (_req, res) => {
+    res.json({ creators: all(`SELECT u.id, u.name, COUNT(*) AS sales, COUNT(DISTINCT s.user_id) AS buyers, COALESCE(SUM(s.cut),0) AS earned, MAX(s.created_at) AS last_at,
+      (SELECT COUNT(*) FROM games g WHERE g.owner_id = u.id AND g.status = 'published') AS games
+      FROM sales s JOIN users u ON u.id = s.owner_id WHERE s.kind = 'game' AND s.refunded_at IS NULL GROUP BY u.id ORDER BY earned DESC LIMIT 100`) });
+  });
+  const csvCell = v => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+  app.get('/api/admin/sales.csv', auth, staffCan('finance'), (_req, res) => {
+    const rows = all('SELECT s.id, s.created_at, u.name AS buyer, s.kind, s.name, s.cents, s.coins, s.coupon, s.refunded_at FROM sales s JOIN users u ON u.id = s.user_id ORDER BY s.id DESC LIMIT 5000');
+    const body = ['id,quando,comprador,tipo,item,valor_reais,moedas,cupom,estornada_em', ...rows.map(r => [r.id, r.created_at, r.buyer, r.kind, r.name, (r.cents / 100).toFixed(2), r.coins, r.coupon || '', r.refunded_at || ''].map(csvCell).join(','))].join('\r\n');
+    res.set({ 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="vendas.csv"' }).send('﻿' + body);
+  });
 
   app.post('/api/admin/users/:id/studio', auth, adminOnly, wrap((req, res) => {
     const id = int(req.params.id, 'id');

@@ -9,10 +9,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
-import { all, get, run } from './db.js';
+import { all, get, run, db } from './db.js';
 import { mountSocial } from './social.js';
 import { mountAccounts } from './accounts.js';
 import { mountAdmin } from './admin.js';
+import { mountSecurity } from './security.js';
 import { mountStore, hasStudio, hasPremium, fmtUid, itemName } from './store.js';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -49,26 +50,36 @@ function str(v, name, min, max) {
   return t;
 }
 const int = (v, name) => { const n = Number(v); if (!Number.isInteger(n) || n < 1) bad(`${name} inválido`); return n; };
-const publicUser = u => ({ id: u.id, uid: fmtUid(u), name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '', studio: hasStudio(u), premium: hasPremium(u), coins: u.coins || 0, frame: u.frame || null, banner: u.banner || null, title: u.title || null, titleName: itemName(u.title), ncolor: u.ncolor || null, theme: u.theme || null, bubble: u.bubble || null });
-const sign = u => jwt.sign({ id: u.id }, SECRET, { expiresIn: '30d' });
+const publicUser = u => ({ id: u.id, uid: fmtUid(u), name: u.name, role: u.role, xp: u.xp, level: Math.floor(u.xp / 500) + 1, avatar: u.avatar || null, bio: u.bio || '', studio: hasStudio(u), premium: hasPremium(u), coins: u.coins || 0, frame: u.frame || null, banner: u.banner || null, title: u.title || null, titleName: itemName(u.title), ncolor: u.ncolor || null, theme: u.theme || null, bubble: u.bubble || null , perms: permsOf(u) });
+const sign = u => jwt.sign({ id: u.id, v: u.token_ver || 0 }, SECRET, { expiresIn: '30d' });
 
 function userFromToken(token) {
   try {
-    const { id } = jwt.verify(token, SECRET);
+    const { id, v } = jwt.verify(token, SECRET);
     const u = get('SELECT * FROM users WHERE id = ?', id);
-    return u && u.status === 'active' ? u : null;
+    return u && u.status === 'active' && (v || 0) === (u.token_ver || 0) ? u : null;
   } catch { return null; }
 }
 function auth(req, _res, next) {
   const h = req.headers.authorization || '';
   const u = h.startsWith('Bearer ') ? userFromToken(h.slice(7)) : null;
   if (!u) return next(new HttpError(401, 'Faça login para continuar'));
-  req.user = u; next();
+  req.user = u; touchSeen(req, u); next();
+}
+const seenAt = new Map();
+function touchSeen(req, u) {
+  const now = Date.now(); if (now - (seenAt.get(u.id) || 0) < 60_000) return; seenAt.set(u.id, now);
+  try { run("UPDATE users SET last_seen = datetime('now'), last_ip = ?, last_ua = ? WHERE id = ?", String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim().slice(0, 45), String(req.headers['user-agent'] || '').slice(0, 160), u.id); } catch {}
 }
 function softAuth(req, _res, next) {
   const h = req.headers.authorization || '';
   req.user = h.startsWith('Bearer ') ? userFromToken(h.slice(7)) || undefined : undefined; next();
 }
+// Permissões da equipe: o administrador tem todas; o moderador usa as que o administrador marcou (padrão abaixo).
+export const PERMS = { users: 'Usuários', content: 'Moderação de conteúdo', reports: 'Denúncias', games: 'Jogos', msgs: 'Mensagem para um jogador', finance: 'Ver compras', audit: 'Ver auditoria' };
+const DEFAULT_MOD = ['users', 'content', 'reports', 'games', 'msgs'];
+const permsOf = u => !u ? [] : u.role === 'admin' ? Object.keys(PERMS) : u.role === 'mod' ? (() => { try { const p = JSON.parse(u.perms); return Array.isArray(p) ? p.filter(k => PERMS[k]) : DEFAULT_MOD; } catch { return DEFAULT_MOD; } })() : [];
+const staffCan = perm => (req, _res, next) => permsOf(req.user).includes(perm) ? next() : next(new HttpError(403, ['admin', 'mod'].includes(req.user.role) ? 'Você não tem esta permissão' : 'Acesso restrito à equipe'));
 const adminOnly = (req, _res, next) => req.user.role === 'admin' ? next() : next(new HttpError(403, 'Acesso restrito a administradores'));
 const staffOnly = (req, _res, next) => ['admin', 'mod'].includes(req.user.role) ? next() : next(new HttpError(403, 'Acesso restrito à equipe'));
 const notify = (userId, title, body = '', ref = '') => run('INSERT INTO notifications (user_id, title, body, kind, ref) VALUES (?,?,?,?,?)', userId, title, body, ref ? 'game' : 'sys', ref);
@@ -80,6 +91,8 @@ const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.descript
 const parseJ = (s, d) => { try { return JSON.parse(s); } catch { return d; } };
 const shapeGame = g => ({ ...g, featured: !!g.featured, ai: !!g.ai, libs: parseJ(g.libs, []), tags: parseJ(g.tags, []), settings: parseJ(g.settings, {}) });
 const categories = () => { const r = get("SELECT value FROM settings WHERE key = 'categories'"); try { return r ? JSON.parse(r.value) : DEFAULT_CATEGORIES; } catch { return DEFAULT_CATEGORIES; } };
+// Aviso fixo para todos os administradores (aparece em Avisos e no painel).
+const alertAdmins = (title, body = '') => { try { for (const a of all("SELECT id FROM users WHERE role = 'admin' AND status = 'active'")) run("INSERT INTO notifications (user_id, title, body, kind) VALUES (?,?,?, 'notice')", a.id, title, body); for (const a of all("SELECT id FROM users WHERE role = 'admin'")) pushTo(a.id, { type: 'games' }); } catch {} };
 const logAct = (req, action, detail = '', targetId = null) => run('INSERT INTO logs (actor_id, actor, action, detail, target_id, role) VALUES (?,?,?,?,?,?)', req.user.id, req.user.name, action, String(detail).slice(0, 200), targetId, req.user.role);
 const COVER_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 // Quem pode ver o jogo: todos (publicado e não privado), ou o dono e os administradores em qualquer estado.
@@ -240,6 +253,7 @@ app.post('/api/games/:id/play', auth, wrap((req, res) => {
   if (g.status === 'unpublished') bad('Jogo despublicado', 404);
   if (needsBuy(g, req.user)) bad('Compre o jogo para jogar', 402);
   run('UPDATE games SET plays = plays + 1 WHERE id = ?', g.id);
+  run("INSERT INTO plays_daily (day, plays) VALUES (date('now'), 1) ON CONFLICT(day) DO UPDATE SET plays = plays + 1");
   run("INSERT INTO game_plays (user_id, game_id, plays) VALUES (?,?,1) ON CONFLICT(user_id, game_id) DO UPDATE SET plays = plays + 1, last_at = datetime('now')", req.user.id, g.id);
   playing.set(req.user.id, { gid: g.id, at: Date.now() });
   run('UPDATE users SET xp = xp + 25 WHERE id = ?', req.user.id);
@@ -384,6 +398,8 @@ app.post('/api/reports', auth, wrap((req, res) => {
   const table = { game: 'games', post: 'posts', user: 'users' }[type];
   if (!get(`SELECT 1 FROM ${table} WHERE id = ?`, id)) bad('Conteúdo não encontrado', 404);
   run('INSERT INTO reports (reporter_id, target_type, target_id, reason) VALUES (?,?,?,?)', req.user.id, type, id, reason);
+  const open = get("SELECT COUNT(*) AS n FROM reports WHERE target_type = ? AND target_id = ? AND status = 'open'", type, id).n;
+  if (open === 3) alertAdmins('Denúncias em excesso', `${{ game: 'Um jogo', post: 'Uma publicação', user: 'Um jogador' }[type]} (#${id}) chegou a 3 denúncias abertas. Abra o painel para analisar.`);
   res.status(201).json({ ok: true });
 }));
 
@@ -420,13 +436,13 @@ app.get('/api/admin/overview', auth, staffOnly, (req, res) => {
     ...(req.user.role === 'admin' ? { coinsInCirculation: n('SELECT COALESCE(SUM(coins),0) AS n FROM users'), sales: n("SELECT COUNT(*) AS n FROM purchases") } : {})
   });
 });
-app.get('/api/admin/reports', auth, staffOnly, (_req, res) => {
+app.get('/api/admin/reports', auth, staffCan('reports'), (_req, res) => {
   res.json({ reports: all(`SELECT r.id, r.target_type, r.target_id, r.reason, r.created_at, u.name AS reporter,
     CASE r.target_type WHEN 'game' THEN (SELECT title FROM games WHERE id = r.target_id)
       WHEN 'user' THEN (SELECT name FROM users WHERE id = r.target_id)
       WHEN 'post' THEN (SELECT substr(text, 1, 60) FROM posts WHERE id = r.target_id) END AS target_title FROM reports r JOIN users u ON u.id = r.reporter_id WHERE r.status = 'open' ORDER BY r.id`) });
 });
-app.post('/api/admin/reports/:id/resolve', auth, staffOnly, wrap((req, res) => {
+app.post('/api/admin/reports/:id/resolve', auth, staffCan('reports'), wrap((req, res) => {
   const r = get("SELECT * FROM reports WHERE id = ? AND status = 'open'", int(req.params.id, 'id'));
   if (!r) bad('Denúncia não encontrada', 404);
   const action = req.body.action;
@@ -480,8 +496,10 @@ app.get('/api/admin/logs', auth, adminOnly, (_req, res) => {
 });
 
 /* ---------- contas: Google, recuperar senha, verificar e-mail, progresso ---------- */
-mountAdmin({ app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance });
-mountStore({ app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
+const sec = mountSecurity({ app, auth, adminOnly, wrap, bad, get, all, run, db, logAct, notify, HttpError, dbFile: process.env.DB_FILE || './data/app.db', PROD });
+const confirmCheck = sec.need;
+mountAdmin({ confirmCheck, alertAdmins, staffCan, permsOf, PERMS, app, auth, staffOnly, adminOnly, wrap, bad, str, int, get, all, run, logAct, notify, fmtUid, parseJ, playing, PLAY_TTL, isOnline, pushTo, online, maintenance, setMaintenance });
+mountStore({ confirmCheck, alertAdmins, staffCan, app, auth, wrap, bad, get, all, run, logAct, adminOnly, int, loadGame, parseJ });
 mountAccounts({ app, auth, wrap, bad, str, get, all, run, sign, publicUser, authLimiter, PROD, SECRET });
 
 /* ---------- chat e comunidade ---------- */

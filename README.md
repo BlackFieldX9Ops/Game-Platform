@@ -251,3 +251,19 @@ Depois de atualizar o app, o servidor no Render precisa ser reimplantado para te
 - **Alertas** na Visão geral: denúncias na fila ou paradas há mais de 24 h, jogo ou jogador com 3+ denúncias, suspensões que terminam em 24 h, onda de contas novas, estornos em excesso e manutenção ligada.
 - **Studio grande:** o mesmo Studio do app (informações, código, bibliotecas, missões, avançado, revisar, meus jogos) numa tela larga, com a **prévia do jogo ao lado** (celular em pé, deitado ou tela cheia). Cole o código e use **Rodar** ou Ctrl + Enter no editor; a prévia roda isolada, como no app.
 - **Ainda não existe:** confirmação por código no e-mail para ações pesadas; cobrança real de pagamento.
+
+> **Nota:** o app para Linux deixou de ser atualizado automaticamente. No computador use a versão web (o link do servidor no Chrome); no celular, o APK Android. O workflow `build-linux.yml` só roda se for disparado manualmente.
+
+### Segurança do painel, permissões, lixeira e backups
+- **Confirmação reforçada**: ações pesadas (banir, mudar perfil, estornar, mexer em preços/moedas/plano, ligar manutenção, mensagem em massa, baixar backup, encerrar sessões, mudar permissões) pedem um **código de 6 números enviado por e-mail** (precisa de `RESEND_API_KEY` no servidor) ou, sem e-mail configurado, a **senha** da própria conta. Vale 10 minutos. No teste local o código vai para `dev_outbox`. Para desligar (só testes): `CONFIRM_GATE=off`.
+- **Backups automáticos**: o servidor grava uma cópia do banco (`VACUUM INTO`) em `backups/` ao lado do banco, a cada ~20 h, mantendo os 14 últimos (+10 manuais). Painel → Segurança: "Fazer backup agora" e "Baixar". Desligar o automático: `BACKUP_AUTO=off`. Em produção o banco precisa estar no disco persistente (`/app/data`).
+- **Sessões**: Segurança lista admins e moderadores (último acesso, IP, aparelho) e **encerra as sessões** de qualquer um (o token antigo deixa de valer).
+- **Permissões por pessoa**: cada moderador tem checkboxes (usuários, moderação de conteúdo, denúncias, jogos, mensagem a um jogador, ver compras, ver auditoria). O padrão é o que moderadores já faziam; o menu do painel esconde o que a pessoa não pode.
+- **Lixeira**: remoções de comentário, avaliação e publicação ficam 30 dias em Moderação → Lixeira, com **Restaurar**.
+- **Gráficos** (7/14/30 dias) na Visão geral, **exportar CSV** da auditoria e das vendas, **Ctrl+K** (busca de seções, usuários e jogos), **alertas** a cada minuto com aviso do navegador e número na aba, e aviso a todos os admins em eventos graves (3 denúncias no mesmo alvo, manutenção).
+- **Cupons**: desconto em % ou bônus em % de moedas, por item/planos/pacotes, limite de usos, validade, uma vez por jogador. O jogador digita o cupom na Loja (Planos e Moedas). **Criadores**: ganhos por criador (70% de cada venda de jogo pago).
+
+## App no computador e puxar para atualizar
+- No **navegador do computador** (tela com 1000 px ou mais) todos os jogadores veem o app com **barra lateral e área larga**, no estilo do painel. O **app Android não muda**.
+- No celular, **puxar para baixo** no topo da tela mostra uma seta redonda que gira e atualiza jogos, Loja, avisos e a checagem de versão.
+- O **app Linux deixou de ser atualizado automaticamente** (o workflow só roda se for disparado à mão): Android para Android, web para computador.
