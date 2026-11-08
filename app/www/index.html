@@ -806,6 +806,7 @@ function toast(m){var t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(
 
 /* ---------- tela cheia e orientação ---------- */
 function native(){return typeof window.GPNative!=='undefined'}
+function isLinux(){return native()&&window.GPNative.platform==='linux'}
 /* ---------- administrador local (temporário, até existir servidor) ---------- */
 function sha256(ascii){
  var mp=Math.pow,mw=mp(2,32),i,j,res='',words=[],al=ascii.length*8,r=function(n,x){return(x>>>n)|(x<<(32-n))};
@@ -855,10 +856,10 @@ async function checkUpdate(manual){
  if(!cb){S.upv={st:'web'};if(manual)toast('Este é o app de navegador; ele já abre sempre na última versão');render(true);return}
  S.upv={st:'checking'};if(manual)render(true);
  try{
-  var r=await fetch('https://api.github.com/repos/'+repo()+'/releases/tags/apk-latest',{headers:{Accept:'application/vnd.github+json'}});
+  var r=await fetch('https://api.github.com/repos/'+repo()+'/releases/tags/'+(isLinux()?'linux-latest':'apk-latest'),{headers:{Accept:'application/vnd.github+json'}});
   if(!r.ok)throw new Error('HTTP '+r.status);
   var j=await r.json(),m=/build\s*[:=]?\s*(\d+)/i.exec(j.body||'')||/(\d+)/.exec(j.name||''),nb=m?+m[1]:0;
-  var a=(j.assets||[]).filter(function(x){return/\.apk$/i.test(x.name)})[0];
+  var a=(j.assets||[]).filter(function(x){return isLinux()?/\.AppImage$/i.test(x.name):/\.apk$/i.test(x.name)})[0];
   if(!a||!nb)throw new Error('release sem versão');
   S.upv={st:nb>cb?'new':'ok',build:nb,url:a.browser_download_url};
   try{localStorage.setItem('gp_updchk',String(Date.now()))}catch(e){}
@@ -906,7 +907,7 @@ function updBanner(){
 function updPanel(){
  var u=S.upv||{},cb=curBuild(),msg=!cb?'Você está usando a versão de navegador, que sempre abre atualizada.':u.st==='checking'?'Verificando…':u.st==='new'?'Nova versão disponível (build '+u.build+').':u.st==='ok'?'Você está na última versão.':u.st==='err'?'Não consegui verificar agora.':'Instalado: build '+cb+'.';
  return '<div class="panel" style="margin-top:14px"><div class="f" style="margin-top:0;font-weight:700">Atualização do app</div><p class="note" style="margin:6px 0 8px">'+(cb?'Versão instalada: build '+cb+'. ':'')+msg+'</p>'
-  +(cb?(canAuto()?'<div style="margin:4px 0 2px">'+sw('Atualizar sozinho (recomendado)','autoupd')+'</div>':'')+'<div class="dev">'+(u.st==='new'?'<button class="btn sm" data-a="doupd">'+(canAuto()?'Atualizar agora':'Baixar e atualizar')+'</button>':'')+'<button class="btn ghost sm" data-a="chkupd">Verificar agora</button></div><p class="note">'+(canAuto()?'Com a opção ligada, o app baixa e instala as versões novas sozinho. Na primeira vez o Android pede que você libere a instalação; depois, no Android 12 ou mais novo, a atualização costuma entrar sem perguntar. Seus dados ficam.':'Ao tocar em atualizar, o Android baixa o arquivo novo; abra-o para instalar por cima. Seus dados ficam.')+'</p>':'')+'</div>'
+  +(cb?(canAuto()?'<div style="margin:4px 0 2px">'+sw('Atualizar sozinho (recomendado)','autoupd')+'</div>':'')+'<div class="dev">'+(u.st==='new'?'<button class="btn sm" data-a="doupd">'+(canAuto()?'Atualizar agora':(isLinux()?'Baixar a nova versão':'Baixar e atualizar'))+'</button>':'')+'<button class="btn ghost sm" data-a="chkupd">Verificar agora</button></div><p class="note">'+(canAuto()?'Com a opção ligada, o app baixa e instala as versões novas sozinho. Na primeira vez o Android pede que você libere a instalação; depois, no Android 12 ou mais novo, a atualização costuma entrar sem perguntar. Seus dados ficam.':(isLinux()?'O navegador baixa o instalador novo (.AppImage ou .deb). Abra-o para instalar por cima. Seus dados ficam.':'Ao tocar em atualizar, o Android baixa o arquivo novo; abra-o para instalar por cima. Seus dados ficam.'))+'</p>':'')+'</div>'
 }
 function applyNative(){
  /* Fora dos jogos o app fica sempre em pé; quem gira é o jogo (setOri em openGame). */

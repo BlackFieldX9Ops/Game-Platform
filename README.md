@@ -216,3 +216,14 @@ Sem essas variáveis o botão do Google não aparece e a recuperação de senha 
 - **Novidades da versão:** campo na aba **Revisar** do Studio (até 300 letras). Aparece na página do jogo e nas Atualizações de jogos do Início. Ao atualizar um jogo o campo começa vazio.
 - **Vendas reais no Painel:** vendas de jogos pagos e moedas ganhas (70% de cada venda), por jogo.
 - **Extrato de moedas** na aba Moedas da Loja: bônus diário, pacotes, skins, jogos comprados e vendas. Tabela `coin_log` (só passa a registrar a partir deste build).
+
+## App para Linux (computador)
+Além do APK do Android, o repositório gera um app para Linux, a mesma plataforma numa janela do computador (Electron, pasta `desktop/`).
+
+1. Abra **Releases → App Linux mais recente** (`linux-latest`).
+2. **AppImage** (qualquer Linux): baixe `game-platform.AppImage`, dê permissão (`chmod +x game-platform.AppImage`) e abra. Se não abrir no Ubuntu 24 ou mais novo, rode `./game-platform.AppImage --no-sandbox`.
+3. **.deb** (Ubuntu/Debian): `sudo apt install ./game-platform.deb`. Ele aparece no menu de aplicativos e registra o retorno do login do Google (`gameplatform://auth`).
+
+Atalhos: **F11** tela cheia, **F5** recarrega, **Ctrl +** e **Ctrl −** aumentam e diminuem o zoom, **Ctrl 0** volta ao normal. Sua conta, jogos e moedas são os mesmos do celular (o servidor é o mesmo). A janela pode ser redimensionada.
+
+O app confere sozinho se há versão nova (build do Linux) e mostra o aviso, com botão para baixar o instalador. O workflow `build-linux.yml` roda o teste rápido do app e só então gera os instaladores. Rodar em desenvolvimento: `cd desktop && npm install && npm start`.

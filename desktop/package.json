@@ -1,0 +1,36 @@
+{
+  "name": "game-platform-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Game Platform para Linux: jogue, crie e publique jogos HTML no computador",
+  "author": "BlackFieldX9Ops <noreply@users.noreply.github.com>",
+  "homepage": "https://github.com/BlackFieldX9Ops/Game-Platform",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "dist": "electron-builder --linux AppImage deb --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.gameplatform.desktop",
+    "publish": null,
+    "productName": "Game Platform",
+    "artifactName": "game-platform-${version}.${ext}",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "build.json"],
+    "extraResources": [{ "from": "../app/www", "to": "www" }],
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Game",
+      "maintainer": "BlackFieldX9Ops <noreply@users.noreply.github.com>",
+      "synopsis": "Plataforma de jogos HTML",
+      "icon": "build/icon.png",
+      "mimeTypes": ["x-scheme-handler/gameplatform"],
+      "desktop": { "Name": "Game Platform", "Comment": "Jogue, crie e publique jogos HTML", "Keywords": "jogos;games;html;" }
+    },
+    "deb": { "depends": ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1", "libsecret-1-0"] }
+  }
+}

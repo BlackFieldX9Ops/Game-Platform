@@ -1,0 +1,83 @@
+name: Gerar app Linux
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app/www/**'
+      - 'desktop/**'
+      - '.github/workflows/build-linux.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Definir o servidor padrão do app
+        env:
+          SERVER_URL: ${{ vars.SERVER_URL }}
+        run: |
+          if [ -n "$SERVER_URL" ]; then
+            sed -i "s|<meta name=\"gp-server\" content=\"\">|<meta name=\"gp-server\" content=\"$SERVER_URL\">|" app/www/index.html
+            echo "Servidor padrão: $SERVER_URL"
+          else
+            echo "SERVER_URL não definida: o app pedirá o endereço do servidor nas configurações."
+          fi
+
+      - name: Registrar o número desta versão
+        env:
+          BUILD: ${{ github.run_number }}
+        run: |
+          sed -i "s|<meta name=\"gp-build\" content=\"\">|<meta name=\"gp-build\" content=\"$BUILD\">|; s|<meta name=\"gp-repo\" content=\"[^\"]*\">|<meta name=\"gp-repo\" content=\"${{ github.repository }}\">|" app/www/index.html
+          echo "{\"build\": $BUILD}" > desktop/build.json
+          cat desktop/build.json
+
+      - name: Instalar dependências
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+
+      - name: Teste rápido do app (abre a janela e confere o essencial)
+        working-directory: desktop
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libatk-bridge2.0-0 libgbm1 libasound2t64 || sudo apt-get install -y -qq xvfb libgbm1 libasound2
+          GP_SMOKE=1 xvfb-run -a npx electron . --no-sandbox --disable-gpu | tee smoke.log
+          grep -q "SMOKE.* OK" smoke.log
+
+      - name: Gerar o AppImage e o .deb
+        working-directory: desktop
+        env:
+          BUILD: ${{ github.run_number }}
+        run: npx electron-builder --linux AppImage deb --publish never -c.extraMetadata.version=1.2.$BUILD
+
+      - name: Guardar os instaladores na execução
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-platform-linux
+          path: |
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+
+      - name: Publicar no link fixo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          cp desktop/dist/*.AppImage game-platform.AppImage
+          cp desktop/dist/*.deb game-platform.deb
+          chmod +x game-platform.AppImage
+          gh release delete linux-latest --yes --cleanup-tag || true
+          gh release create linux-latest game-platform.AppImage game-platform.deb \
+            --target "${{ github.sha }}" \
+            --prerelease \
+            --title "App Linux mais recente" \
+            --notes "Build ${{ github.run_number }}. App do Game Platform para Linux (computador). Baixe game-platform.AppImage (funciona em qualquer Linux: dê permissão de execução e abra) ou game-platform.deb (Ubuntu/Debian: sudo apt install ./game-platform.deb)."
