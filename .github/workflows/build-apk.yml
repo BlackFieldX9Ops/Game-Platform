@@ -140,7 +140,13 @@ jobs:
         working-directory: app/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          # O download do Gradle (GitHub/services.gradle.org) às vezes dá 504 ou timeout; tenta de novo.
+          for i in 1 2 3 4 5; do
+            ./gradlew assembleDebug && exit 0
+            echo "gradle falhou (tentativa $i); aguardando para tentar de novo"
+            sleep $((i * 30))
+          done
+          exit 1
 
       - name: Conferir que a assinatura é a chave fixa
         run: |
