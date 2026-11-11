@@ -131,6 +131,7 @@ public class MainActivity extends BridgeActivity {
 
     // Avisa o app web quanto espaço evitar (variáveis CSS --sat, --sar, --sab, --sal).
     ViewCompat.setOnApplyWindowInsetsListener(window.getDecorView(), (v, insets) -> {
+      applyIme(insets);
       pushInsets(insets);
       return ViewCompat.onApplyWindowInsets(v, insets);
     });
@@ -274,6 +275,27 @@ public class MainActivity extends BridgeActivity {
     setRequestedOrientation(value);
   }
 
+  // Com o app desenhando por trás das barras o teclado não encolhe a tela sozinho: a área do WebView
+  // passa a terminar no topo do teclado, e o app (que reage ao tamanho da janela) continua inteiro na tela.
+  private void applyIme(WindowInsetsCompat insets) {
+    try {
+      WebView web = getBridge() != null ? getBridge().getWebView() : null;
+      if (web == null) return;
+      int bottom = insets.isVisible(WindowInsetsCompat.Type.ime())
+          ? insets.getInsets(WindowInsetsCompat.Type.ime()).bottom : 0;
+      android.view.ViewGroup.LayoutParams lp = web.getLayoutParams();
+      if (lp instanceof android.view.ViewGroup.MarginLayoutParams) {
+        android.view.ViewGroup.MarginLayoutParams m = (android.view.ViewGroup.MarginLayoutParams) lp;
+        if (m.bottomMargin != bottom) {
+          m.bottomMargin = bottom;
+          web.setLayoutParams(m);
+        }
+      }
+    } catch (Exception ignored) {
+      // sem ajuste de teclado: o app web ainda tenta se ajustar sozinho
+    }
+  }
+
   private void pushInsets(WindowInsetsCompat insets) {
     WebView web = getBridge() != null ? getBridge().getWebView() : null;
     if (web == null) return;
@@ -281,10 +303,11 @@ public class MainActivity extends BridgeActivity {
     int types = WindowInsetsCompat.Type.displayCutout();
     if (!fullscreen) types |= WindowInsetsCompat.Type.systemBars();
     Insets i = insets.getInsets(types);
+    boolean imeOn = insets.isVisible(WindowInsetsCompat.Type.ime());
     float d = getResources().getDisplayMetrics().density;
     String js = "(function(s){s.setProperty('--sat','" + (i.top / d) + "px');"
         + "s.setProperty('--sar','" + (i.right / d) + "px');"
-        + "s.setProperty('--sab','" + (i.bottom / d) + "px');"
+        + "s.setProperty('--sab','" + ((imeOn ? 0 : i.bottom) / d) + "px');"
         + "s.setProperty('--sal','" + (i.left / d) + "px');})(document.documentElement.style)";
     web.evaluateJavascript(js, null);
   }

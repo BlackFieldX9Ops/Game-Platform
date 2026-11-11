@@ -2,11 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="0ab8b8940340">
+<meta name="gp-ui" content="e0477230d03e">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -1104,6 +1104,27 @@ html.lt .cover svg{color:#fff}
 .lvl.ok{background:#34d3992b;color:var(--ok)}
 .lvl.mid{background:#fbbf242b;color:var(--warn)}
 .lvl.hv{background:#f871712b;color:var(--bad)}
+
+/* Perfil: nome colorido não empurra o título, selos e atalhos sem texto cortado */
+.pf-info h1,.pf-info h1.nc-rainbow{display:block;width:fit-content;max-width:100%}
+.pf-info .ttl{display:inline-flex;align-items:center;margin:4px 0 0;line-height:1.5}
+.chips2{align-items:center}
+.legacy .lg{width:76px;font-size:calc(8.5px*var(--ts,1));letter-spacing:0;line-height:1.2;overflow-wrap:normal;word-break:keep-all;hyphens:none}
+.tiles .mtile{position:relative;overflow:visible}
+.tiles .mtile span{overflow:visible;text-overflow:clip;white-space:normal;line-height:1.2}
+.tiles .mtile em{position:absolute;top:-7px;right:10px;max-width:none;padding:0 7px;font-size:calc(10px*var(--ts,1));line-height:16px;background:var(--accent2);border-color:var(--bg);color:#fff}
+
+/* Loja: saldo, busca, ordenação e cartões com preço e peso */
+.stg{justify-content:space-between;margin:2px 0 10px}
+.stbal{font-size:calc(13px*var(--ts,1));padding:4px 12px}
+.stbar{display:flex;gap:8px;margin:0 0 10px}
+.stq{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line2);border-radius:12px;padding:0 12px;height:44px;color:var(--muted)}
+.stq svg{width:18px;height:18px;flex:none}
+.stq input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--fg);font-size:calc(14px*var(--ts,1));height:100%}
+.stsort{flex:none;width:auto;max-width:44%;height:44px;padding:0 10px;font-size:calc(13px*var(--ts,1))}
+.scard .sprow{margin-top:2px;align-items:center}
+.scard .ptag.own{color:var(--ok)}
+.scard .lvl{font-size:calc(10.5px*var(--ts,1));padding:1px 8px}
 </style>
 
 <div id="ws" hidden></div>
@@ -1501,13 +1522,35 @@ function updatedGames(){
  return all().filter(function(g){if(!g.remote||!g.upd||!g.created)return false;return T(g.upd)-T(g.created)>120000&&T(g.upd)>lim}).sort(function(a,b){return T(b.upd)-T(a.upd)}).slice(0,4);
 }
 function priceBR(c){return 'R$ '+(c/100).toFixed(2).replace('.',',')}
+if(!P.search)P.search='<circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/>';
+function gOwnReal(g){return !!S.lib[g.id]||(on()&&g.remote&&g.owner===S.user.id)}
+function lvlChip(g){var rq=g.cfg&&g.cfg.req;if(!rq||!rq.level)return '';return '<span class="lvl '+(rq.level==='leve'?'ok':rq.level==='médio'?'mid':'hv')+'" title="Peso estimado para o celular">'+esc(rq.level.charAt(0).toUpperCase()+rq.level.slice(1))+'</span>'}
+function storeCard(g){
+ var a=avg(g.id),p=gPrice(g),own=gOwnReal(g);
+ return '<button class="card scard" data-a="open" data-v="'+g.id+'" aria-label="Abrir '+esc(g.title)+'">'+cover(g)+'<div class="meta"><div class="t">'+esc(g.title)+'</div><div class="row"><span class="g">'+esc(g.genre)+'</span><span class="stars">'+(a?'★ '+a:'Novo')+'</span></div>'
+  +'<div class="row sprow">'+(own?'<span class="ptag own">'+ic('check')+'Seu</span>':'<span class="ptag">'+ic('coin')+p.toLocaleString('pt-BR')+'</span>')+lvlChip(g)+'</div></div></button>';
+}
+function storeSorted(kind){
+ var q=(S.sq||'').trim().toLowerCase(),so=S.ssort||'new';
+ var list=featFirst(all()).filter(function(g){return (kind==='early'?gEarly(g)&&gPrice(g):gPrice(g)&&!gEarly(g))&&(S.cat==='Todos'||g.cat===S.cat)&&(S.dim==='Todos'||g.dim===S.dim)&&(!q||(g.title+' '+g.genre+' '+(g.cat||'')+' '+(g.desc||'')).toLowerCase().indexOf(q)>-1)});
+ if(so==='low')list=list.slice().sort(function(a,b){return gPrice(a)-gPrice(b)});
+ else if(so==='high')list=list.slice().sort(function(a,b){return gPrice(b)-gPrice(a)});
+ else if(so==='rate')list=list.slice().sort(function(a,b){return (Number(avg(b.id))||0)-(Number(avg(a.id))||0)});
+ return list;
+}
+function storeGrid(kind){
+ var list=storeSorted(kind);
+ return '<div class="note" style="margin:0 0 8px" aria-live="polite">'+list.length+(list.length===1?' jogo':' jogos')+'</div>'
+  +(list.length?'<div class="grid">'+list.map(storeCard).join('')+'</div>':'<div class="empty">'+((S.sq||S.cat!=='Todos'||S.dim!=='Todos')?'Nenhum jogo com esses filtros.<div style="margin-top:10px"><button class="btn ghost sm" data-a="stclear">Limpar filtros</button></div>':(kind==='early'?'Nenhum jogo em acesso antecipado à venda.':'Nenhum jogo pago ainda.')+(studioOn()?'<br>Publique um no Studio com preço em moedas.':''))+'</div>');
+}
 function storeGames(kind){
  var cats=['Todos'].concat(CATL().map(function(c){return c[0]}));
- var list=featFirst(all()).filter(function(g){return (kind==='early'?gEarly(g)&&gPrice(g):gPrice(g)&&!gEarly(g))&&(S.cat==='Todos'||g.cat===S.cat)&&(S.dim==='Todos'||g.dim===S.dim)});
  return '<p class="note" style="margin:0 0 10px">'+(kind==='early'?'Jogos ainda em desenvolvimento. Compre o acesso antecipado e jogue antes de todo mundo.':'Jogos pagos: compre uma vez com moedas e o jogo é seu para sempre.')+'</p>'
+ +'<div class="stbar"><label class="stq">'+ic('search')+'<input id="stq" type="search" placeholder="Buscar na Loja" value="'+esc(S.sq||'')+'" autocomplete="off" enterkeyhint="search" aria-label="Buscar na Loja"></label>'
+ +'<select class="in stsort" id="stSort" aria-label="Ordenar">'+[['new','Novidades'],['low','Menor preço'],['high','Maior preço'],['rate','Mais bem avaliados']].map(function(o){return '<option value="'+o[0]+'"'+((S.ssort||'new')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>'
  +'<div class="seg" style="margin-bottom:10px">'+['Todos','2D','3D','Misto'].map(function(d){return '<button data-a="dim" data-v="'+d+'" aria-pressed="'+(S.dim===d)+'">'+d+'</button>'}).join('')+'</div>'
  +'<div class="chips">'+cats.map(function(c){return '<button class="chip" data-a="cat2" data-v="'+c+'" aria-pressed="'+(S.cat===c)+'">'+c+'</button>'}).join('')+'</div>'
- +'<div class="sec"><h2>'+(kind==='early'?'Acesso antecipado':'Jogos pagos')+'</h2></div>'+(list.length?'<div class="grid">'+list.map(card).join('')+'</div>':'<div class="empty">'+(kind==='early'?'Nenhum jogo em acesso antecipado à venda.':'Nenhum jogo pago ainda.')+(studioOn()?'<br>Publique um no Studio com preço em moedas.':'')+'</div>')
+ +'<div class="sec"><h2>'+(kind==='early'?'Acesso antecipado':'Jogos pagos')+'</h2></div><div id="stgrid" data-kind="'+kind+'">'+storeGrid(kind)+'</div>';
 }
 function needLogin(){return on()?'':'<div class="panel mini" style="margin-bottom:10px"><div class="row"><div><b>Entre para comprar</b><div class="note" style="margin:2px 0 0">Planos, moedas e skins ficam na sua conta.</div></div><button class="btn sm" data-a="sub" data-v="auth">Entrar</button></div></div>'}
 function testNote(){if(S.store&&S.store.test===false)return '';return '<p class="note" style="margin:0 0 10px">Compras de teste: liberam na hora e <b>não cobram nada</b> por enquanto. O pagamento de verdade entra depois.</p>'}
@@ -1557,7 +1600,7 @@ function storeSkins(){
 }
 function store(){
  var t=S.shop||'games',tabs=[['games','Jogos'],['early','Antecipado'],['plans','Planos'],['coins','Moedas'],['skins','Skins']];
- return '<h1 class="h1s">Loja</h1>'
+ return '<div class="row stg"><h1 class="h1s" style="margin:0">Loja</h1>'+(on()?'<button class="idc coin stbal" data-a="sttab" data-v="coins" aria-label="Seu saldo em moedas">'+ic('coin')+'<b>'+(S.user.coins||0).toLocaleString('pt-BR')+'</b></button>':'')+'</div>'
  +'<div class="seg five" style="margin-bottom:12px">'+tabs.map(function(x){return '<button data-a="sttab" data-v="'+x[0]+'" aria-pressed="'+(t===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>'
  +({games:function(){return storeGames('games')},early:function(){return storeGames('early')},plans:storePlans,coins:storeCoins,skins:storeSkins}[t]||function(){return storeGames('games')})();
 }
@@ -4401,7 +4444,7 @@ function oriDetect(code){
 (function(){var vv=window.visualViewport,de=document.documentElement,base=0,t;
 function fit(){var h=vv?vv.height:innerHeight,top=vv?vv.offsetTop:0;
  base=Math.max(base,innerHeight,h);
- var kb=base-h>120;
+ var kb=base-h>120&&h>=180;
  var z=(typeof UIZ==='number'&&UIZ>0)?UIZ:1;de.style.setProperty('--vvh',Math.round((kb?h:Math.max(h,innerHeight))/z)+'px');
  de.style.setProperty('--vvt',Math.round(kb?top:0)+'px');
  de.classList.toggle('kb',kb);
@@ -4786,6 +4829,7 @@ async function act(a,v,t){
  switch(a){
   case 'go':if(v==='chat'){S.tab='chat';S.sub='community';S.detail=null;if(!S.chubSeen){S.ctab='msgs';S.chubSeen=1}render();socLoad();break}
    S.tab=v;S.sub=null;S.detail=null;render();if(v==='store')loadStore();break;
+  case 'stclear':S.sq='';S.cat='Todos';S.dim='Todos';render(true);break;
   case 'sttab':S.tab='store';S.sub=null;S.detail=null;S.shop=v;render();if(v!=='games')loadStore();break;
   case 'plans':S.tab='store';S.sub=null;S.detail=null;S.shop='plans';render();loadStore();break;
   case 'buy':buyItem(v);break;
@@ -5039,6 +5083,7 @@ document.addEventListener('change',function(e){
  if(t.id==='sCoverIn'&&t.files[0]){setCover(t.files[0]);t.value=''}
  if(t.id==='pfIn'&&t.files[0]){setAvatar(t.files[0]);t.value=''}
  if(t.id==='pfQuick'&&t.files[0]){setAvatar(t.files[0],true);t.value=''}
+ if(t.id==='stSort'){S.ssort=t.value;render(true);return}
  if(t.id==='pfCover'&&t.files[0]){setProfCover(t.files[0]);t.value=''}
  if(t.dataset&&t.dataset.early!==undefined){S.studio.early=t.checked?1:0}
  if(t.dataset.lib){S.studio.libs[t.dataset.lib]=t.checked}
@@ -5069,7 +5114,7 @@ document.addEventListener('drop',function(ev){
  if(z.classList.contains('cvu'))(document.getElementById('cfIn')?setCformCover(f):setCover(f));else importFile(f);
 });
 /* editor: números de linha e Tab */
-document.addEventListener('input',function(ev){if(ev.target.id==='sCode')edSync();if(ev.target.id==='sDesc'){var c=document.getElementById('dcnt');if(c)c.textContent=ev.target.value.length+'/200'}if(ev.target.id==='sNotes'){var cn=document.getElementById('ncnt');if(cn)cn.textContent=ev.target.value.length+'/300'}});
+document.addEventListener('input',function(ev){if(ev.target.id==='stq'){S.sq=ev.target.value;var g=document.getElementById('stgrid');if(g)g.innerHTML=storeGrid(g.dataset.kind||'games');return}if(ev.target.id==='sCode')edSync();if(ev.target.id==='sDesc'){var c=document.getElementById('dcnt');if(c)c.textContent=ev.target.value.length+'/200'}if(ev.target.id==='sNotes'){var cn=document.getElementById('ncnt');if(cn)cn.textContent=ev.target.value.length+'/300'}});
 document.addEventListener('scroll',function(ev){if(ev.target&&ev.target.id==='sCode'){var g=document.getElementById('gut'),hh=document.getElementById('hl');if(g)g.scrollTop=ev.target.scrollTop;if(hh){hh.scrollTop=ev.target.scrollTop;hh.scrollLeft=ev.target.scrollLeft}}},true);
 document.addEventListener('keydown',function(ev){
  if(ev.target.id==='sCode'&&ev.key==='Tab'){ev.preventDefault();var t=ev.target,s=t.selectionStart;t.value=t.value.slice(0,s)+'  '+t.value.slice(t.selectionEnd);t.selectionStart=t.selectionEnd=s+2;edSync()}

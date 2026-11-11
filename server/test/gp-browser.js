@@ -343,6 +343,33 @@ async function main() {
   ok('com o chat ligado não há aviso de desenvolvimento', !/Chat em desenvolvimento/.test(await txt(pf, '#view')));
   await pf.context().close();
 
+  // ---------- Loja: busca, ordenação, saldo e chips ----------
+  const mkG = (t, c, d, extra = {}) => api('POST', '/games', { title: t, description: 'Jogo ' + t, category: c, age: 'Livre', dim: d, libs: [], code: '<!doctype html><canvas id=c></canvas><script>c.getContext("2d")</script>', orientation: 'auto', tags: ['loja'], version: '1.0.0', visibility: 'public', settings: { kind: 'Jogo', monetization: 'paid', price: 50, ...extra } }, adm.token);
+  await mkG('Lojinha Alfa', 'Corrida', '2D', { price: 300 }); await mkG('Lojinha Beta', 'RPG', '3D', { price: 20 });
+  let ls = await page(phone, seed(ana));
+  await goto(ls); await ls.waitForTimeout(500);
+  await ls.click('#nav [data-v=store]'); await ls.waitForTimeout(600);
+  ok('Loja: campo de busca, ordenação e saldo', !!(await ls.$('#stq')) && !!(await ls.$('#stSort')) && !!(await ls.$('.stbal')));
+  ok('Loja: o ícone de busca é um desenho de verdade', await ls.evaluate(() => !/undefined/.test(document.querySelector('.stq').innerHTML)));
+  const nGrid = () => ls.evaluate(() => document.querySelectorAll('#stgrid .scard').length);
+  const all0 = await nGrid();
+  ok('Loja: mostra os jogos pagos', all0 >= 2, String(all0));
+  await ls.evaluate(() => { const i = document.getElementById('stq'); i.value = 'lojinha alfa'; i.dispatchEvent(new Event('input', { bubbles: true })); });
+  await ls.waitForTimeout(300);
+  ok('Loja: a busca filtra a lista', (await nGrid()) === 1 && /Lojinha Alfa/.test(await txt(ls, '#stgrid')));
+  await ls.evaluate(() => { const i = document.getElementById('stq'); i.value = 'zzzz-nada'; i.dispatchEvent(new Event('input', { bubbles: true })); });
+  await ls.waitForTimeout(300);
+  ok('Loja: busca sem resultado mostra aviso e botão de limpar', (await nGrid()) === 0 && !!(await ls.$('[data-a=stclear]')));
+  await ls.click('[data-a=stclear]'); await ls.waitForTimeout(400);
+  ok('Loja: limpar filtros volta a lista toda', (await nGrid()) === all0);
+  await ls.evaluate(() => { const s = document.getElementById('stSort'); const o = [...s.options].find(x => /menor|barato/i.test(x.textContent)); if (o) { s.value = o.value; s.dispatchEvent(new Event('change', { bubbles: true })); } });
+  await ls.waitForTimeout(400);
+  const prices = await ls.evaluate(() => [...document.querySelectorAll('#stgrid .scard')].map(c => { const m = (c.querySelector('.sprow') || c).textContent.match(/(\d[\d.]*)/); return m ? +m[1].replace(/\./g, '') : 0; }));
+  ok('Loja: ordenar por menor preço', prices.length > 1 && prices.every((v, i) => !i || v >= prices[i - 1]), prices.join(','));
+  ok('Loja: cartões mostram o peso do jogo (Leve/Médio/Pesado)', /Leve|Médio|Pesado/.test(await txt(ls, '#stgrid')));
+  ok('sem erros na Loja', ls.errs.length === 0, ls.errs.join('|'));
+  await ls.context().close();
+
   // Studio: Bibliotecas dentro de Avançado, dimensão Misto e tipo de projeto
   await api('POST', '/admin/studio-defaults', {}, adm.token);
   ok('categorias novas existem por padrão', (await api('GET', '/categories')).categories.some(c => /Battle Royale/.test(c)) && (await api('GET', '/categories')).categories.includes('Engine HTML'));

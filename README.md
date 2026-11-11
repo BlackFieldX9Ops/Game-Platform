@@ -315,3 +315,8 @@ Testes: `npm test` (servidor), `npm run test:app` (telas), `npm run test:browser
 ## Análise automática do arquivo do jogo
 
 Ao publicar (ou editar) um jogo, o servidor lê o arquivo (`server/src/scan.js`) e guarda em `settings.req`: tamanho, imagens/sons embutidos, motor detectado (Three.js, Phaser, Babylon, Unity, Godot…), WebGL/WebAssembly, se precisa de internet e uma **estimativa** de memória (512 MB a 6 GB, mais um degrau recomendado) e de versão do Android. A aba **Requisitos** do jogo usa isso; o criador vê o mesmo resultado em Studio → Revisar (`POST /api/games/analyze`). O criador não consegue forjar a análise, e jogos antigos são analisados na primeira subida do servidor. É uma estimativa feita só lendo o arquivo, sem executar o jogo.
+
+## Loja renovada, perfil e teclado
+- **Loja**: busca por nome/descrição/categoria, ordenação (novidades, menor/maior preço, melhor avaliados), chip de saldo que abre Moedas, selos de peso (Leve/Médio/Pesado, vindos da análise do arquivo) e "Limpar filtros" quando nada é encontrado.
+- **Perfil**: títulos como "Premium" não ficam mais tortos (nome em bloco, título alinhado, rótulos do legado sem quebrar) e o selo de nível das ferramentas aparece sobre o ícone.
+- **Teclado no Android**: o app agora aplica a altura do teclado como margem da WebView e usa `interactive-widget=resizes-content`. Não dá para reproduzir a tela escura no navegador de testes; valide em aparelho real e relate se persistir.
