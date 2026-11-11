@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="300c25e70adc">
+<meta name="gp-ui" content="9a644c786952">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -1559,7 +1559,10 @@ function detail(g){
   +'<div class="list" style="margin-top:12px">'+(reviewsOf(g.id).length?reviewsOf(g.id).slice().reverse().map(function(r){return '<div class="li" style="align-items:flex-start"><div class="body"><div class="row"><b>'+esc(r.n)+'</b><span class="note" style="margin:0">'+esc(r.d)+'</span></div><div>'+starRow(r.s)+'</div><div style="margin-top:4px">'+esc(r.t)+'</div></div></div>'}).join(''):'<div class="empty">Sem avaliações ainda. Seja o primeiro.</div>')+'</div>';
  }else if(tab==='req'){
   var d3=g.dim!=='2D';
-  body='<dl class="panel kv"><dt>Navegador</dt><dd>Chrome, Safari, Edge ou Firefox atual</dd><dt>Gráficos</dt><dd>'+(d3?'WebGL 2 ou Canvas':'Canvas 2D')+'</dd><dt>Memória</dt><dd>'+(d3?'2 GB (4 GB recomendado)':'1 GB')+'</dd><dt>Controles</dt><dd>Toque, mouse, teclado</dd><dt>Armazenamento</dt><dd>Roda direto no navegador</dd></dl>';
+  var cs=(g.cfg&&g.cfg.controls)||['touch'],cl=[];if(cs.indexOf('touch')>=0||!cs.length)cl.push('Toque na tela');if(cs.indexOf('gamepad')>=0)cl.push('controle (opcional)');if(cs.indexOf('keyboard')>=0)cl.push('teclado (opcional)');
+  var ori={portrait:'Em pé (retrato)',landscape:'Deitado (paisagem)'}[g.ori||(g.cfg&&g.cfg.orientation)||'']||'Em pé ou deitado';
+  var di=devInfo(),me=di.rows.length?'<div class="chipok '+(di.bad?'bad':'ok')+'" style="margin:0 0 10px;display:inline-flex">'+(di.bad?'Seu aparelho pode ter problemas':'Seu aparelho é compatível')+'</div>':'';
+  body=me+'<dl class="panel kv"><dt>Aparelho</dt><dd>Celular ou tablet Android</dd><dt>Sistema</dt><dd>Android 7.0 ou superior</dd><dt>Gráficos</dt><dd>'+(g.dim==='2D'?'Canvas 2D (qualquer celular)':'WebGL 2 (celular intermediário ou melhor)')+'</dd><dt>Memória</dt><dd>'+(g.dim==='2D'?'1 GB (2 GB recomendado)':'2 GB (4 GB recomendado)')+'</dd><dt>Tela</dt><dd>'+ori+'</dd><dt>Controles</dt><dd>'+cl.join(', ')+'</dd><dt>Instalação</dt><dd>Roda dentro do app Game Platform, sem instalar mais nada</dd></dl>';
  }else{
   var o=all().filter(function(x){return x.id!==g.id});
   body=o.length?'<div class="grid">'+o.map(card).join('')+'</div>':'<div class="empty">Sem outros jogos por enquanto.</div>';
@@ -1567,12 +1570,12 @@ function detail(g){
  var mineG=on()&&g.remote&&g.owner===S.user.id;
  return '<div class="row" style="margin:4px 0 12px"><button class="ib" data-a="back" aria-label="Voltar">'+ic('back')+'</button><span class="badge">'+esc(g.cat)+'</span></div>'
  +'<div class="detail-hero">'+cover(g)+'</div><h1 style="margin-top:14px">'+esc(g.title)+'</h1>'
- +'<div class="pills"><span class="badge">'+esc(g.genre)+'</span><span class="badge">'+dimL(g.dim)+'</span>'+((g.cfg&&g.cfg.kind)?'<span class="badge">'+esc(g.cfg.kind)+'</span>':'')+'<span class="badge">'+(g.age||'Livre')+'</span>'+(gEarly(g)?'<span class="badge warn">Acesso antecipado</span>':'')+(gPrice(g)?'<span class="badge">'+gPrice(g)+' moedas</span>':'')+(a?'<span class="badge">★ '+a+' ('+n+')</span>':'')+(g.dl&&g.dl!=='0'?'<span class="badge">'+g.dl+(g.remote?' partidas':' downloads')+'</span>':'')+((g.id[0]==='u'||mineG)?'<span class="badge ok">Publicado por você</span>':'')+'</div>'
+ +'<div class="pills"><span class="badge">'+esc(g.genre)+'</span><span class="badge">'+dimL(g.dim)+'</span>'+((g.cfg&&g.cfg.kind&&g.cfg.kind!==g.genre)?'<span class="badge">'+esc(g.cfg.kind)+'</span>':'')+'<span class="badge">'+(g.age||'Livre')+'</span>'+(gEarly(g)?'<span class="badge warn">Acesso antecipado</span>':'')+(gPrice(g)?'<span class="badge">'+gPrice(g)+' moedas</span>':'')+(a?'<span class="badge">★ '+a+' ('+n+')</span>':'')+(g.dl&&g.dl!=='0'?'<span class="badge">'+g.dl+(g.remote?' partidas':' downloads')+'</span>':'')+((g.id[0]==='u'||mineG)?'<span class="badge ok">Publicado por você</span>':'')+'</div>'
  +'<p style="color:var(--muted)">'+esc(g.desc||'')+'</p>'
  +(g.cfg&&g.cfg.notes?'<div class="panel whatsnew"><b>Novidades · v'+esc(g.ver||'1.0.0')+'</b><div>'+esc(g.cfg.notes)+'</div></div>':'')
  +(gOwned(g)?'<div class="dev"><button class="btn" style="flex:2" data-a="play" data-v="'+g.id+'">'+ic('play')+'Jogar agora</button><button class="btn ghost" style="flex:1.3" data-a="add" data-v="'+g.id+'">'+(inLib?ic('check')+'Na biblioteca':ic('plus')+'Biblioteca')+'</button>':'<div class="dev"><button class="btn" style="flex:3" data-a="buygame" data-v="'+g.id+'">'+ic('coin')+(gEarly(g)?'Comprar acesso antecipado · ':'Comprar · ')+gPrice(g)+' moedas</button>')+'<button class="ib" style="width:46px;height:auto;'+(wl?'color:#f472b6':'')+'" data-a="wish" data-v="'+g.id+'" aria-pressed="'+wl+'" aria-label="Lista de desejos">'+ic('heart')+'</button></div>'
  +'<div class="seg" style="margin:16px 0 12px">'+[['rev','Avaliações'],['req','Requisitos'],['sim','Semelhantes']].map(function(t){return '<button data-a="dtab" data-v="'+t[0]+'" aria-pressed="'+(tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>'+body
- +'<dl class="panel kv" style="margin-top:12px"><dt>Desenvolvedor</dt><dd>'+esc(g.dev||'Você')+'</dd><dt>Plataforma</dt><dd>Navegador (HTML5)</dd><dt>Classificação</dt><dd>'+(g.age||'Livre')+'</dd></dl>'
+ +'<dl class="panel kv" style="margin-top:12px"><dt>Desenvolvedor</dt><dd>'+esc(g.dev||'Você')+'</dd><dt>Plataforma</dt><dd>Android (app Game Platform)</dd><dt>Classificação</dt><dd>'+(g.age||'Livre')+'</dd></dl>'
  +(on()&&g.remote&&!mineG?'<div style="text-align:center;margin-top:10px"><button class="del" data-a="report" data-v="game:'+g.rid+'">Denunciar este jogo</button></div>':'');
 }
 function library(){
