@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="9a644c786952">
+<meta name="gp-ui" content="c2a105233baf">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -1095,6 +1095,12 @@ html.lt .cover svg{color:#fff}
 #ws .wchips{display:flex;flex-wrap:wrap;gap:8px}
 #ws .wcatc{display:inline-flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;border:1px solid var(--line2);border-radius:999px;background:var(--soft);font-size:calc(13px*var(--ts,1))}
 #ws .wcatc .ib{width:24px;height:24px;font-size:calc(16px*var(--ts,1));line-height:1}
+
+/* peso do jogo no celular */
+.lvl{padding:2px 10px;border-radius:999px;font-size:calc(12px*var(--ts,1));font-weight:700}
+.lvl.ok{background:#34d3992b;color:var(--ok)}
+.lvl.mid{background:#fbbf242b;color:var(--warn)}
+.lvl.hv{background:#f871712b;color:var(--bad)}
 </style>
 
 <div id="ws" hidden></div>
@@ -1421,6 +1427,23 @@ function postsVM(){
 }
 
 /* ---------- componentes ---------- */
+function scanParts(r){var f=r.files||{},p=[];if(f.img)p.push('imagens '+fmtSize(f.img));if(f.audio)p.push('sons '+fmtSize(f.audio));if(f.other)p.push('outros '+fmtSize(f.other));return p.length?' <span class="note" style="margin:0">· '+p.join(', ')+'</span>':''}
+function scanKey(s){return (s.code||'').length+'|'+Object.keys(s.libs||{}).filter(function(k){return s.libs[k]}).join(',')+'|'+(s.ext||[]).length}
+function scanRun(force){
+ var s=S.studio;if(!s||!on()||!s.code||!s.code.trim())return;
+ var k=scanKey(s);if(!force&&s.scanK===k&&(s.scan||s.scanBusy))return;
+ s.scanBusy=1;s.scanK=k;s.scanErr='';
+ api('POST','/games/analyze',{code:s.code,libs:Object.keys(s.libs||{}).filter(function(x){return s.libs[x]}),ext:(s.ext||[]).map(function(x){return{n:x.n,u:x.u,c:x.c}})}).then(function(r){s.scan=r.req;s.scanBusy=0;if(S.studio===s&&s.sect==='rev')render(true)}).catch(function(e){s.scanBusy=0;s.scanErr=e.message;if(S.studio===s&&s.sect==='rev')render(true)});
+}
+function scanCard(s){
+ if(!on())return '';
+ if(!s.code||!s.code.trim())return '';
+ var r=s.scan,h='<div class="sc"><h3><i>'+ic('chart')+'</i>Análise do arquivo<small>automática</small></h3>';
+ if(s.scanBusy&&!r)return h+'<p class="note">Lendo o arquivo do jogo…</p></div>';
+ if(!r)return h+'<p class="note">'+esc(s.scanErr||'Ainda não analisado.')+'</p><button class="btn ghost sm" data-a="sscan">Analisar agora</button></div>';
+ return h+'<div class="sumr"><div><span>Tamanho</span><b>'+esc(r.size)+'</b></div><div><span>Memória</span><b>'+esc(r.ram)+'</b></div><div><span>Recomendado</span><b>'+esc(r.ramRec)+'</b></div><div><span>Gráficos</span><b>'+esc(r.gfx)+'</b></div><div><span>Android</span><b>'+esc(r.android)+'+</b></div><div><span>Internet</span><b>'+(r.online?'Precisa':'Não precisa')+'</b></div></div>'
+  +(r.engines&&r.engines.length?'<p class="note">Detectado: '+esc(r.engines.join(', '))+'</p>':'')+'<p class="note">Esses requisitos aparecem sozinhos na página do jogo. São uma estimativa feita só lendo o arquivo (o jogo não é executado).'+(s.scanBusy?' Atualizando…':'')+'</p><button class="btn ghost sm" data-a="sscan">Analisar de novo</button></div>';
+}
 function dimL(d){return d==='Misto'?'2D e 3D':(d||'2D')}
 function kindNames(){var k=on()&&S.srvKinds&&S.srvKinds.length?S.srvKinds:['Jogo','Aplicativo'];return k}
 function catNames(){return on()&&S.srvCats?S.srvCats:(S.cats||CATS.map(function(c){return c[0]}))}
@@ -1561,8 +1584,8 @@ function detail(g){
   var d3=g.dim!=='2D';
   var cs=(g.cfg&&g.cfg.controls)||['touch'],cl=[];if(cs.indexOf('touch')>=0||!cs.length)cl.push('Toque na tela');if(cs.indexOf('gamepad')>=0)cl.push('controle (opcional)');if(cs.indexOf('keyboard')>=0)cl.push('teclado (opcional)');
   var ori={portrait:'Em pé (retrato)',landscape:'Deitado (paisagem)'}[g.ori||(g.cfg&&g.cfg.orientation)||'']||'Em pé ou deitado';
-  var di=devInfo(),me=di.rows.length?'<div class="chipok '+(di.bad?'bad':'ok')+'" style="margin:0 0 10px;display:inline-flex">'+(di.bad?'Seu aparelho pode ter problemas':'Seu aparelho é compatível')+'</div>':'';
-  body=me+'<dl class="panel kv"><dt>Aparelho</dt><dd>Celular ou tablet Android</dd><dt>Sistema</dt><dd>Android 7.0 ou superior</dd><dt>Gráficos</dt><dd>'+(g.dim==='2D'?'Canvas 2D (qualquer celular)':'WebGL 2 (celular intermediário ou melhor)')+'</dd><dt>Memória</dt><dd>'+(g.dim==='2D'?'1 GB (2 GB recomendado)':'2 GB (4 GB recomendado)')+'</dd><dt>Tela</dt><dd>'+ori+'</dd><dt>Controles</dt><dd>'+cl.join(', ')+'</dd><dt>Instalação</dt><dd>Roda dentro do app Game Platform, sem instalar mais nada</dd></dl>';
+  var rq=g.cfg&&g.cfg.req,di=devInfo(),me=di.rows.length?'<div class="chipok '+(di.bad?'bad':'ok')+'" style="margin:0 0 10px;display:inline-flex">'+(di.bad?'Seu aparelho pode ter problemas':'Seu aparelho é compatível')+'</div>':'';
+  body=me+'<dl class="panel kv"><dt>Aparelho</dt><dd>Celular ou tablet Android</dd><dt>Sistema</dt><dd>Android '+(rq?rq.android:'7.0')+' ou superior</dd><dt>Gráficos</dt><dd>'+(rq?rq.gfx:(g.dim==='2D'?'Canvas 2D (qualquer celular)':'WebGL 2 (celular intermediário ou melhor)'))+'</dd><dt>Memória</dt><dd>'+(rq?rq.ram+' ('+rq.ramRec+' recomendado)':(g.dim==='2D'?'1 GB (2 GB recomendado)':'2 GB (4 GB recomendado)'))+'</dd><dt>Tela</dt><dd>'+ori+'</dd><dt>Controles</dt><dd>'+cl.join(', ')+'</dd><dt>Instalação</dt><dd>Roda dentro do app Game Platform, sem instalar mais nada</dd>'+(rq?'<dt>Tamanho do jogo</dt><dd>'+esc(rq.size)+scanParts(rq)+'</dd>'+(rq.engines&&rq.engines.length?'<dt>Feito com</dt><dd>'+esc(rq.engines.join(', '))+'</dd>':'')+'<dt>Internet</dt><dd>'+(rq.online?'Precisa de conexão':'Funciona sem internet')+'</dd><dt>Peso para o celular</dt><dd><b class="lvl '+(rq.level==='leve'?'ok':rq.level==='médio'?'mid':'hv')+'">'+esc(rq.level.charAt(0).toUpperCase()+rq.level.slice(1))+'</b></dd>':'')+'</dl>'+(rq?'<p class="note">Estimativa feita pelo app lendo o arquivo do jogo quando ele foi publicado. O desempenho real depende do aparelho.</p>':'');
  }else{
   var o=all().filter(function(x){return x.id!==g.id});
   body=o.length?'<div class="grid">'+o.map(card).join('')+'</div>':'<div class="empty">Sem outros jogos por enquanto.</div>';
@@ -1675,7 +1698,7 @@ function publish_form(){
  }else if(sec==='mis'){
   body=misForm(s);
  }else if(sec==='rev'){
-  body=notesBox(s)+revHtml(s);
+  scanRun();body=notesBox(s)+scanCard(s)+revHtml(s);
  }else{
   var ctl=[['touch','Toque'],['keyboard','Teclado'],['gamepad','Gamepad']];
   body='<div class="sc"><h3><i>'+ic('cog')+'</i>Configurações avançadas</h3>'
@@ -4841,6 +4864,7 @@ async function act(a,v,t){
   case 'doupd':if(S.ud&&S.ud.st==='err')S.ud=null;startInstall(false);break;
   case 'allowinst':if(canAuto()&&window.GPNative.openInstallSettings)window.GPNative.openInstallSettings();break;
   case 'sclear':S.studio.code='';S.studio.zip='';S.studio.src=null;render(true);break;
+  case 'sscan':scanRun(true);render(true);break;
   case 'ssect':S.studio.sect=v;render();view.scrollTop=0;break;
   case 'spreview':S.studio.prev=S.studio.prev?0:1;render(true);if(S.studio.prev)view.scrollTop=0;break;
   case 'tagadd':

@@ -18,6 +18,7 @@ import { mountAppVer } from './appver.js';
 import { mountPush } from './push.js';
 import { mountAdminX } from './adminx.js';
 import { makeCfg } from './settings.js';
+import { analyze, SCAN_VERSION } from './scan.js';
 import { mountStore, hasStudio, hasPremium, fmtUid, itemName } from './store.js';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -177,6 +178,7 @@ function gameInput(b) {
     if (settings.missions.some(o => o.id === m.id)) m.id = 'm' + (i + 1) + 'x';
     settings.missions.push(m);
   }
+  settings.req = analyze(b.code, libs, settings.ext);
   return { title, description, category: b.category, age, dim: b.dim, libs: JSON.stringify([...new Set(libs)]), code: b.code, cover, orientation, tags: JSON.stringify(tags), version, visibility, settings: JSON.stringify(settings), ai: b.ai ? 1 : 0 };
 }
 
@@ -295,6 +297,14 @@ app.post('/api/games/:id/play', auth, wrap((req, res) => {
   res.json({ title: g.title, code: g.code, libs: JSON.parse(g.libs), ext: parseJ(g.settings, {}).ext || [], settings: parseJ(g.settings, {}), xp: req.user.xp + 25 });
 }));
 app.post('/api/games/:id/leave', auth, (req, res) => { const p = playing.get(req.user.id); if (p && p.gid === Number(req.params.id)) playing.delete(req.user.id); res.json({ ok: true }); });
+// Análise do arquivo antes de publicar: o Studio mostra o que o app entendeu (tamanho, motor, memória estimada).
+app.post('/api/games/analyze', auth, wrap((req, res) => {
+  if (typeof req.body.code !== 'string' || !req.body.code.trim()) bad('Envie o código do jogo');
+  if (req.body.code.length > MAX_CODE) bad('Código maior que 20 MB');
+  const libs = (Array.isArray(req.body.libs) ? req.body.libs : []).filter(l => LIBS.includes(l));
+  const ext = (Array.isArray(req.body.ext) ? req.body.ext : []).slice(0, 6).map(x => ({ n: String(x?.n || ''), u: typeof x?.u === 'string' ? x.u : undefined, c: typeof x?.c === 'string' ? x.c.slice(0, 300_000) : undefined }));
+  res.json({ req: analyze(req.body.code, libs, ext) });
+}));
 app.post('/api/games', auth, wrap((req, res) => {
   if (process.env.STUDIO_GATE !== 'off' && !hasStudio(req.user)) bad('O Studio é exclusivo de quem tem o plano. Veja os planos na Loja.', 403);
   const d = gameInput(req.body);
@@ -508,6 +518,15 @@ try {
   }
   run("INSERT INTO settings (key, value) VALUES ('categories_v2', '1') ON CONFLICT(key) DO NOTHING");
 } catch { /* sem lista salva: vale o padrão */ }
+// Jogos publicados antes da análise automática (ou com análise de versão antiga) ganham a análise na primeira subida.
+try {
+  for (const { id } of all('SELECT id FROM games')) {
+    const g = get('SELECT code, libs, settings FROM games WHERE id = ?', id); if (!g) continue;
+    const st = parseJ(g.settings, {}); if (st.req && st.req.v === SCAN_VERSION) continue;
+    st.req = analyze(g.code, parseJ(g.libs, []), st.ext || []);
+    run('UPDATE games SET settings = ? WHERE id = ?', JSON.stringify(st), id);
+  }
+} catch (e) { console.warn('análise dos jogos antigos:', e.message); }
 app.get('/api/categories', (_req, res) => res.json({ categories: categories() }));
 const listPut = (key, label, min, max, len) => wrap((req, res) => {
   const list = Array.isArray(req.body[key]) ? req.body[key].map(c => typeof c === 'string' ? c.trim().replace(/\s+/g, ' ') : '') : [];

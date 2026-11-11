@@ -351,8 +351,24 @@ async function main() {
   st = await txt(ps, '#view');
   ok('Avançado traz as bibliotecas', /Bibliotecas externas/.test(st) && /Configurações avançadas/.test(st));
   ok('sem aba Missões do Studio com missões desligadas? (ligada: aparece)', !!(await ps.$('[data-a=ssect][data-v=mis]')));
+  // análise automática do arquivo: aparece na revisão e vira requisitos na página do jogo
+  await ps.evaluate(() => document.querySelector('[data-a=ssect][data-v=code]').click()); await ps.waitForTimeout(200);
+  await ps.evaluate(() => document.querySelector('[data-a=smode][data-v=code]').click()); await ps.waitForTimeout(200);
+  await ps.fill('#sCode', '<!doctype html><meta name=viewport content="width=device-width"><canvas id=c></canvas><script>const s=new THREE.Scene();c.getContext("webgl2")</script>');
+  await ps.evaluate(() => document.querySelector('[data-a=ssect][data-v=rev]').click()); await ps.waitForTimeout(1200);
+  st = await txt(ps, '#view');
+  ok('Revisar mostra a análise do arquivo (tamanho, memória, motor)', /Análise do arquivo/.test(st) && /Three\.js/.test(st) && /Memória/.test(st) && /WebGL 2/.test(st), st.slice(0, 300));
   ok('sem erros no Studio', ps.errs.length === 0, ps.errs.join('|'));
   await ps.context().close();
+  const gp = await api('POST', '/games', { title: 'Leve Demais', description: 'jogo pequeno', category: 'Ação', age: 'Livre', dim: '2D', libs: [], code: '<!doctype html><canvas id=c></canvas><script>c.getContext("2d")</script>', orientation: 'auto', tags: [], version: '1.0.0', visibility: 'public', settings: {} }, adm.token);
+  let pd = await page(phone, seed(adm));
+  await goto(pd); await pd.waitForTimeout(600);
+  await pd.evaluate((id) => { const b = document.querySelector('[data-a=open][data-v="r' + id + '"]') || document.querySelector('[data-a=open]'); b.click(); }, gp.id);
+  await pd.waitForTimeout(400);
+  await pd.evaluate(() => [...document.querySelectorAll('[data-a=dtab]')].find(b => /Requisitos/.test(b.textContent)).click()); await pd.waitForTimeout(300);
+  const dt = await txt(pd, '#view');
+  ok('requisitos do jogo vêm da análise (512 MB, tamanho, sem internet)', /512 MB/.test(dt) && /Tamanho do jogo/.test(dt) && /Funciona sem internet/.test(dt) && /Leve/.test(dt), dt.slice(0, 500));
+  await pd.context().close();
   // painel: aba Studio em Configurações
   ps = await page({ viewport: { width: 1280, height: 900 } }, seed(adm));
   await goto(ps); await ps.waitForTimeout(900);

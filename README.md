@@ -311,3 +311,7 @@ Testes: `npm test` (servidor), `npm run test:app` (telas), `npm run test:browser
 - **Servidor** (endereço, HTTPS, versões de serviço e conteúdo) só aparece para o administrador; jogadores e compradores de plano veem apenas "Conexão".
 - **Instalação automática**: o servidor confere sozinho o APK mais novo no GitHub (`AUTO_APK_SYNC`), o app atualiza o manifesto antes de baixar e, se a verificação falhar, oferece "Tentar de novo" e "Baixar pelo navegador".
 - **Abertura do app**: a proteção da interface remota agora só dispara se o app não renderizar em 25 s (marca o sucesso na primeira tela) e a tela de abertura sai sozinha em até 7 s, mesmo com a rede lenta.
+
+## Análise automática do arquivo do jogo
+
+Ao publicar (ou editar) um jogo, o servidor lê o arquivo (`server/src/scan.js`) e guarda em `settings.req`: tamanho, imagens/sons embutidos, motor detectado (Three.js, Phaser, Babylon, Unity, Godot…), WebGL/WebAssembly, se precisa de internet e uma **estimativa** de memória (512 MB a 6 GB, mais um degrau recomendado) e de versão do Android. A aba **Requisitos** do jogo usa isso; o criador vê o mesmo resultado em Studio → Revisar (`POST /api/games/analyze`). O criador não consegue forjar a análise, e jogos antigos são analisados na primeira subida do servidor. É uma estimativa feita só lendo o arquivo, sem executar o jogo.
