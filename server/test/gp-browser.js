@@ -307,6 +307,13 @@ async function main() {
     await pz.waitForTimeout(9800);
     ok('a tela de abertura some sozinha mesmo com um arquivo travado', await pz.evaluate(() => !document.getElementById('splash')));
     await ctx.close(); }
+  // ---------- interface baixada (OTA) reescreve a página: a abertura tem que sair mesmo assim ----------
+  { const ctx = await br.newContext(phone), pz = await ctx.newPage();
+    await ctx.addInitScript(([h]) => { window.GPNative = { platform: 'android', getBuild: () => 77, canInstall: () => true, openUrl() {}, installApk() {} }; try { if (!localStorage.getItem('gp_ota')) { localStorage.setItem('gp_ota', JSON.stringify({ v: 'antiga', forBuild: 77, at: Date.now() })); localStorage.setItem('gp_ota_html', h); } } catch (e) {} }, [html1]);
+    await pz.goto(BASE + '/');
+    await pz.waitForTimeout(10500);
+    ok('com a interface baixada em uso, a tela de abertura também sai', await pz.evaluate(() => window.__GP_OTA === 'antiga' && !document.getElementById('splash')) );
+    await ctx.close(); }
   // ---------- recursos desligados, Studio e servidor só para o administrador ----------
   await api('POST', '/admin/config', { featChat: false, featMissions: false, featShortcuts: false }, adm.token);
   ok('o servidor informa os recursos desligados', JSON.stringify((await api('GET', '/platform')).feat) === JSON.stringify({ chat: false, missions: false, shortcuts: false }));
