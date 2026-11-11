@@ -300,6 +300,13 @@ async function main() {
   ok('cancelar agendamento pelo painel', (await api('GET', '/admin/notif/campaigns', null, adm.token)).campaigns.find(c => c.title === 'Jogo novo na Loja').status === 'cancelled');
   ok('sem erros no painel', p.errs.length === 0, p.errs.join('|'));
 
+  // ---------- a abertura (logo) nunca fica presa: mesmo se o evento load não vier ----------
+  { const ctx = await br.newContext(phone), pz = await ctx.newPage();
+    await pz.route('**/vendor/jszip.min.js', () => { /* nunca responde: o load da página não dispara */ });
+    await pz.goto(BASE + '/', { waitUntil: 'commit' });
+    await pz.waitForTimeout(9800);
+    ok('a tela de abertura some sozinha mesmo com um arquivo travado', await pz.evaluate(() => !document.getElementById('splash')));
+    await ctx.close(); }
   // ---------- recursos desligados, Studio e servidor só para o administrador ----------
   await api('POST', '/admin/config', { featChat: false, featMissions: false, featShortcuts: false }, adm.token);
   ok('o servidor informa os recursos desligados', JSON.stringify((await api('GET', '/platform')).feat) === JSON.stringify({ chat: false, missions: false, shortcuts: false }));
