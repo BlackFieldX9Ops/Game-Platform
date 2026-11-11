@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="3ee0aea436a2">
+<meta name="gp-ui" content="300c25e70adc">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -3675,7 +3675,8 @@ function startInstall(auto){
  var u0=S.upv;if(!u0||u0.st!=='new'||!u0.url)return;
  if(!canAuto()||viaPlay()||(S.ud&&(S.ud.st==='dl'||S.ud.st==='inst'))){startInstall2(auto);return}
  /* antes de baixar, pergunta de novo ao servidor: o SHA-256 do APK muda a cada build e o app precisa do mais recente */
- Promise.resolve().then(function(){return syncRun(false)}).then(function(){startInstall2(auto)},function(){startInstall2(auto)});
+ if(S.instBusy)return;S.instBusy=1;var done=0;function go(){if(done)return;done=1;S.instBusy=0;startInstall2(auto)}
+ Promise.resolve().then(function(){return syncRun(false)}).then(go,go);setTimeout(go,5000);
 }
 function startInstall2(auto){
  var u=S.upv;if(!u||u.st!=='new'||!u.url)return;

@@ -64,6 +64,7 @@ const view = x => x.d.getElementById('view').textContent;
   await wait(3800);
   ok('auto: desligado não instala, só avisa', n3.inst.length === 0 && /Nova versão disponível/.test(view(a3)));
   a3.d.querySelector('[data-a="doupd"]').click();
+  await wait(800);
   ok('auto: desligado, o botão Atualizar instala na hora', n3.inst.length === 1);
   console.log(`\n${pass} passaram, ${fail} falharam`);
   process.exit(fail ? 1 : 0);
