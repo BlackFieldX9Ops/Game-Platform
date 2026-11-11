@@ -64,8 +64,8 @@ async function main() {
   await goto(pa);
   await pa.evaluate(() => document.querySelector('[data-a=sub][data-v=settings]') && 0);
   await pa.click('#cfgb'); await pa.waitForTimeout(400);
-  ok('no Android não há campo para trocar o servidor', await pa.evaluate(() => !document.getElementById('srvUrl')) && /Servidor oficial/.test(await txt(pa, '#view')));
-  ok('o servidor oficial é a base das chamadas', await pa.evaluate(() => /game-platform-dgvz\.onrender\.com/.test(document.querySelector('#view').textContent)));
+  ok('no Android não há campo para trocar o servidor', await pa.evaluate(() => !document.getElementById('srvUrl')));
+  ok('o servidor fica escondido de quem não é administrador', await pa.evaluate(() => !/game-platform-dgvz\.onrender\.com|Servidor oficial/.test(document.querySelector('#view').textContent)));
   await pa.context().close();
 
   // ---------- 3. versões: tela de atualização ----------
@@ -78,7 +78,7 @@ async function main() {
   await pa.waitForTimeout(400);
   const ut = await txt(pa, '#view');
   ok('tela de atualização: versão atual, nova, descrição e correções', /build 10/.test(ut) && /1\.2\.50/.test(ut) && /Nova tela de atualização/.test(ut) && /Corrige o chat/.test(ut) && /Melhora a Loja/.test(ut) && /12,0 MB/.test(ut), ut.slice(0, 300));
-  ok('mostra conexão e versões do sistema', /Conexão com o servidor/.test(ut) && /Interface/.test(ut) && /Conteúdo/.test(ut) && /HTTPS|Sem HTTPS/.test(ut));
+  ok('jogador comum vê a conexão sem endereço nem versões do servidor', /Conexão/.test(ut) && !/game-platform-dgvz|Servidor oficial|HTTPS|Conteúdo \d/.test(ut), ut.slice(0, 400));
   await pa.evaluate(() => document.querySelector('#view [data-a=doupd]').click()); await pa.waitForTimeout(300);
   ok('"Atualizar agora" chama a instalação com SHA-256 e tamanho', await pa.evaluate(([a, s]) => JSON.stringify(window.__inst) === JSON.stringify([a, s, 12582912]), [APK, APK_SHA]), JSON.stringify(await pa.evaluate(() => window.__inst)));
   await pa.evaluate(() => window.GPUpd('dl', 40)); await pa.waitForTimeout(150);
@@ -299,6 +299,84 @@ async function main() {
   await p.click('.wmodal .btn:not(.ghost)'); await p.waitForTimeout(800);
   ok('cancelar agendamento pelo painel', (await api('GET', '/admin/notif/campaigns', null, adm.token)).campaigns.find(c => c.title === 'Jogo novo na Loja').status === 'cancelled');
   ok('sem erros no painel', p.errs.length === 0, p.errs.join('|'));
+
+  // ---------- recursos desligados, Studio e servidor só para o administrador ----------
+  await api('POST', '/admin/config', { featChat: false, featMissions: false, featShortcuts: false }, adm.token);
+  ok('o servidor informa os recursos desligados', JSON.stringify((await api('GET', '/platform')).feat) === JSON.stringify({ chat: false, missions: false, shortcuts: false }));
+  let pf = await page(phone, seed(ana));
+  await goto(pf); await pf.waitForTimeout(900);
+  let ft = await txt(pf, '#view');
+  ok('Início sem atalhos quando desligados', !/Atalhos/.test(ft));
+  ok('Início sem o cartão Comunidade quando o chat está desligado', !/Grupos, feed e conversas/.test(ft));
+  await pf.click('#nav [data-v=chat]'); await pf.waitForTimeout(400);
+  ft = await txt(pf, '#view');
+  ok('aba Chat mostra "em desenvolvimento / em breve"', /Chat em desenvolvimento/.test(ft) && /Em breve será lançado/.test(ft));
+  ok('o aviso do chat fica centralizado', await pf.evaluate(() => { const e = document.querySelector('.soon'); if (!e) return false; const r = e.getBoundingClientRect(), v = document.querySelector('#view').getBoundingClientRect(); return Math.abs((r.left + r.width / 2) - (v.left + v.width / 2)) < 4 && getComputedStyle(e).justifyContent === 'center'; }));
+  await pf.click('#nav [data-v=profile]'); await pf.waitForTimeout(400);
+  ok('Perfil sem o cartão de Missões', !(await pf.$('[data-a=sub][data-v=missions]')));
+  await pf.evaluate(() => document.querySelector('[data-a=sub][data-v=uiprefs]') && document.querySelector('[data-a=sub][data-v=uiprefs]').click());
+  await pf.waitForTimeout(300);
+  const tabIn = await pf.$('[data-a=uitab][data-v=inicio]');
+  if (tabIn) { await tabIn.click(); await pf.waitForTimeout(250); }
+  ok('Aparência sem a lista de atalhos', !/Usar atalhos padrão/.test(await txt(pf, '#view')));
+  ok('sem erros com os recursos desligados', pf.errs.length === 0, pf.errs.join('|'));
+  await pf.context().close();
+  await api('POST', '/admin/config', { featChat: true, featMissions: true, featShortcuts: true }, adm.token);
+  pf = await page(phone, seed(ana));
+  await goto(pf); await pf.waitForTimeout(900);
+  ok('com tudo ligado voltam os atalhos', /Atalhos/.test(await txt(pf, '#view')));
+  await pf.click('#nav [data-v=chat]'); await pf.waitForTimeout(400);
+  ok('com o chat ligado não há aviso de desenvolvimento', !/Chat em desenvolvimento/.test(await txt(pf, '#view')));
+  await pf.context().close();
+
+  // Studio: Bibliotecas dentro de Avançado, dimensão Misto e tipo de projeto
+  await api('POST', '/admin/studio-defaults', {}, adm.token);
+  ok('categorias novas existem por padrão', (await api('GET', '/categories')).categories.some(c => /Battle Royale/.test(c)) && (await api('GET', '/categories')).categories.includes('Engine HTML'));
+  ok('tipos de projeto padrão', JSON.stringify((await api('GET', '/kinds')).kinds) === JSON.stringify(['Jogo', 'Aplicativo', 'Engine', 'Ferramenta']));
+  let ps = await page(phone, seed(adm));
+  await goto(ps); await ps.waitForTimeout(900);
+  await ps.evaluate(() => document.querySelector('[data-a=go][data-v=studio]').click()); await ps.waitForTimeout(400);
+  await ps.evaluate(() => { const b = document.querySelector('[data-a=stab][data-v=pub]'); if (b) b.click(); });
+  await ps.waitForTimeout(300);
+  let st = await txt(ps, '#view');
+  ok('Studio: não existe mais a aba Bibliotecas', !(await ps.$('[data-a=ssect][data-v=libs]')) && !!(await ps.$('[data-a=ssect][data-v=adv]')));
+  ok('Studio: seletor de dimensão com Misto e tipo de projeto', /2D e 3D/.test(st) && /Tipo de projeto/.test(st) && !!(await ps.$('#sKind')));
+  await ps.evaluate(() => { document.querySelector('[data-a=sdim][data-v=Misto]').click(); });
+  await ps.waitForTimeout(200);
+  ok('Misto fica marcado', await ps.evaluate(() => document.querySelector('[data-a=sdim][data-v=Misto]').getAttribute('aria-pressed') === 'true'));
+  const opts = await ps.evaluate(() => [...document.querySelectorAll('#sKind option')].map(o => o.textContent));
+  ok('o tipo vem da lista do servidor', opts.join() === 'Jogo,Aplicativo,Engine,Ferramenta', opts.join());
+  await ps.evaluate(() => document.querySelector('[data-a=ssect][data-v=adv]').click());
+  await ps.waitForTimeout(250);
+  st = await txt(ps, '#view');
+  ok('Avançado traz as bibliotecas', /Bibliotecas externas/.test(st) && /Configurações avançadas/.test(st));
+  ok('sem aba Missões do Studio com missões desligadas? (ligada: aparece)', !!(await ps.$('[data-a=ssect][data-v=mis]')));
+  ok('sem erros no Studio', ps.errs.length === 0, ps.errs.join('|'));
+  await ps.context().close();
+  // painel: aba Studio em Configurações
+  ps = await page({ viewport: { width: 1280, height: 900 } }, seed(adm));
+  await goto(ps); await ps.waitForTimeout(900);
+  await ps.evaluate(() => { document.querySelector('#admb').click(); });
+  await ps.waitForTimeout(700);
+  await ps.evaluate(() => [...document.querySelectorAll('.wnav')].find(b => /Configurações/.test(b.textContent)).click()); await ps.waitForTimeout(700);
+  await ps.evaluate(() => [...document.querySelectorAll('.wtab')].find(b => /Studio/.test(b.textContent)).click());
+  await ps.waitForTimeout(900);
+  st = await txt(ps, '#ws');
+  ok('Configurações → Studio lista categorias e tipos', /Categorias dos jogos/.test(st) && /Tipos de projeto/.test(st) && /Battle Royale/.test(st) && /Aplicativo/.test(st), st.slice(0, 200));
+  await ps.fill('#wsSt_kind', 'Plugin'); await ps.click('[data-a=w_stadd][data-v=kind]'); await ps.waitForTimeout(700);
+  ok('adicionar tipo pelo painel', (await api('GET', '/kinds')).kinds.includes('Plugin'));
+  await ps.fill('#wsSt_cat', 'Cartas'); await ps.click('[data-a=w_stadd][data-v=cat]'); await ps.waitForTimeout(700);
+  ok('adicionar categoria pelo painel', (await api('GET', '/categories')).categories.includes('Cartas'));
+  await ps.evaluate(() => document.querySelector('[data-a=w_strm][data-v="kind:Plugin"]').click()); await ps.waitForTimeout(700);
+  ok('remover tipo pelo painel', !(await api('GET', '/kinds')).kinds.includes('Plugin'));
+  ok('sem erros no painel de configurações', ps.errs.length === 0, ps.errs.join('|'));
+  await ps.context().close();
+  // servidor visível só para o administrador
+  let pad2 = await page(phone, NATIVE(10) + seed(adm));
+  await goto(pad2); await pad2.waitForTimeout(500);
+  await pad2.click('#cfgb'); await pad2.waitForTimeout(400);
+  ok('administrador no Android vê o servidor', /game-platform-dgvz\.onrender\.com|Servidor oficial/.test(await txt(pad2, '#view')));
+  await pad2.context().close();
   await br.close();
 }
 main().catch(e => { console.error(e); fail++; }).finally(() => {

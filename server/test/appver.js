@@ -63,6 +63,14 @@ async function main() {
   m = (await call('GET', '/api/app/manifest?build=60')).j;
   ok('a versão sincronizada vira a mais nova', m.app.latest.build === 77 && m.app.latest.name === '1.2.77' && m.app.latest.notes === 'Sincronizada do GitHub');
 
+  // sincronização automática: se o SHA publicado ficar diferente do APK do GitHub, o servidor corrige sozinho
+  const lt = m.app.latest;
+  await call('POST', '/api/admin/versions', { build: 77, name: lt.name, url: lt.url, sha256: 'a'.repeat(64) }, ADM);
+  ok('SHA errado publicado (como acontece quando o GitHub troca o APK)', (await call('GET', '/api/app/manifest?build=60')).j.app.latest.sha256 === 'a'.repeat(64));
+  const au = await call('POST', '/api/admin/versions/auto', { now: true }, ADM);
+  ok('a sincronização automática confere com o GitHub', au.s === 200 && au.j.ok === true && au.j.build === 77, au.txt);
+  ok('e corrige o SHA publicado', (await call('GET', '/api/app/manifest?build=60')).j.app.latest.sha256 === APK_SHA);
+  ok('jogador não mexe na sincronização', (await call('POST', '/api/admin/versions/auto', { on: false }, A)).s === 403);
   ok('interface remota: desligar e exigir APK mínimo', (await call('POST', '/api/admin/app-settings', { uiOta: false, uiMinNative: 60 }, ADM)).s === 200 && (await call('GET', '/api/app/manifest')).j.ui.ota === false && (await call('GET', '/api/app/manifest')).j.ui.minNative === 60);
   const cv0 = (await call('GET', '/api/app/manifest')).j.config.version;
   ok('configuração remota muda de versão', (await call('POST', '/api/admin/app-settings', { config: { pollMinutes: 15, shortcuts: ['store', 'ach', 'BAD!'] } }, ADM)).s === 200 && (await call('GET', '/api/app/manifest')).j.config.version === cv0 + 1 && (await call('GET', '/api/app/manifest')).j.config.pollMinutes === 15 && (await call('GET', '/api/app/manifest')).j.config.shortcuts.join() === 'store,ach');

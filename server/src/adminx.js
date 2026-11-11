@@ -33,7 +33,7 @@ export function mountAdminX(c) {
   const url = (v, nm) => { const t = txt(v, 200); if (t && !/^https:\/\/[^\s]+$/.test(t)) bad(nm + ' deve começar com https://'); return t; };
 
   // ---------- identidade e regras (públicas para leitura) ----------
-  app.get('/api/platform', (_req, res) => res.json({ platform: kv('platform', PLATFORM_DEF), launched: !!get("SELECT 1 FROM settings WHERE key = 'launched'"), notice: cfg.val('homeNotice') }));
+  app.get('/api/platform', (_req, res) => res.json({ platform: kv('platform', PLATFORM_DEF), launched: !!get("SELECT 1 FROM settings WHERE key = 'launched'"), notice: cfg.val('homeNotice'), feat: { chat: !!cfg.val('featChat'), missions: !!cfg.val('featMissions'), shortcuts: !!cfg.val('featShortcuts') } }));
   app.get('/api/rules', (_req, res) => { const r = kv('rules', RULES_DEF); res.json({ rules: { intro: r.intro, sections: r.sections, devices: r.devices, updated_at: r.updated_at || null } }); });
   app.get('/api/admin/platform', auth, adminOnly, (_req, res) => res.json({ platform: kv('platform', PLATFORM_DEF), rules: kv('rules', RULES_DEF), defaults: { rules: RULES_DEF } }));
   app.post('/api/admin/platform', auth, adminOnly, wrap((req, res) => {

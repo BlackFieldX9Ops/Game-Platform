@@ -303,3 +303,11 @@ Testes: `npm test` (servidor), `npm run test:app` (telas), `npm run test:browser
 - **Formatar compras e atividade**: pede sua senha e a frase `FORMATAR TUDO`, faz um backup antes e é registrado na Auditoria. Depois de **Lançar a plataforma** (senha + `LANÇAR`) a formatação fica desativada para sempre.
 - **Painel no celular**: Configurações > Painel de gestão > *Abrir painel* (equipe). O botão de seta no topo volta ao app.
 - **Aparência**: temas (Meia-noite, Grafite, Preto total, Oceano, Floresta, Vinho, Pôr do sol, Claro, Alto contraste), cor do fundo e de destaque livres, 7 tipos de letra, peso e espaço das linhas, bordas e menos animações. Tudo fica guardado no aparelho.
+
+## Recursos desligados, Studio com tipos e servidor escondido
+
+- **Chat, Missões e Atalhos** têm interruptor em Painel → Configurações → Geral ("Recursos e aviso no app"). Na versão publicada (`NODE_ENV=production`) começam **desligados**; em desenvolvimento começam ligados (`FEAT_DEFAULT=on|off` força um dos dois). Desligado, o Chat mostra "Chat em desenvolvimento · Em breve será lançado" no centro da tela, e Missões e Atalhos somem do app.
+- **Studio**: a aba Bibliotecas virou parte de Avançado. A dimensão agora tem `2D`, `3D` e `Misto`, e há o campo **Tipo de projeto** (Jogo, Aplicativo, Engine, Ferramenta…). As listas de categorias (Battle Royale, Tiro, Engine HTML, Engine…) e de tipos são editadas em Painel → Configurações → Studio (`PUT /api/admin/categories`, `PUT /api/admin/kinds`, `POST /api/admin/studio-defaults`).
+- **Servidor** (endereço, HTTPS, versões de serviço e conteúdo) só aparece para o administrador; jogadores e compradores de plano veem apenas "Conexão".
+- **Instalação automática**: o servidor confere sozinho o APK mais novo no GitHub (`AUTO_APK_SYNC`), o app atualiza o manifesto antes de baixar e, se a verificação falhar, oferece "Tentar de novo" e "Baixar pelo navegador".
+- **Abertura do app**: a proteção da interface remota agora só dispara se o app não renderizar em 25 s (marca o sucesso na primeira tela) e a tela de abertura sai sozinha em até 7 s, mesmo com a rede lenta.

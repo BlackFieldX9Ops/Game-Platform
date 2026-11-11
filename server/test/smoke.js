@@ -142,7 +142,16 @@ async function main() {
   ok('categorias: repetidas recusadas', (await call('PUT', '/admin/categories', { categories: ['Ação', 'ação'] }, ADM)).s === 400);
   ok('categorias: admin altera a lista', (await call('PUT', '/admin/categories', { categories: ['Ação', 'Corrida', 'Esportes'] }, ADM)).s === 200);
   ok('categoria nova vale na publicação', (await call('POST', '/games', { ...base, title: 'Futebol', category: 'Esportes' }, A)).s === 201);
+  ok('dimensão Misto é aceita', (await call('POST', '/games', { ...base, title: 'Misto Um', category: 'Esportes', dim: 'Misto' }, A)).s === 201);
+  ok('dimensão inventada é recusada', (await call('POST', '/games', { ...base, title: 'Dim X', category: 'Esportes', dim: '4D' }, A)).s === 400);
+  ok('tipos de projeto são públicos', (await call('GET', '/kinds')).j.kinds.includes('Aplicativo') && (await call('GET', '/kinds')).j.dims.includes('Misto'));
+  ok('jogador não altera os tipos', (await call('PUT', '/admin/kinds', { kinds: ['Jogo'] }, A)).s === 403);
+  ok('admin altera os tipos', (await call('PUT', '/admin/kinds', { kinds: ['Jogo', 'Aplicativo', 'Plugin'] }, ADM)).s === 200);
+  ok('tipo de projeto vai junto com o jogo', (await call('POST', '/games', { ...base, title: 'Plug', category: 'Esportes', settings: { kind: 'Plugin' } }, A)).s === 201);
+  ok('tipo que não existe é recusado', (await call('POST', '/games', { ...base, title: 'Plug2', category: 'Esportes', settings: { kind: 'Nave' } }, A)).s === 400);
+  ok('lista de tipos vazia é recusada', (await call('PUT', '/admin/kinds', { kinds: [] }, ADM)).s === 400);
   ok('categoria removida não vale mais', (await call('POST', '/games', { ...base, title: 'Susto', category: 'Terror' }, A)).s === 400);
+  ok('restaurar padrões devolve categorias e tipos', (await call('POST', '/admin/studio-defaults', {}, ADM)).j.kinds.length === 4);
   const logs = await call('GET', '/admin/logs', null, ADM);
   ok('logs registram as ações do admin', logs.s === 200 && ['Jogo destacado', 'Categorias alteradas', 'Usuário suspenso', 'Notificação global'].every(a => logs.j.logs.some(l => l.action === a)));
   ok('logs: usuário comum é bloqueado', (await call('GET', '/admin/logs', null, A)).s === 403);

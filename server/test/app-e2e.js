@@ -165,9 +165,9 @@ async function main() {
   AD.click('[data-a="ugames"][data-v$=":Ana"]');
   ok('"Ver jogos" abre a lista filtrada pelo criador', await until(() => /Criador: Ana/.test(AD.text()) && /Meu Jogo Revisado/.test(AD.text())));
   AD.click('[data-a="ugx"]'); AD.click('[data-a="agc"][data-v="all"]');
-  AD.click('[data-a="atab"][data-v="cats"]'); AD.set('newCat', 'Esportes'); AD.click('[data-a="catadd"]');
+  AD.click('[data-a="atab"][data-v="cats"]'); AD.set('newCat', 'Cartas'); AD.click('[data-a="catadd"]');
   await wait(600);
-  ok('admin adiciona categoria pelo app', (await (await fetch(URL_ + 'api/categories')).json()).categories.includes('Esportes'));
+  ok('admin adiciona categoria pelo app', (await (await fetch(URL_ + 'api/categories')).json()).categories.includes('Cartas'));
   AD.click('[data-a="atab"][data-v="logs"]');
   ok('logs mostram as ações feitas', await until(() => /Jogo destacado/.test(AD.text()) && /Categorias alteradas/.test(AD.text())));
   AD.click('[data-a="atab"][data-v="mod"]');
@@ -186,7 +186,7 @@ async function main() {
   ok('Studio mostra o aviso de modo offline', await until(() => /Modo offline/.test(A.text())));
   A.set('sTitle', 'Rascunho Um');
   A.click('[data-a="ssect"][data-v="code"]'); A.click('[data-a="smode"][data-v="code"]'); A.click('[data-a="tpl"]');
-  A.click('[data-a="ssect"][data-v="libs"]');
+  A.click('[data-a="ssect"][data-v="adv"]');
   A.click('[data-a="lib"][data-v="phaser"]');
   ok('chip de biblioteca fica marcado', await until(() => A.$('[data-a="lib"][data-v="phaser"]').getAttribute('aria-pressed') === 'true'));
   A.click('[data-a="ssect"][data-v="code"]');
@@ -203,7 +203,7 @@ async function main() {
   ok('Studio: aba Informações não repete Testar/Publicar nem Meus jogos', !A.$('[data-a="spub"]') && !A.$('[data-a="stest"]') && !/Meus jogos publicados/.test(A.text()) && !!A.$('[data-a="spreview"]'));
   A.click('[data-a="ssect"][data-v="code"]');
   ok('Studio: aba Código tem análise do código e Testar', !!A.$('[data-a="stest"]') && !A.$('[data-a="spub"]'));
-  A.click('[data-a="ssect"][data-v="libs"]');
+  A.click('[data-a="ssect"][data-v="adv"]');
   ok('Studio: aba Bibliotecas só tem bibliotecas', !!A.$('[data-a="lib"]') && !A.$('[data-a="stest"]') && !A.$('[data-a="spreview"]'));
   A.click('[data-a="ssect"][data-v="rev"]');
   ok('Studio: aba Revisar tem checklist, resumo e Publicar', !!A.$('[data-a="spub"]') && /Revisão/.test(A.text()) && /Resumo/.test(A.text()) && !/Meus jogos publicados/.test(A.text()));
@@ -214,7 +214,7 @@ async function main() {
   ok('tag some ao tocar nela', await until(() => A.d.querySelectorAll('[data-a="tagrm"]').length === 1));
   A.click('[data-a="ssect"][data-v="code"]'); A.click('[data-a="tplmode"]');
   ok('modo Modelo carrega o código inicial no editor', await until(() => A.$('#sCode') && /<script>/.test(A.$('#sCode').value)));
-  A.click('[data-a="ssect"][data-v="libs"]');
+  A.click('[data-a="ssect"][data-v="adv"]');
   A.set('xUrl', 'http://ruim.com/x.js'); A.click('[data-a="extadd"]');
   ok('biblioteca externa exige https', /https/.test(A.toast()) && A.d.querySelectorAll('[data-a="extrm"]').length === 0);
   A.set('xUrl', 'https://cdn.exemplo.com/lib.min.js'); A.click('[data-a="extadd"]');

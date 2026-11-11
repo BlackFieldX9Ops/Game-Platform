@@ -27,7 +27,9 @@ if (!SECRET) { console.error('Defina JWT_SECRET em produção.'); process.exit(1
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').toLowerCase();
 const ORIGINS = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 
-const CATEGORIES = ['Aventura', 'RPG', 'Corrida', 'Ação', 'Estratégia', 'Terror', 'Plataforma', 'Quebra-cabeça'];
+const CATEGORIES = ['Aventura', 'RPG', 'Corrida', 'Ação', 'Estratégia', 'Terror', 'Plataforma', 'Quebra-cabeça', 'Battle Royale', 'Tiro', 'Luta', 'Esportes', 'Simulação', 'Musical', 'Educativo', 'Engine HTML', 'Engine', 'Utilitário'];
+const DEFAULT_KINDS = ['Jogo', 'Aplicativo', 'Engine', 'Ferramenta'];
+const DIMS = ['2D', '3D', 'Misto'];
 const DEFAULT_CATEGORIES = CATEGORIES.slice();
 const AGES = ['Livre', '10+', '12+', '14+', '16+', '18+'];
 const LIBS = ['three', 'phaser', 'p5', 'pixi'];
@@ -101,6 +103,7 @@ const GAME_COLS = `g.id, g.cover, g.featured, g.orientation, g.title, g.descript
 const parseJ = (s, d) => { try { return JSON.parse(s); } catch { return d; } };
 const cfg = makeCfg({ get, run, parseJ });
 const shapeGame = g => ({ ...g, featured: !!g.featured, ai: !!g.ai, libs: parseJ(g.libs, []), tags: parseJ(g.tags, []), settings: parseJ(g.settings, {}) });
+const kinds = () => { const r = get("SELECT value FROM settings WHERE key = 'kinds'"); try { return r ? JSON.parse(r.value) : DEFAULT_KINDS; } catch { return DEFAULT_KINDS; } };
 const categories = () => { const r = get("SELECT value FROM settings WHERE key = 'categories'"); try { return r ? JSON.parse(r.value) : DEFAULT_CATEGORIES; } catch { return DEFAULT_CATEGORIES; } };
 // Aviso fixo para todos os administradores (aparece em Avisos e no painel).
 const alertAdmins = (title, body = '') => { try { for (const a of all("SELECT id FROM users WHERE role = 'admin' AND status = 'active'")) run("INSERT INTO notifications (user_id, title, body, kind) VALUES (?,?,?, 'notice')", a.id, title, body); for (const a of all("SELECT id FROM users WHERE role = 'admin'")) pushTo(a.id, { type: 'games' }); } catch {} };
@@ -127,7 +130,7 @@ function gameInput(b) {
   const description = typeof b.description === 'string' ? b.description.trim().slice(0, 200) : '';
   if (!categories().includes(b.category)) bad('Categoria inválida');
   const age = b.age ?? 'Livre'; if (!AGES.includes(age)) bad('Classificação inválida');
-  if (!['2D', '3D'].includes(b.dim)) bad('Tipo deve ser 2D ou 3D');
+  if (!DIMS.includes(b.dim)) bad('A dimensão deve ser 2D, 3D ou Misto (2D e 3D)');
   const libs = Array.isArray(b.libs) ? b.libs : [];
   if (libs.some(l => !LIBS.includes(l))) bad('Biblioteca não suportada');
   if (typeof b.code !== 'string' || !b.code.trim()) bad('O código do jogo é obrigatório');
@@ -154,6 +157,7 @@ function gameInput(b) {
     settings.price = price;
   } else settings.price = 0;
   settings.early = st.early ? 1 : 0;
+  { const kd = st.kind === undefined || st.kind === null || st.kind === '' ? kinds()[0] : String(st.kind); if (!kinds().includes(kd)) bad('Tipo de projeto inválido'); settings.kind = kd; }
   settings.notes = typeof st.notes === 'string' ? st.notes.trim().slice(0, 300) : '';
   let extBytes = 0;
   for (const x of (Array.isArray(st.ext) ? st.ext : []).slice(0, 6)) {
@@ -496,15 +500,32 @@ app.post('/api/admin/notify', auth, adminOnly, wrap((req, res) => {
   logAct(req, 'Notificação global', req.body.title);
   res.status(201).json({ ok: true });
 }));
+try {
+  const savedC = get("SELECT value FROM settings WHERE key = 'categories'");
+  if (savedC && !get("SELECT 1 FROM settings WHERE key = 'categories_v2'")) {
+    const cur = JSON.parse(savedC.value), add = CATEGORIES.slice(8).filter(c => !cur.some(x => x.toLowerCase() === c.toLowerCase()));
+    run("UPDATE settings SET value = ? WHERE key = 'categories'", JSON.stringify([...cur, ...add].slice(0, 40)));
+  }
+  run("INSERT INTO settings (key, value) VALUES ('categories_v2', '1') ON CONFLICT(key) DO NOTHING");
+} catch { /* sem lista salva: vale o padrão */ }
 app.get('/api/categories', (_req, res) => res.json({ categories: categories() }));
-app.put('/api/admin/categories', auth, adminOnly, wrap((req, res) => {
-  const list = Array.isArray(req.body.categories) ? req.body.categories.map(c => typeof c === 'string' ? c.trim() : '') : [];
-  if (list.length < 2 || list.length > 14) bad('Mantenha entre 2 e 14 categorias');
-  if (list.some(c => c.length < 2 || c.length > 16)) bad('Cada categoria deve ter de 2 a 16 letras');
-  if (new Set(list.map(c => c.toLowerCase())).size !== list.length) bad('Há categorias repetidas');
-  run("INSERT INTO settings (key, value) VALUES ('categories', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", JSON.stringify(list));
-  logAct(req, 'Categorias alteradas', list.join(', '));
-  res.json({ categories: list });
+const listPut = (key, label, min, max, len) => wrap((req, res) => {
+  const list = Array.isArray(req.body[key]) ? req.body[key].map(c => typeof c === 'string' ? c.trim().replace(/\s+/g, ' ') : '') : [];
+  if (list.length < min || list.length > max) bad(`Mantenha entre ${min} e ${max} ${label}`);
+  if (list.some(c => c.length < 2 || c.length > len)) bad(`Cada item deve ter de 2 a ${len} letras`);
+  if (new Set(list.map(c => c.toLowerCase())).size !== list.length) bad('Há itens repetidos');
+  const before = key === 'kinds' ? kinds() : categories();
+  run("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", key, JSON.stringify(list));
+  logAct(req, key === 'kinds' ? 'Tipos de projeto alterados' : 'Categorias alteradas', `${before.length} → ${list.length}: ` + list.join(', '));
+  res.json({ [key]: list });
+});
+app.get('/api/kinds', (_req, res) => res.json({ kinds: kinds(), dims: DIMS }));
+app.put('/api/admin/categories', auth, adminOnly, listPut('categories', 'categorias', 2, 40, 24));
+app.put('/api/admin/kinds', auth, adminOnly, listPut('kinds', 'tipos', 1, 10, 24));
+app.post('/api/admin/studio-defaults', auth, adminOnly, wrap((req, res) => {
+  run("DELETE FROM settings WHERE key IN ('categories','kinds')");
+  logAct(req, 'Categorias e tipos do Studio restaurados', 'padrão');
+  res.json({ categories: categories(), kinds: kinds() });
 }));
 app.get('/api/admin/games', auth, adminOnly, (req, res) => {
   const w = ["g.status != 'removed'"], p = [], q = req.query;

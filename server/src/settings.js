@@ -1,12 +1,14 @@
 // Configurações do administrador: um cadastro único (tipos, limites, textos de ajuda) que o painel desenha sozinho
 // e que o servidor realmente respeita (cadastro, moderação, chat, economia, notificações).
+// Chat, Missões e Atalhos começam desligados na versão publicada (produção); FEAT_DEFAULT=on/off força o contrário.
+const FEAT_DEF = process.env.FEAT_DEFAULT ? process.env.FEAT_DEFAULT === 'on' : process.env.NODE_ENV !== 'production';
 export const GROUPS = [
   { id: 'signup', name: 'Cadastro e login', desc: 'Quem pode entrar e como as contas são protegidas.' },
   { id: 'mod', name: 'Moderação automática', desc: 'Filtros e limites que ajudam a equipe a cuidar da comunidade.' },
   { id: 'chat', name: 'Chat e comunidade', desc: 'Regras de conversa, imagens, grupos e publicações.' },
   { id: 'economy', name: 'Moedas e economia', desc: 'Bônus, recompensas e a parte dos criadores.' },
   { id: 'push', name: 'Notificações (padrões)', desc: 'O que vale para todos, antes de cada pessoa ajustar o seu.' },
-  { id: 'app', name: 'Aviso no app', desc: 'Um recado fixo no topo da tela inicial.' },
+  { id: 'app', name: 'Recursos e aviso no app', desc: 'Liga ou desliga partes do app para todos e define o recado fixo da tela inicial.' },
 ];
 export const FIELDS = [
   { key: 'signupOpen', group: 'signup', type: 'bool', def: true, label: 'Aceitar novos cadastros', help: 'Desligue para fechar a entrada de gente nova (quem já tem conta continua entrando).' },
@@ -31,6 +33,9 @@ export const FIELDS = [
   { key: 'quietDefault', group: 'push', type: 'bool', def: false, label: 'Horário silencioso ligado por padrão', help: 'Vale só para quem nunca mexeu nas próprias preferências.' },
   { key: 'quietFrom', group: 'push', type: 'time', def: '22:00', label: 'Silêncio começa às', help: '' },
   { key: 'quietTo', group: 'push', type: 'time', def: '07:00', label: 'Silêncio termina às', help: '' },
+  { key: 'featChat', group: 'app', type: 'bool', def: FEAT_DEF, label: 'Chat liberado', help: 'Desligado: a aba Chat mostra "Em desenvolvimento, em breve será lançado".' },
+  { key: 'featMissions', group: 'app', type: 'bool', def: FEAT_DEF, label: 'Missões liberadas', help: 'Desligado: as missões da plataforma ficam escondidas no app.' },
+  { key: 'featShortcuts', group: 'app', type: 'bool', def: FEAT_DEF, label: 'Atalhos na tela inicial', help: 'Desligado: os atalhos saem da Início e da personalização.' },
   { key: 'homeNotice', group: 'app', type: 'text', def: '', max: 160, label: 'Aviso na tela inicial', help: 'Aparece no topo da Início para todos. Deixe vazio para esconder.' },
 ];
 const BY = Object.fromEntries(FIELDS.map(f => [f.key, f]));

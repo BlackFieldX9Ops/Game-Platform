@@ -159,5 +159,32 @@ export function mountAppVer(c) {
     logAct(req, 'Configurações do app', out.join(' · '));
     res.json({ ok: true });
   }));
-  return { uiInfo, contentVersion };
+  // Sincronização automática com o GitHub: a cada build nova o APK muda (e o SHA-256 também), então o servidor
+  // mantém a versão publicada igual à do GitHub sozinho. Sem isso o app recusa instalar (o SHA não confere).
+  const autoState = { at: 0, ok: null, build: 0, err: '' };
+  async function autoSync() {
+    if (setting('app_auto_sync', '1') === '0' || setting('app_auto_sync', '1') === 0) return autoState;
+    autoState.at = Date.now();
+    try {
+      const v = await fromGithub();
+      const cur = get("SELECT * FROM app_versions WHERE platform = 'android' AND build = ?", v.build);
+      if (cur && cur.sha256 === v.sha256 && cur.url === v.url && cur.active) { autoState.ok = true; autoState.build = v.build; autoState.err = ''; return autoState; }
+      const req = { user: { id: null, name: 'Servidor (automático)', role: 'admin' }, ip: '' };
+      upsert(req, { ...v, notes: (cur && cur.notes) || v.notes || '', fixes: (cur && parseJ(cur.fixes, [])) || [], mandatory: cur ? !!cur.mandatory : false });
+      autoState.ok = true; autoState.build = v.build; autoState.err = '';
+    } catch (e) { autoState.ok = false; autoState.err = String((e && e.message) || e).slice(0, 160); }
+    return autoState;
+  }
+  if (env.AUTO_APK_SYNC === 'on' || (env.NODE_ENV === 'production' && env.AUTO_APK_SYNC !== 'off')) {
+    const t0 = setTimeout(autoSync, 25_000), t1 = setInterval(autoSync, 10 * 60_000);
+    t0.unref && t0.unref(); t1.unref && t1.unref();
+  }
+  app.get('/api/admin/versions/auto', auth, adminOnly, (_req, res) => res.json({ ...autoState, on: !(setting('app_auto_sync', '1') === '0' || setting('app_auto_sync', '1') === 0) }));
+  app.post('/api/admin/versions/auto', auth, adminOnly, wrap(async (req, res) => {
+    const b = req.body || {};
+    if (b.on !== undefined) { setSetting('app_auto_sync', b.on ? '1' : '0'); logAct(req, 'Sincronização automática do APK', b.on ? 'ligada' : 'desligada'); }
+    if (b.now) await autoSync();
+    res.json({ ...autoState, on: !(setting('app_auto_sync', '1') === '0' || setting('app_auto_sync', '1') === 0) });
+  }));
+  return { uiInfo, contentVersion, autoSync };
 }
