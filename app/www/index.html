@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="9165495ae91c">
+<meta name="gp-ui" content="4907b06cf8b9">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -1162,6 +1162,32 @@ html.lt .cover svg{color:#fff}
 .bnb{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .bnact{display:flex;gap:6px}
 .bnact .ib{width:32px;height:32px}.bnact .ib svg{width:15px;height:15px}
+
+/* ===== itens criados pela administração (molduras, fundos, temas) ===== */
+@keyframes skspin{to{transform:rotate(360deg)}}
+@keyframes skpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:.8}}
+@keyframes skmove{from{background-position:0 50%}to{background-position:100% 50%}}
+html[data-skth] #app{background:var(--skbg,var(--bg)),var(--bg)}
+html[data-skth] body{background:var(--bg)}
+.skt{display:inline-block;font-size:calc(10px*var(--ts,1));font-weight:700;color:var(--accent);background:var(--soft);border-radius:99px;padding:1px 8px}
+.skin .sw.th{position:relative}
+.skin .btn.sm svg{vertical-align:-2px}
+.skpv{display:grid;place-items:center;min-height:120px;overflow:hidden}
+.skpvt{width:100%;border-radius:14px;padding:14px;overflow:hidden}
+.skpvc{border:1px solid;border-radius:12px;padding:12px;display:grid;gap:6px}
+.skpvb{display:inline-block;justify-self:start;margin-top:4px;padding:6px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:calc(12px*var(--ts,1))}
+.skpvf{padding:18px}
+.skpvb2{width:100%;height:96px;border-radius:14px;background-size:240% 240%}
+.skrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.skrow>div{min-width:0}
+.skgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.skgrid .skc{min-width:0}
+.skcol{width:44px;height:36px;padding:0;border:1px solid var(--line2);border-radius:8px;background:var(--surface);flex:none}
+.skcol.off{opacity:.45}
+.skli{align-items:flex-start;flex-wrap:wrap;gap:8px}
+.skli .body{flex:1 1 160px;min-width:0;display:grid;gap:2px}
+.skbtn{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.badge.ok{background:#34d3991f;color:var(--ok)}
 </style>
 
 <div id="ws" hidden></div>
@@ -1999,7 +2025,7 @@ function settings(){
  +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação nos jogos</div><div class="seg">'+[['auto','O jogo decide'],['portrait','Sempre em pé'],['landscape','Sempre deitado']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">Fora dos jogos o app fica sempre em pé. Ao abrir um jogo, ele gira sozinho para a posição que o jogo pede (retrato ou paisagem). '+(native()?'Recursos do Android ativos.':'Neste navegador a rotação depende do aparelho.')+'</p></div>'
  +(wsIsStaff()?'<div class="panel" style="margin-top:14px"><div class="row"><span><b>Painel de gestão</b><span class="note" style="display:block;margin:2px 0 0">Usuários, moderação, compras, configurações e mais. Funciona no celular e no computador.</span></span><button class="btn ghost sm" data-a="w_enter">Abrir painel</button></div></div>':'')
 +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (local)','admin'))+'</div>'+admBox()
- +'<div class="stack" style="margin-top:14px">'+mrow('sliders','Aparência e tamanho','sub','uiprefs')+mrow('bell','Notificações','sub','notifprefs')+mrow('shield','Regras e requisitos','sub','rules')+mrow('folder','Pastas dos jogos','sub','files')+(bnAdm()?mrow('image','Banner de boas-vindas','sub','bned'):'')+mrow('upd','Atualização do app','sub','update',S.upv&&S.upv.st==='new'?'Nova':'')+'</div>'
+ +'<div class="stack" style="margin-top:14px">'+mrow('sliders','Aparência e tamanho','sub','uiprefs')+mrow('bell','Notificações','sub','notifprefs')+mrow('shield','Regras e requisitos','sub','rules')+mrow('folder','Pastas dos jogos','sub','files')+(bnAdm()?mrow('image','Banner de boas-vindas','sub','bned'):'')+(bnAdm()?mrow('star','Criar itens da Loja','sub','sked'):'')+mrow('upd','Atualização do app','sub','update',S.upv&&S.upv.st==='new'?'Nova':'')+'</div>'
  +updBanner()+updPanel()
  +'<dl class="panel kv" style="margin-top:12px"><dt>Tema</dt><dd>Escuro</dd><dt>Idioma</dt><dd>Português (Brasil)</dd><dt>Versão</dt><dd>1.2'+(curBuild()?' (build '+curBuild()+')':'')+'</dd></dl>'
  +'<div class="sec"><h2>Dados deste aparelho</h2></div>'
@@ -2102,7 +2128,7 @@ function render(keep){
  if(S.detail){var g=find(S.detail);html=g?detail(g):home()}
  else if(S.sub&&!featOn('chat')&&SUBTAB[S.sub]==='chat')html=chatSoon();
  else if(S.sub==='missions'&&!featOn('missions'))html=subhead('Missões')+'<div class="soon">'+ic('star')+'<h2>Missões em breve</h2><p>Este recurso está desativado por enquanto.</p></div>';
- else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,pay:payView,editprof:editprof,update:updView,uiprefs:uiView,notifprefs:npView,rules:rulesView,files:filesView,bned:bnEditor}[S.sub]()}
+ else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,pay:payView,editprof:editprof,update:updView,uiprefs:uiView,notifprefs:npView,rules:rulesView,files:filesView,bned:bnEditor,sked:skEditor}[S.sub]()}
  else if(S.tab==='chat'&&!featOn('chat'))html=chatSoon();
  else html={home:home,store:store,lib:library,studio:studio,profile:profile,chat:community}[S.tab]();
  view.innerHTML=(S.maint&&!ws0()?'<div class="warnbar">'+ic('alert')+'<div><b>Em manutenção</b>'+esc(S.maint.msg||'Voltamos já.')+'</div></div>':'')+offBar()+html;view.classList.toggle('cm',!!view.querySelector('.chatpg'));
@@ -4872,6 +4898,282 @@ function dedupeDom(){
 }
 window.addEventListener('load',function(){dedupeDom();setTimeout(dedupeDom,800);setTimeout(dedupeDom,3000)});
 dedupeDom();
+
+/* ===== Loja: itens criados pelo administrador (molduras, fundos, títulos, cores, balões e temas do app) ===== */
+var SK_FONTS={padrao:'',gotica:"'Palatino Linotype','Book Antiqua',Georgia,serif",fantasia:"fantasy,Impact,'Arial Black',sans-serif",cursiva:"'Segoe Script','Brush Script MT','Comic Sans MS',cursive",maquina:"ui-monospace,'Courier New',monospace",redonda:"'Trebuchet MS','Arial Rounded MT Bold',system-ui,sans-serif",grossa:"Impact,'Arial Black',sans-serif"};
+var SK_FONTN={padrao:'Padrão do app',gotica:'Gótica (com serifa)',fantasia:'Fantasia',cursiva:'Cursiva',maquina:'Máquina de escrever',redonda:'Redonda',grossa:'Grossa (cartaz)'};
+var SK_SLOTN={frame:'Moldura de perfil',banner:'Fundo do perfil',title:'Título',ncolor:'Cor do nome',bubble:'Balão do chat',theme:'Tema do app'};
+var SK_ID=/^c\d+$/,SK_HEX=/^#[0-9a-fA-F]{6}$/;
+var SK={busy:0};
+S.skins=ld('gp_skins',{})||{};
+S.skprev='';
+function skDef(id){return id&&SK_ID.test(String(id))&&S.skins&&S.skins[id]||null}
+function skUrl(k,d){return base()+'/api/store/'+k+'/'+d.id+'?v='+(d.ver||1)}
+function skHex(v){return typeof v==='string'&&SK_HEX.test(v)?v:''}
+function skCss(){
+ var o=[];
+ Object.keys(S.skins||{}).forEach(function(id){
+  var d=S.skins[id];if(!d||!SK_ID.test(id))return;
+  var x=d.data||{},c='.'+id,img=d.hasImg?'url("'+skUrl('img',d)+'")':'',s=d.slot,g;
+  if(s==='frame'){
+   g=skHex(x.glow);
+   o.push('.avatar'+c+','+'.pf-av'+c+' .avatar,.sw'+c+'{position:relative'+(g?';box-shadow:0 0 0 2px '+g+',0 0 12px '+g+'aa':'')+'}');
+   if(img)o.push('.avatar'+c+'::after,.pf-av'+c+' .avatar::after,.sw'+c+'::after{content:"";position:absolute;inset:-26%;background:'+img+' center/contain no-repeat;pointer-events:none'+(x.anim==='spin'?';animation:skspin 7s linear infinite':x.anim==='pulse'?';animation:skpulse 1.8s ease-in-out infinite':'')+'}');
+   else if(x.anim==='pulse'&&g)o.push('.avatar'+c+',.pf-av'+c+' .avatar{animation:skpulse 1.8s ease-in-out infinite}');
+  }else if(s==='banner'){
+   var cs=[skHex(x.c1),skHex(x.c2),skHex(x.c3)].filter(Boolean),gr=cs.length?'linear-gradient(120deg,'+(cs.length>1?cs.join(','):cs[0]+','+cs[0])+')':'';
+   o.push('.pbanner'+c+',.pf-cover'+c+',.pf-cthumb'+c+',.sw'+c+'{background:'+(img?img+' center/cover':gr)+(!img&&x.fx==='move'?';background-size:240% 240%;animation:skmove 9s ease-in-out infinite alternate':'')+'}');
+  }else if(s==='ncolor'){
+   var a=skHex(x.c1),b=skHex(x.c2);
+   o.push('b'+c+',h1'+c+',span'+c+',.sw.nc'+c+'{'+(b?'background:linear-gradient(90deg,'+a+','+b+');-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block':'color:'+a)+'}');
+  }else if(s==='bubble'){
+   var a2=skHex(x.bg),b2=skHex(x.bg2);
+   o.push('.sw.bb'+c+',.bub'+c+',.bub.me'+c+',.bub:not(.me)'+c+'{background:'+(b2?'linear-gradient(120deg,'+a2+','+b2+')':a2)+';color:'+(skHex(x.fg)||'#fff')+'}');
+  }else if(s==='theme'){
+   var t1=skHex(x.accent),t2=skHex(x.accent2)||t1;
+   o.push('.sw.th'+c+'{background:'+(img?'linear-gradient(#0005,#0005),'+img+' center/cover':'linear-gradient(135deg,'+t1+','+t2+')')+(img?';outline:2px solid '+t1:'')+'}');
+  }
+ });
+ var st=document.getElementById('gpSkinCss');
+ if(!st){st=document.createElement('style');st.id='gpSkinCss';document.head.appendChild(st)}
+ st.textContent=o.join('\n');
+}
+function skSet(list){
+ var m={};(list||[]).forEach(function(d){if(d&&SK_ID.test(String(d.id)))m[d.id]=d});
+ var was=JSON.stringify(S.skins||{});
+ S.skins=m;
+ if(JSON.stringify(m)!==was){try{sv('gp_skins',m)}catch(e){}skCss();skThemeApply()}
+}
+skCss();
+function skLoad(){return api('GET','/skins').then(function(r){skSet(r.skins);if(S.tab==='store'||S.tab==='profile'||S.tab==='chat'||S.tab==='home')if(!S.sub&&!S.detail)render(true)}).catch(function(){})}
+(function(){var f=bnLoad;bnLoad=function(){try{skLoad()}catch(e){}return f.apply(this,arguments)}})();
+(function(){var f=loadStore;loadStore=function(){if(on())api('GET','/store').then(function(r){if(r&&r.skins)skSet(r.skins)}).catch(function(){});return f.apply(this,arguments)}})();
+
+/* ----- tema do app (substitui cores, letra e imagem de fundo do app inteiro) ----- */
+var skUiOrig=uiApply,skThemeOrig=applyTheme;
+var SK_KEYS=['--accent','--accent2','--soft','--soft2','--glow','--bg','--halo','--nav','--surface','--surface2','--surface3','--line','--line2','--fg','--muted','--font','--skbg'];
+function skThemeApply(){
+ var r=document.documentElement,st=r.style,id=S.skprev||(on()&&S.user&&S.user.theme)||'',d=skDef(id);
+ if(!d||d.slot!=='theme'){
+  if(r.getAttribute('data-skth')){
+   r.removeAttribute('data-skth');
+   SK.busy=1;try{SK_KEYS.forEach(function(k){st.removeProperty(k)});skUiOrig();skThemeOrig()}catch(e){}SK.busy=0;
+   var f=document.getElementById('gpSkinFont');if(f)f.textContent=''
+  }
+  return;
+ }
+ SK.busy=1;
+ try{
+  SK_KEYS.forEach(function(k){st.removeProperty(k)});
+  skUiOrig();skThemeOrig();
+  var x=d.data||{},A=skHex(x.accent)||'#8b5cf6',A2=skHex(x.accent2)||A,bg=skHex(x.bg),sf=skHex(x.surface),fg=skHex(x.fg),mu=skHex(x.muted),ln=skHex(x.line),lt=!!x.light;
+  st.setProperty('--accent',A);st.setProperty('--accent2',A2);st.setProperty('--soft',A+'1f');st.setProperty('--soft2',A+'3a');st.setProperty('--glow','0 10px 24px -10px '+A+'aa');
+  var up=lt?'#000000':'#ffffff';
+  if(bg){st.setProperty('--bg',bg);st.setProperty('--halo',mixHex(bg,A,lt?.08:.16));st.setProperty('--nav',lt?(sf||'#ffffff'):mixHex(bg,'#000000',.18));if(!sf)sf=mixHex(bg,up,lt?.55:.05)}
+  if(sf){st.setProperty('--surface',sf);st.setProperty('--surface2',mixHex(sf,up,lt?.05:.05));st.setProperty('--surface3',mixHex(sf,up,.1));if(!ln)ln=mixHex(sf,up,lt?.12:.1);st.setProperty('--line',ln);st.setProperty('--line2',mixHex(ln,up,.1))}
+  if(fg){st.setProperty('--fg',fg);if(!mu&&bg)mu=mixHex(fg,bg,.42)}
+  if(mu)st.setProperty('--muted',mu);
+  r.classList.toggle('lt',lt);st.colorScheme=lt?'light':'dark';
+  var fs=document.getElementById('gpSkinFont');
+  if(!fs){fs=document.createElement('style');fs.id='gpSkinFont';document.head.appendChild(fs)}
+  var stack=SK_FONTS[x.font]||'';
+  if(d.hasFont){fs.textContent='@font-face{font-family:"GPTema";src:url("'+skUrl('font',d)+'");font-display:swap}';st.setProperty('--font','"GPTema"'+(stack?','+stack:',system-ui,sans-serif'))}
+  else{fs.textContent='';if(stack)st.setProperty('--font',stack)}
+  if(d.hasImg){
+   var sh=Math.max(0,Math.min(90,+x.shade||0))/100,ov=sh?'linear-gradient(rgba(0,0,0,'+sh+'),rgba(0,0,0,'+sh+')),':'';
+   st.setProperty('--skbg',ov+'url("'+skUrl('img',d)+'") '+(x.fit==='tile'?'0 0/auto repeat':'center/cover no-repeat'));
+  }
+  var mt=document.querySelector('meta[name=theme-color]');if(mt&&bg)mt.setAttribute('content',bg);
+  r.setAttribute('data-skth',id);
+ }catch(e){try{console.error('tema do app: '+e.message+' '+String(e.stack).split('\n').slice(0,8).join(' | '))}catch(q){}}
+ SK.busy=0;
+}
+uiApply=function(){skUiOrig.apply(this,arguments);if(!SK.busy)skThemeApply()};
+applyTheme=function(){skThemeOrig.apply(this,arguments);if(!SK.busy)skThemeApply()};
+function skTry(id){
+ var d=skDef(id);if(!d||d.slot!=='theme')return;
+ S.skprev=id;skThemeApply();toast('Testando o tema por 10 segundos');
+ clearTimeout(skTry.h);skTry.h=setTimeout(function(){S.skprev='';skThemeApply();if(S.tab==='store'&&!S.sub)render(true)},10000);
+}
+try{skThemeApply()}catch(e){}
+
+/* ----- Loja: cartões dos itens (inclui etiqueta de temporada, datas e "Testar") ----- */
+function skDate(s){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');return m?m[3]+'/'+m[2]:''}
+function skinCard(slot,i,only){
+ var st=S.store,own=st.owned||[],eq=st.equipped||{};
+ var has=own.indexOf(i.id)>=0,on_=eq[slot]===i.id,cls=i.id.replace('_','-'),lock=i.premium&&!(S.user&&S.user.premium)&&!has;
+ var sw=slot==='title'?'<div class="sw ti">'+esc(i.name)+'</div>':slot==='ncolor'?'<div class="sw nc '+cls+'">Nome</div>':slot==='bubble'?'<div class="sw bb '+cls+'">Olá!</div>':'<div class="sw '+(slot==='frame'?'fr':slot==='banner'?'bn':'th')+' '+cls+'"></div>';
+ var tag=i.custom&&(i.tag||i.ends_at)?'<span class="skt">'+(i.tag?esc(i.tag):'')+(i.ends_at?(i.tag?' · ':'')+'até '+skDate(i.ends_at):'')+'</span>':'';
+ var act=has||(only&&!i.coins&&!lock)?'<button class="btn '+(on_?'ghost ':'')+'sm" data-a="'+(has?'equip':'buy')+'" data-v="'+(has?slot:i.id)+'"'+(has?' data-id="'+(on_?'':i.id)+'"':'')+'>'+(has?(on_?'Remover':'Usar'):'Pegar grátis')+'</button>':lock?'<button class="btn ghost sm" data-a="plans">Só Premium</button>':i.offsale?'<span class="note" style="margin:0">Fora de venda</span>':'<button class="btn sm" data-a="buy" data-v="'+i.id+'">'+(i.coins?ic('coin')+i.coins:'Grátis')+'</button>';
+ var tr=slot==='theme'&&i.custom&&skDef(i.id)?'<button class="btn ghost sm" data-a="sktry" data-v="'+i.id+'">'+ic('eye')+'Testar</button>':'';
+ return '<div class="skin">'+sw+'<b>'+esc(i.name)+(i.premium?' <i class="pm">Premium</i>':'')+'</b>'+tag+tr+act+'</div>';
+}
+function skinGrp(slot,only){
+ var st=S.store;if(!st)return '';
+ var own=st.owned||[],list=st.items.filter(function(i){return i.slot===slot&&(!only||own.indexOf(i.id)>=0||!i.coins)});
+ if(!list.length)return '';
+ return '<div class="sec tight"><h2>'+SLOTN[slot]+'</h2></div><div class="skins">'+list.map(function(i){return skinCard(slot,i,only)}).join('')+'</div>';
+}
+(function(){var f=storeSkins;storeSkins=function(){var h=f.apply(this,arguments);return (on()&&S.user.role==='admin'?'<button class="btn ghost sm" data-a="sked" style="margin-bottom:10px">'+ic('edit')+'Criar e editar itens da Loja</button>':'')+h}})();
+
+/* ----- editor do administrador ----- */
+var SK_PRESETS={
+ halloween:{name:'Halloween',tag:'Halloween',m:[10,1,11,2],coins:300,d:{accent:'#f97316',accent2:'#7c2d12',bg:'#0b0610',surface:'#1a0f22',fg:'#fde68a',font:'gotica',shade:35}},
+ criancas:{name:'Dia das Crianças',tag:'Dia das Crianças',m:[10,1,10,15],coins:300,d:{accent:'#fb7185',accent2:'#38bdf8',bg:'#1b1147',surface:'#2a1a6b',fg:'#fff7ed',font:'redonda',shade:20}},
+ carnaval:{name:'Carnaval',tag:'Carnaval',m:[2,1,3,5],coins:300,d:{accent:'#f59e0b',accent2:'#ec4899',bg:'#14072e',surface:'#231046',fg:'#ffffff',font:'fantasia',shade:20}},
+ natal:{name:'Natal',tag:'Natal',m:[12,1,12,31],coins:300,d:{accent:'#ef4444',accent2:'#16a34a',bg:'#08150d',surface:'#10261a',fg:'#fef2f2',font:'cursiva',shade:25}}
+};
+var SK_TAGS=['Halloween','Dia das Crianças','Carnaval','Natal','Ano Novo','Páscoa','Festa Junina','Dia dos Namorados'];
+function skAdm(){return on()&&S.user&&S.user.role==='admin'}
+function skEdLoad(){
+ if(!S.ske)S.ske={list:[],form:null};
+ S.ske.busy=1;S.ske.err='';render(true);
+ api('GET','/admin/store-items').then(function(r){var E=S.ske;E.busy=0;E.list=r.items||[];E.fonts=r.fonts||[];if(S.sub==='sked')render(true)}).catch(function(e){if(S.ske){S.ske.busy=0;S.ske.err=e.message}if(S.sub==='sked')render(true)});
+}
+function skYear(m,d){var n=new Date(),y=n.getFullYear(),end=y+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[3]).slice(-2);if(end<n.toISOString().slice(0,10))y++;return y}
+function skBlank(slot){return{id:0,slot:slot,name:'',coins:100,premium:false,active:true,tag:'',starts_at:'',ends_at:'',data:slot==='frame'?{anim:'none'}:slot==='theme'?{accent:'#8b5cf6',font:'padrao',shade:0,fit:'cover'}:slot==='banner'?{c1:'#4c1d95',c2:'#0e7490'}:slot==='ncolor'?{c1:'#f97316'}:slot==='bubble'?{bg:'#7c3aed',fg:'#ffffff'}:{},img:null,imgSrc:'',font:null,fontSrc:'',fontName:'',hasFont:false}}
+function skFromItem(it){return{id:it.n||+String(it.id).slice(1),cid:it.id,slot:it.slot,name:it.name,coins:it.coins,premium:!!it.premium,active:it.active!==false,tag:it.tag||'',starts_at:it.starts_at||'',ends_at:it.ends_at||'',data:JSON.parse(JSON.stringify(it.data||{})),img:it.hasImg?'keep':null,imgSrc:it.hasImg?skUrl('img',it):'',font:it.hasFont?'keep':null,fontSrc:it.hasFont?skUrl('font',it):'',fontName:it.hasFont?'(fonte enviada)':'',hasFont:!!it.hasFont}}
+function skColor(label,key,F,opt){
+ var v=F.data[key]||'';
+ return '<div class="skc"><label class="f" style="margin:0">'+label+'</label><div class="dev" style="margin:4px 0 0"><input type="color" data-sk="d.'+key+'" value="'+(v||'#888888')+'" class="skcol'+(v?'':' off')+'" aria-label="'+esc(label)+'"><span class="note" style="margin:0">'+(v||(opt?'não usar':'escolha'))+'</span>'+(opt&&v?'<button class="btn ghost sm" data-a="skclr" data-v="'+key+'">Limpar</button>':'')+'</div></div>';
+}
+function skPvHtml(F){
+ var x=F.data||{},s=F.slot,pv='';
+ if(s==='theme'){
+  var bg=skHex(x.bg)||'#0a0d1c',sf=skHex(x.surface)||'#11152a',fg=skHex(x.fg)||'#eef0fb',A=skHex(x.accent)||'#8b5cf6',A2=skHex(x.accent2)||A,mu=skHex(x.muted)||'#8d94b8',stack=SK_FONTS[x.font]||'';
+  var im=F.imgSrc?'url("'+esc(F.imgSrc)+'") '+(x.fit==='tile'?'0 0/auto repeat':'center/cover no-repeat'):'';
+  var sh=Math.max(0,Math.min(90,+x.shade||0))/100,ov=im&&sh?'linear-gradient(rgba(0,0,0,'+sh+'),rgba(0,0,0,'+sh+')),':'';
+  var ff=F.fontSrc&&/^data:/.test(F.fontSrc)?'"SKPV"'+(stack?','+stack:''):F.hasFont&&F.fontSrc?'"SKPV"'+(stack?','+stack:''):stack;
+  pv='<div class="skpvt" style="background:'+(im?ov+im+','+bg:bg)+';color:'+fg+(ff?';font-family:'+ff:'')+'"><div class="skpvc" style="background:'+sf+';border-color:'+mixHex(sf,'#ffffff',.12)+'"><b>Início</b><div style="color:'+mu+'">Jogue, crie e compartilhe</div><span class="skpvb" style="background:linear-gradient(135deg,'+A+','+A2+')">Jogar agora</span></div></div>';
+ }else if(s==='frame'){
+  var g=skHex(x.glow);
+  pv='<div class="skpvf"><div class="avatar xl" style="position:relative'+(g?';box-shadow:0 0 0 2px '+g+',0 0 14px '+g+'aa':'')+'">J'+(F.imgSrc?'<i style="position:absolute;inset:-26%;background:url(\''+esc(F.imgSrc)+'\') center/contain no-repeat;pointer-events:none'+(x.anim==='spin'?';animation:skspin 7s linear infinite':x.anim==='pulse'?';animation:skpulse 1.8s ease-in-out infinite':'')+'"></i>':'')+'</div></div>';
+ }else if(s==='banner'){
+  var cs=[skHex(x.c1),skHex(x.c2),skHex(x.c3)].filter(Boolean);
+  pv='<div class="skpvb2" style="background:'+(F.imgSrc?'url(\''+esc(F.imgSrc)+'\') center/cover':cs.length?'linear-gradient(120deg,'+(cs.length>1?cs.join(','):cs[0]+','+cs[0])+')':'#1b2140')+'"></div>';
+ }else if(s==='title'){
+  pv='<span class="ttl">'+esc(F.name||'Título')+'</span>';
+ }else if(s==='ncolor'){
+  var a=skHex(x.c1)||'#fff',b=skHex(x.c2);
+  pv='<b style="font-size:20px;'+(b?'background:linear-gradient(90deg,'+a+','+b+');-webkit-background-clip:text;background-clip:text;color:transparent':'color:'+a)+'">Seu nome</b>';
+ }else if(s==='bubble'){
+  var a3=skHex(x.bg)||'#7c3aed',b3=skHex(x.bg2);
+  pv='<div class="bub me" style="background:'+(b3?'linear-gradient(120deg,'+a3+','+b3+')':a3)+';color:'+(skHex(x.fg)||'#fff')+';display:inline-block">Olá, tudo bem?</div>';
+ }
+ return pv;
+}
+function skFontCss(F){return F.fontSrc?'@font-face{font-family:"SKPV";src:url("'+F.fontSrc+'")}':''}
+function skForm(F,E){
+ var h=subhead(F.id?'Editar item':'Novo item')+'<p class="note" style="margin-top:0">'+SK_SLOTN[F.slot]+'. A prévia muda enquanto você mexe.</p>';
+ h+='<div class="panel"><div class="skpv" id="skPv">'+skPvHtml(F)+'</div><style id="skpvFont">'+skFontCss(F)+'</style></div>';
+ h+='<div class="panel" style="margin-top:12px"><label class="f" for="skName" style="margin-top:0">'+(F.slot==='title'?'Texto do título':'Nome do item')+'</label><input class="in" id="skName" data-sk="name" maxlength="40" value="'+esc(F.name)+'" placeholder="'+(F.slot==='theme'?'Ex.: Halloween':F.slot==='title'?'Ex.: Caçador de fantasmas':'Ex.: Teia de aranha')+'" autocomplete="off">'
+  +'<div class="skrow"><div><label class="f">Preço em moedas</label><input class="in" type="number" min="0" max="100000" data-sk="coins" value="'+(+F.coins||0)+'" inputmode="numeric"></div><div><label class="f">Etiqueta (temporada)</label><input class="in" data-sk="tag" maxlength="24" list="skTags" value="'+esc(F.tag)+'" placeholder="Ex.: Halloween" autocomplete="off"><datalist id="skTags">'+SK_TAGS.map(function(t){return '<option value="'+esc(t)+'">'}).join('')+'</datalist></div></div>'
+  +'<div class="skrow"><div><label class="f">Vende a partir de</label><input class="in" type="date" data-sk="starts_at" value="'+esc(F.starts_at)+'"></div><div><label class="f">Vende até</label><input class="in" type="date" data-sk="ends_at" value="'+esc(F.ends_at)+'"></div></div>'
+  +'<p class="note" style="margin:6px 0 0">Deixe as datas vazias para vender sempre. Depois da data final quem já comprou continua com o item.</p>'
+  +'<label class="tg" style="margin-top:8px"><span>À venda</span><input type="checkbox" data-sk="active"'+(F.active?' checked':'')+'></label><label class="tg"><span>Só para quem tem Premium</span><input type="checkbox" data-sk="premium"'+(F.premium?' checked':'')+'></label></div>';
+ if(F.slot==='theme'){
+  h+='<div class="panel" style="margin-top:12px"><b>Cores do app</b><p class="note" style="margin:2px 0 8px">Só a cor principal é obrigatória. As outras trocam fundo, cartões e letras do app inteiro.</p><div class="skgrid">'+skColor('Cor principal','accent',F)+skColor('Cor secundária','accent2',F,1)+skColor('Fundo','bg',F,1)+skColor('Cartões','surface',F,1)+skColor('Texto','fg',F,1)+skColor('Texto fraco','muted',F,1)+'</div><label class="tg" style="margin-top:8px"><span>Tema claro (fundo claro, letra escura)</span><input type="checkbox" data-sk="d.light"'+(F.data.light?' checked':'')+'></label></div>'
+   +'<div class="panel" style="margin-top:12px"><b>Letras</b><label class="f" for="skFont">Estilo da letra</label><select class="in" id="skFont" data-sk="d.font">'+Object.keys(SK_FONTN).map(function(k){return '<option value="'+k+'"'+(F.data.font===k?' selected':'')+'>'+SK_FONTN[k]+'</option>'}).join('')+'</select>'
+   +'<div class="dev" style="margin:10px 0 0"><button class="btn ghost sm" data-a="skfont">'+ic('file')+(F.font?'Trocar fonte':'Enviar fonte própria')+'</button>'+(F.font?'<button class="btn ghost sm" data-a="skfontx">Tirar fonte</button>':'')+'</div><p class="note" style="margin:6px 0 0">Fonte própria: arquivo .woff2, .woff, .ttf ou .otf de até 400 KB. '+(F.fontName?esc(F.fontName):'')+'</p></div>'
+   +'<div class="panel" style="margin-top:12px"><b>Imagem de fundo (pode ser animada)</b><div class="dev" style="margin:8px 0 0"><button class="btn ghost sm" data-a="skimg">'+ic('image')+(F.img?'Trocar imagem':'Escolher imagem')+'</button>'+(F.img?'<button class="btn ghost sm" data-a="skimgx">Tirar</button>':'')+'</div><p class="note" style="margin:6px 0 0">WebP animado, PNG animado (APNG), GIF ou JPG, até 1 MB.</p>'
+   +'<div class="skrow"><div><label class="f">Escurecer a imagem</label><input type="range" min="0" max="90" step="5" data-sk="d.shade" value="'+(+F.data.shade||0)+'"></div><div><label class="f">Ajuste</label><select class="in" data-sk="d.fit"><option value="cover"'+(F.data.fit!=='tile'?' selected':'')+'>Cobrir a tela</option><option value="tile"'+(F.data.fit==='tile'?' selected':'')+'>Repetir (textura)</option></select></div></div></div>';
+ }else if(F.slot==='frame'){
+  h+='<div class="panel" style="margin-top:12px"><b>Imagem da moldura</b><div class="dev" style="margin:8px 0 0"><button class="btn ghost sm" data-a="skimg">'+ic('image')+(F.img?'Trocar imagem':'Escolher imagem')+'</button>'+(F.img?'<button class="btn ghost sm" data-a="skimgx">Tirar</button>':'')+'</div><p class="note" style="margin:6px 0 0">PNG animado (APNG), WebP animado ou GIF com fundo transparente, até 1 MB. A imagem fica em volta da foto de perfil.</p>'
+   +'<div class="skgrid">'+skColor('Cor do brilho','glow',F,1)+'</div><label class="f">Movimento</label><select class="in" data-sk="d.anim">'+[['none','Parado'],['pulse','Pulsando'],['spin','Girando']].map(function(a){return '<option value="'+a[0]+'"'+(F.data.anim===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join('')+'</select></div>';
+ }else if(F.slot==='banner'){
+  h+='<div class="panel" style="margin-top:12px"><b>Fundo do perfil</b><div class="dev" style="margin:8px 0 0"><button class="btn ghost sm" data-a="skimg">'+ic('image')+(F.img?'Trocar imagem':'Escolher imagem')+'</button>'+(F.img?'<button class="btn ghost sm" data-a="skimgx">Tirar</button>':'')+'</div><p class="note" style="margin:6px 0 0">Imagem (WebP animado, APNG, GIF ou JPG, até 1 MB) ou, sem imagem, um degradê de até 3 cores.</p>'
+   +'<div class="skgrid">'+skColor('Cor 1','c1',F)+skColor('Cor 2','c2',F,1)+skColor('Cor 3','c3',F,1)+'</div><label class="f">Movimento do degradê</label><select class="in" data-sk="d.fx"><option value="none"'+(F.data.fx!=='move'?' selected':'')+'>Parado</option><option value="move"'+(F.data.fx==='move'?' selected':'')+'>Ondulando</option></select></div>';
+ }else if(F.slot==='ncolor'){
+  h+='<div class="panel" style="margin-top:12px"><b>Cores do nome</b><div class="skgrid">'+skColor('Cor 1','c1',F)+skColor('Cor 2 (degradê)','c2',F,1)+'</div></div>';
+ }else if(F.slot==='bubble'){
+  h+='<div class="panel" style="margin-top:12px"><b>Balão do chat</b><div class="skgrid">'+skColor('Cor do balão','bg',F)+skColor('Cor 2 (degradê)','bg2',F,1)+skColor('Cor do texto','fg',F,1)+'</div></div>';
+ }
+ h+='<div class="dev" style="margin-top:12px"><button class="btn" data-a="sksave"'+(E.saving?' disabled':'')+'>'+(E.saving?'Salvando…':'Salvar item')+'</button><button class="btn ghost" data-a="skx">Cancelar</button></div>'
+  +'<input type="file" id="skFile" accept="image/png,image/webp,image/gif,image/jpeg" hidden><input type="file" id="skFontFile" accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf" hidden>';
+ return h;
+}
+function skStatus(i){return !i.active?'<span class="badge">Desligado</span>':!i.onSale?'<span class="badge">Fora das datas</span>':'<span class="badge ok">À venda</span>'}
+function skEditor(){
+ var E=S.ske||{busy:1,list:[],form:null};
+ if(!skAdm())return subhead('Criar itens da Loja')+'<div class="empty">Só o administrador.</div>';
+ if(E.form)return skForm(E.form,E);
+ var h=subhead('Criar itens da Loja');
+ if(E.busy&&!E.list.length)return h+'<p class="note">Carregando…</p>';
+ if(E.err)return h+'<div class="panel"><b>Não foi possível carregar</b><p class="note">'+esc(E.err)+'</p><button class="btn" data-a="skretry">Tentar de novo</button></div>';
+ h+='<p class="note" style="margin-top:0">Crie molduras, fundos, títulos, cores de nome, balões e temas que mudam o app inteiro (Halloween, Dia das Crianças, Carnaval, Natal…). Os itens aparecem na Loja, aba Skins.</p>'
+  +'<div class="panel"><label class="f" for="skNewSlot" style="margin-top:0">O que você quer criar?</label><select class="in" id="skNewSlot">'+Object.keys(SK_SLOTN).map(function(k){return '<option value="'+k+'"'+(k==='theme'?' selected':'')+'>'+SK_SLOTN[k]+'</option>'}).join('')+'</select><button class="btn" style="margin-top:10px" data-a="sknew">'+ic('plus')+'Criar</button>'
+  +'<div class="sec tight" style="margin-top:12px"><h2>Temas prontos para começar</h2></div><div class="dev" style="flex-wrap:wrap;gap:6px">'+Object.keys(SK_PRESETS).map(function(k){return '<button class="btn ghost sm" data-a="skpreset" data-v="'+k+'">'+esc(SK_PRESETS[k].name)+'</button>'}).join('')+'</div></div>';
+ h+='<div class="sec"><h2>Itens criados ('+E.list.length+')</h2></div>';
+ h+=E.list.length?'<div class="list">'+E.list.map(function(i){
+  var cf=E.confirm===i.id;
+  return '<div class="li skli"><div class="body"><b>'+esc(i.name)+'</b><span class="note">'+SK_SLOTN[i.slot]+' · '+(i.coins?i.coins+' moedas':'Grátis')+(i.tag?' · '+esc(i.tag):'')+(i.owners?' · '+i.owners+' com o item':'')+'</span><span>'+skStatus(i)+'</span></div>'
+   +'<div class="skbtn"><button class="btn ghost sm" data-a="skedit" data-v="'+i.id+'">Editar</button>'
+   +'<button class="btn ghost sm" data-a="skon" data-v="'+i.id+'">'+(i.active?'Desligar':'Ligar')+'</button>'
+   +(cf?'<button class="btn danger sm" data-a="skdelok" data-v="'+i.id+'">Apagar mesmo</button>':'<button class="del" data-a="skdel" data-v="'+i.id+'" aria-label="Apagar '+esc(i.name)+'">'+ic('trash')+'</button>')+'</div></div>'}).join('')+'</div>':'<div class="empty">Nenhum item criado ainda. Escolha o tipo acima ou comece por um tema pronto.</div>';
+ return h;
+}
+function skPvRefresh(){
+ var F=S.ske&&S.ske.form;if(!F)return;
+ var pv=document.getElementById('skPv'),fs=document.getElementById('skpvFont');
+ if(fs)fs.textContent=skFontCss(F);
+ if(pv)pv.innerHTML=skPvHtml(F);
+}
+function skFile(kind,f){
+ var F=S.ske&&S.ske.form;if(!F||!f)return;
+ var fr=new FileReader();
+ if(kind==='img'){
+  if(!/^image\/(png|webp|gif|jpeg)$/.test(f.type)){toast('Use PNG, APNG, WebP, GIF ou JPG');return}
+  if(f.size>1000000){toast('Imagem pesada ('+Math.round(f.size/1000)+' KB). O máximo é 1 MB: reduza o tamanho ou os quadros da animação.');return}
+  fr.onload=function(){F.img=fr.result;F.imgSrc=fr.result;render(true)};
+ }else{
+  if(!/\.(woff2|woff|ttf|otf)$/i.test(f.name||'')){toast('Use um arquivo .woff2, .woff, .ttf ou .otf');return}
+  if(f.size>400000){toast('Fonte pesada ('+Math.round(f.size/1000)+' KB). O máximo é 400 KB.');return}
+  fr.onload=function(){var m=/^data:[^;]*;base64,(.*)$/.exec(fr.result);if(!m)return;var t=/\.woff2$/i.test(f.name)?'font/woff2':/\.woff$/i.test(f.name)?'font/woff':/\.otf$/i.test(f.name)?'font/otf':'font/ttf';F.font='data:'+t+';base64,'+m[1];F.fontSrc=F.font;F.fontName=f.name;F.hasFont=true;render(true)};
+ }
+ fr.readAsDataURL(f);
+}
+function skBody(F){
+ var o={name:F.name,coins:Math.max(0,parseInt(F.coins,10)||0),premium:!!F.premium,active:!!F.active,tag:F.tag||'',starts_at:F.starts_at||'',ends_at:F.ends_at||'',data:F.data,img:F.img===null?null:F.img};
+ if(!F.id)o.slot=F.slot;
+ if(F.slot==='theme')o.font=F.font===null?null:F.font;
+ return o;
+}
+document.addEventListener('input',function(e){skField(e)});
+document.addEventListener('change',function(e){skField(e,1)});
+function skField(e,ch){
+ var el=e.target,k=el&&el.getAttribute&&el.getAttribute('data-sk'),E=S.ske,F=E&&E.form;if(!k||!F||S.sub!=='sked')return;
+ var v=el.type==='checkbox'?el.checked:el.value;
+ if(k.indexOf('d.')===0){var key=k.slice(2);if(el.type==='range')v=+v;F.data[key]=v;if(el.type==='color'){el.classList.remove('off');var n=el.parentNode.querySelector('.note');if(n)n.textContent=v}
+  if(ch&&(key==='font'||key==='light'))render(true)}
+ else F[k]=v;
+ skPvRefresh();
+}
+(function(){var old=gpAct;gpAct=function(a,v,t){
+ if(a==='sub'&&v==='sked'&&skAdm()){navMark(v);goSub(v);skEdLoad();return true}
+ if(a==='sked'&&skAdm()){S.detail=null;goSub('sked');skEdLoad();return true}
+ if(a==='sktry'){skTry(v);return true}
+ var E=S.ske;
+ if(a==='skretry'){skEdLoad();return true}
+ if(a==='sknew'&&E){var sl=(document.getElementById('skNewSlot')||{}).value||'theme';E.form=skBlank(sl);render(true);return true}
+ if(a==='skpreset'&&E){var p=SK_PRESETS[v];if(!p)return true;var F=skBlank('theme'),y=skYear(p.m);F.name=p.name;F.tag=p.tag;F.coins=p.coins;F.data=Object.assign({},F.data,p.d);F.starts_at=y+'-'+('0'+p.m[0]).slice(-2)+'-'+('0'+p.m[1]).slice(-2);F.ends_at=(p.m[2]<p.m[0]?y+1:y)+'-'+('0'+p.m[2]).slice(-2)+'-'+('0'+p.m[3]).slice(-2);E.form=F;render(true);return true}
+ if(a==='skedit'&&E){var it=E.list.filter(function(x){return x.id===v})[0];if(it){E.form=skFromItem(it);render(true)}return true}
+ if(a==='skx'&&E){E.form=null;render(true);return true}
+ if(a==='skimg'&&E&&E.form){var f=document.getElementById('skFile');if(f){f.value='';f.onchange=function(){skFile('img',f.files&&f.files[0])};f.click()}return true}
+ if(a==='skimgx'&&E&&E.form){E.form.img=null;E.form.imgSrc='';render(true);return true}
+ if(a==='skfont'&&E&&E.form){var g=document.getElementById('skFontFile');if(g){g.value='';g.onchange=function(){skFile('font',g.files&&g.files[0])};g.click()}return true}
+ if(a==='skfontx'&&E&&E.form){E.form.font=null;E.form.fontSrc='';E.form.fontName='';E.form.hasFont=false;render(true);return true}
+ if(a==='skclr'&&E&&E.form){delete E.form.data[v];render(true);return true}
+ if(a==='skon'&&E){var it2=E.list.filter(function(x){return x.id===v})[0];if(it2)api('PUT','/admin/store-items/'+String(v).slice(1),{active:!it2.active}).then(function(r){Object.assign(it2,r.item);render(true);loadStore();skLoad()}).catch(function(e){toast(e.message)});return true}
+ if(a==='skdel'&&E){E.confirm=v;render(true);return true}
+ if(a==='skdelok'&&E){api('DELETE','/admin/store-items/'+String(v).slice(1)).then(function(r){E.confirm=null;E.list=E.list.filter(function(x){return x.id!==v});toast('Item apagado'+(r.owners?' (estava com '+r.owners+')':''));render(true);loadStore();skLoad()}).catch(function(e){E.confirm=null;render(true);toast(e.message)});return true}
+ if(a==='sksave'&&E&&E.form&&!E.saving){
+  var F2=E.form;if(!F2.name||F2.name.trim().length<2){toast('Dê um nome ao item');return true}
+  E.saving=1;render(true);
+  api(F2.id?'PUT':'POST','/admin/store-items'+(F2.id?'/'+F2.id:''),skBody(F2)).then(function(r){
+   E.saving=0;var i=E.list.map(function(x){return x.id}).indexOf(r.item.id);if(i>=0)E.list[i]=r.item;else E.list.unshift(r.item);E.form=null;toast('Item salvo');render(true);loadStore();skLoad();
+  },function(e){E.saving=0;render(true);toast(e.message)});
+  return true}
+ return old(a,v,t)}})();
 
 /* ---------- player ---------- */
 var cur=null;

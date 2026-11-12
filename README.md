@@ -342,3 +342,16 @@ Ao publicar (ou editar) um jogo, o servidor lê o arquivo (`server/src/scan.js`)
 Ao trocar a interface por OTA, um APK antigo deixava o resto do documento antigo rodando por baixo da interface nova (duas telas, dois conjuntos de scripts). Com o teclado aberto, a cópia vazia ficava por cima e a tela parecia preta. Agora a interface termina com `<plaintext hidden>` (o que o navegador ainda ler vira texto escondido), o `ota_boot.html` faz o mesmo ao escrever a interface e o app remove elementos duplicados ao abrir. Isso vale para os APKs já instalados (via OTA) e para os novos.
 
 O editor do banner agora lista os jogos da plataforma (inclusive os ainda não publicados, marcados como tal) na opção "Abrir um jogo".
+
+### Criador de itens da Loja (administrador)
+
+Em Perfil → Configurações → **Criar itens da Loja** (ou na Loja, aba Skins) o administrador cria, edita, liga/desliga e apaga itens, sem publicar uma versão nova:
+
+- **Moldura de perfil**: imagem animada (PNG animado/APNG, WebP animado ou GIF, até 1 MB) em volta da foto, brilho e movimento (parado, pulsando, girando).
+- **Fundo do perfil**: imagem ou degradê de até 3 cores (pode ondular).
+- **Título**: o texto é o nome do item (escrever/reescrever).
+- **Cor do nome** e **balão do chat**.
+- **Tema do app**: troca cores (principal, fundo, cartões, texto), **letra** (estilos prontos ou fonte própria .woff2/.woff/.ttf/.otf até 400 KB) e **imagem/textura de fundo animada** do app inteiro. Vale para qualquer temporada (Halloween, Dia das Crianças, Carnaval, Natal… há modelos prontos) com etiqueta e datas opcionais de venda. Quem já comprou continua com o item depois da data final. Na Loja o jogador pode **testar** o tema por 10 segundos antes de comprar.
+
+Servidor: tabela `store_items` (ids `c1`, `c2`…), rotas `GET/POST/PUT/DELETE /api/admin/store-items`, imagens e fontes em `/api/store/img/:id` e `/api/store/font/:id` (cache imutável, conferidas pelos bytes reais do arquivo; SVG não é aceito), definições públicas em `/api/skins`. Os itens entram em `/api/store` com preço, dados e etiqueta. Testes: `test/skins.js` e a parte "itens criados" de `test/gp-browser.js`.
+

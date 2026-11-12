@@ -507,5 +507,24 @@ addCol('users', 'title', 'TEXT');
 addCol('users', 'ncolor', 'TEXT');
 addCol('users', 'theme', 'TEXT');
 addCol('users', 'bubble', 'TEXT');
+db.exec(`
+CREATE TABLE IF NOT EXISTS store_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slot TEXT NOT NULL,
+  name TEXT NOT NULL,
+  coins INTEGER NOT NULL DEFAULT 0,
+  premium INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  tag TEXT NOT NULL DEFAULT '',
+  starts_at TEXT,
+  ends_at TEXT,
+  data TEXT NOT NULL DEFAULT '{}',
+  img TEXT,
+  font TEXT,
+  ver INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`);
 addCol('users', 'premium_until', 'TEXT');
 addCol('users', 'daily_at', 'TEXT');

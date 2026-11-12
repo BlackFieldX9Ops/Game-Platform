@@ -29,7 +29,19 @@ const ITEMS = [
   I('bb_cyan', 'bubble', 'Balão ciano', 100), I('bb_pink', 'bubble', 'Balão rosa', 100), I('bb_green', 'bubble', 'Balão verde', 100), I('bb_orange', 'bubble', 'Balão laranja', 100), I('bb_aurora', 'bubble', 'Balão aurora', 200), I('bb_gold', 'bubble', 'Balão ouro', 300, true),
 ];
 export const SLOTS = ['frame', 'banner', 'title', 'ncolor', 'theme', 'bubble'];
-export const itemName = id => (ITEMS.find(i => i.id === id) || {}).name || null;
+let skinFn = () => [];
+export const itemName = id => (ITEMS.find(i => i.id === id) || skinFn().find(i => i.id === id) || {}).name || null;
+// Itens criados pelo administrador (tabela store_items): ids "c" + número.
+export const SKIN_SLOTS = ['frame', 'banner', 'title', 'ncolor', 'theme', 'bubble'];
+export const SKIN_FONTS = { padrao: '', gotica: "'Palatino Linotype','Book Antiqua',Georgia,serif", fantasia: "fantasy,Impact,'Arial Black',sans-serif", cursiva: "'Segoe Script','Brush Script MT','Comic Sans MS',cursive", maquina: "ui-monospace,'Courier New',monospace", redonda: "'Trebuchet MS','Arial Rounded MT Bold',system-ui,sans-serif", grossa: "Impact,'Arial Black',sans-serif" };
+const HEX = /^#[0-9a-fA-F]{6}$/;
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const dataOk = (d, max) => typeof d === 'string' && d.length <= max;
+const IMG_RE = /^data:(image\/(?:png|webp|gif|jpeg));base64,([A-Za-z0-9+/=]+)$/;
+const FONT_RE = /^data:(font\/(?:woff2|woff|ttf|otf));base64,([A-Za-z0-9+/=]+)$/;
+const fontMagic = b => { const m = b.subarray(0, 4).toString('latin1'); return m === 'wOF2' ? 'font/woff2' : m === 'wOFF' ? 'font/woff' : m === 'OTTO' ? 'font/otf' : (b[0] === 0 && b[1] === 1 && b[2] === 0 && b[3] === 0) || m === 'true' ? 'font/ttf' : null; };
+const imgMagic = b => { const h = b.subarray(0, 12); const s4 = h.toString('latin1', 0, 4); if (h[0] === 0x89 && s4.slice(1) === 'PNG') return 'image/png'; if (s4 === 'RIFF' && h.toString('latin1', 8, 12) === 'WEBP') return 'image/webp'; if (s4 === 'GIF8') return 'image/gif'; if (h[0] === 0xff && h[1] === 0xd8) return 'image/jpeg'; return null; };
+export { IMG_RE, FONT_RE, HEX, DAY, dataOk, fontMagic, imgMagic };
 export const GAME_SHARE = 0.7; // parte do preço que fica com o criador
 
 export function mountStore(c) {
@@ -43,10 +55,21 @@ export function mountStore(c) {
   const saveCustomPacks = l => run("INSERT INTO settings (key, value) VALUES ('custom_packs', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", JSON.stringify(l));
   const allPacks = () => [...PACKS, ...customPacks()];
   const merged = (list, ov) => list.map(p => ({ ...p, ...(ov[p.id] || {}), base: p, edited: !!ov[p.id] }));
+  // ---- itens criados pelo administrador ----
+  const today = () => new Date().toISOString().slice(0, 10);
+  const inWindow = i => (!i.starts_at || i.starts_at <= today()) && (!i.ends_at || i.ends_at >= today());
+  const rowToSkin = r => ({ id: 'c' + r.id, n: r.id, slot: r.slot, name: r.name, coins: r.coins, premium: !!r.premium, active: !!r.active, tag: r.tag || '', starts_at: r.starts_at || null, ends_at: r.ends_at || null, data: parseJ(r.data, {}), ver: r.ver, hasImg: !!r.hasImg, hasFont: !!r.hasFont, custom: true });
+  let skinCache = null;
+  const skinItems = () => skinCache || (skinCache = all('SELECT id, slot, name, coins, premium, active, tag, starts_at, ends_at, data, ver, (img IS NOT NULL) AS hasImg, (font IS NOT NULL) AS hasFont FROM store_items ORDER BY id').map(rowToSkin));
+  const skinDirty = () => { skinCache = null; };
+  skinFn = () => skinItems();
+  const pubSkin = i => { const { n, active, ...r } = i; return r; };
+  const allItems = () => [...ITEMS, ...skinItems()];
+  const skinDefs = () => skinItems().map(pubSkin);
   const catalog = (all_ = false) => {
     const ov = overrides(), keep = x => all_ || x.active !== false;
     const strip = x => { if (all_) return x; const { base, edited, active, ...r } = x; return r; };
-    return { plans: merged(PLANS, ov).filter(keep).map(strip), packs: merged(allPacks(), ov).filter(keep).map(strip), items: merged(ITEMS, ov).filter(keep).map(strip) };
+    return { plans: merged(PLANS, ov).filter(keep).map(strip), packs: merged(allPacks(), ov).filter(keep).map(strip), items: [...merged(ITEMS, ov).filter(keep).map(strip), ...skinItems().filter(i => all_ || (i.active && inWindow(i))).map(i => all_ ? i : pubSkin(i))] };
   };
   const sale = (userId, kind, ref, name, o = {}) => run('INSERT INTO sales (user_id, kind, ref, name, cents, coins, cut, owner_id, days, coupon) VALUES (?,?,?,?,?,?,?,?,?,?)', userId, kind, ref, name, o.cents || 0, o.coins || 0, o.cut || 0, o.owner || null, o.days || 0, o.coupon || null);
   const brl = c => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
@@ -273,7 +296,23 @@ export function mountStore(c) {
   }));
 
   app.get('/api/store/log', auth, (req, res) => res.json({ log: all('SELECT id, delta, note, created_at FROM coin_log WHERE user_id = ? ORDER BY id DESC LIMIT 50', req.user.id) }));
-  app.get('/api/store', auth, (req, res) => res.json({ ...catalog(), test: payCfg().mode === 'test', payMode: payCfg().mode, ...state(req.user) }));
+  app.get('/api/store', auth, (req, res) => {
+    const cat = catalog(), st = state(req.user);
+    // itens que o jogador já tem continuam aparecendo, mesmo fora da venda (temporada acabou)
+    for (const i of skinItems()) if (st.owned.includes(i.id) && !cat.items.some(x => x.id === i.id)) cat.items.push({ ...pubSkin(i), offsale: true });
+    res.json({ ...cat, skins: skinDefs(), test: payCfg().mode === 'test', payMode: payCfg().mode, ...st });
+  });
+  // definições de aparência (cores, imagens) de todos os itens criados: o app usa para desenhar os perfis dos outros jogadores
+  app.get('/api/skins', (_req, res) => res.set('Cache-Control', 'no-cache').json({ skins: skinDefs() }));
+  const blob = (col, re) => (req, res) => {
+    const id = Number(String(req.params.id).replace(/^c/, ''));
+    const r = Number.isInteger(id) ? get(`SELECT ${col} AS b FROM store_items WHERE id = ?`, id) : null;
+    const m = r && r.b && re.exec(r.b);
+    if (!m) return res.status(404).end();
+    res.set({ 'Content-Type': m[1], 'Cache-Control': 'public, max-age=86400, immutable', 'X-Content-Type-Options': 'nosniff', 'Access-Control-Allow-Origin': '*', 'Cross-Origin-Resource-Policy': 'cross-origin' }).send(Buffer.from(m[2], 'base64'));
+  };
+  app.get('/api/store/img/:id', blob('img', IMG_RE));
+  app.get('/api/store/font/:id', blob('font', FONT_RE));
 
   app.post('/api/store/coupon', auth, wrap((req, res) => {
     const cat = catalog(), id = String(req.body.id || ''), plan = cat.plans.find(p => p.id === id), pack = cat.packs.find(p => p.id === id), item = plan || pack;
@@ -313,7 +352,7 @@ export function mountStore(c) {
     const id = String(req.body.id || '');
     const u = get('SELECT * FROM users WHERE id = ?', req.user.id);
     const cat = catalog(), plan = cat.plans.find(p => p.id === id), pack = cat.packs.find(p => p.id === id), item = cat.items.find(p => p.id === id);
-    if (!plan && !pack && !item && [...PLANS, ...allPacks(), ...ITEMS].some(p => p.id === id)) bad('Este item não está à venda agora', 410);
+    if (!plan && !pack && !item && [...PLANS, ...allPacks(), ...allItems()].some(p => p.id === id)) bad('Este item não está à venda agora', 410);
     const cp = plan ? couponFor(u.id, req.body.coupon, plan, 'plan') : pack ? couponFor(u.id, req.body.coupon, pack, 'pack') : null;
     if (plan || pack) {
       if (payCfg().mode !== 'test') bad('O pagamento real está ligado. Use o botão de comprar para abrir o pagamento.', 409);
@@ -337,7 +376,7 @@ export function mountStore(c) {
     if (!SLOTS.includes(slot)) bad('Item inválido');
     const id = req.body.id ? String(req.body.id) : null;
     if (id) {
-      const it = ITEMS.find(p => p.id === id);
+      const it = allItems().find(p => p.id === id);
       if (!it || it.slot !== slot || !owned(req.user.id).includes(id)) bad('Você não tem este item', 403);
     }
     run(`UPDATE users SET ${slot} = ? WHERE id = ?`, id, req.user.id);
@@ -480,7 +519,7 @@ export function mountStore(c) {
     } else if (s.kind === 'item') {
       run('UPDATE users SET coins = coins + ? WHERE id = ?', s.coins, u.id); clog(u.id, s.coins, 'Estorno: ' + s.name, 'refund:' + s.id);
       run('DELETE FROM user_items WHERE user_id = ? AND item_id = ?', u.id, s.ref);
-      const it = ITEMS.find(i => i.id === s.ref); if (it) run(`UPDATE users SET ${it.slot} = NULL WHERE id = ? AND ${it.slot} = ?`, u.id, it.id);
+      const it = allItems().find(i => i.id === s.ref); if (it) run(`UPDATE users SET ${it.slot} = NULL WHERE id = ? AND ${it.slot} = ?`, u.id, it.id);
     } else if (s.kind === 'game') {
       run('UPDATE users SET coins = coins + ? WHERE id = ?', s.coins, u.id); clog(u.id, s.coins, 'Estorno: ' + s.name, 'refund:' + s.id);
       if (s.owner_id && s.cut) { const o = get('SELECT coins FROM users WHERE id = ?', s.owner_id); if (o) { const take = Math.min(o.coins, s.cut); run('UPDATE users SET coins = coins - ? WHERE id = ?', take, s.owner_id); clog(s.owner_id, -take, 'Estorno de venda: ' + s.name, 'refund:' + s.id); } }
@@ -537,5 +576,90 @@ export function mountStore(c) {
     if (on) notifyK(id, 'Studio liberado', 'A administração liberou o Studio para você. Já pode publicar jogos.', 'premium');
     logAct(req, on ? 'Studio liberado' : 'Studio removido', t.name);
     res.json({ ok: true });
+  }));
+
+  // ---- criador de itens (administrador) ----
+  const SK_MAX_IMG = 1_400_000, SK_MAX_FONT = 560_000;
+  const colorOf = (v, nm, req_ = false) => { if (v === undefined || v === null || v === '') { if (req_) bad(nm + ': escolha uma cor'); return ''; } if (!HEX.test(String(v))) bad(nm + ': cor inválida'); return String(v).toLowerCase(); };
+  const cleanData = (slot, d) => {
+    d = d && typeof d === 'object' ? d : {}; const o = {};
+    if (slot === 'frame') { o.glow = colorOf(d.glow, 'Brilho'); o.anim = ['none', 'spin', 'pulse'].includes(d.anim) ? d.anim : 'none'; }
+    else if (slot === 'banner') { o.c1 = colorOf(d.c1, 'Cor 1'); o.c2 = colorOf(d.c2, 'Cor 2'); o.c3 = colorOf(d.c3, 'Cor 3'); o.fx = ['none', 'move'].includes(d.fx) ? d.fx : 'none'; }
+    else if (slot === 'title') { o.color = colorOf(d.color, 'Cor do título'); o.bg = colorOf(d.bg, 'Fundo do título'); }
+    else if (slot === 'ncolor') { o.c1 = colorOf(d.c1, 'Cor 1', true); o.c2 = colorOf(d.c2, 'Cor 2'); }
+    else if (slot === 'bubble') { o.bg = colorOf(d.bg, 'Cor do balão', true); o.bg2 = colorOf(d.bg2, 'Cor 2 do balão'); o.fg = colorOf(d.fg, 'Cor do texto'); }
+    else if (slot === 'theme') {
+      for (const [k, n] of [['accent', 'Cor principal'], ['accent2', 'Cor secundária'], ['bg', 'Fundo'], ['surface', 'Cartões'], ['fg', 'Texto'], ['muted', 'Texto fraco'], ['line', 'Linhas']]) o[k] = colorOf(d[k], n, k === 'accent');
+      o.font = Object.hasOwn(SKIN_FONTS, d.font) ? d.font : 'padrao';
+      o.shade = Math.max(0, Math.min(90, parseInt(d.shade, 10) || 0));
+      o.fit = ['cover', 'tile'].includes(d.fit) ? d.fit : 'cover';
+      o.light = !!d.light;
+    }
+    return o;
+  };
+  const imgIn = (v, cur) => {
+    if (v === undefined || v === 'keep') return cur;
+    if (v === null || v === '') return null;
+    if (!dataOk(v, SK_MAX_IMG)) bad('Imagem muito grande (máximo cerca de 1 MB)');
+    const m = IMG_RE.exec(v); if (!m) bad('Use imagem PNG, APNG, WebP, GIF ou JPG');
+    const real = imgMagic(Buffer.from(m[2], 'base64')); if (!real) bad('O arquivo não parece uma imagem válida');
+    return `data:${real};base64,${m[2]}`;
+  };
+  const fontIn = (v, cur) => {
+    if (v === undefined || v === 'keep') return cur;
+    if (v === null || v === '') return null;
+    if (!dataOk(v, SK_MAX_FONT)) bad('Fonte muito grande (máximo cerca de 400 KB)');
+    const m = /^data:[a-z0-9\/\-+.]*;base64,([A-Za-z0-9+/=]+)$/.exec(v); if (!m) bad('Arquivo de fonte inválido');
+    const real = fontMagic(Buffer.from(m[1], 'base64')); if (!real) bad('Use fonte .woff2, .woff, .ttf ou .otf');
+    return `data:${real};base64,${m[1]}`;
+  };
+  const dateIn = (v, nm) => { if (v === undefined || v === null || v === '') return null; if (!DAY.test(String(v))) bad(nm + ': use a data no formato AAAA-MM-DD'); return String(v); };
+  const adminSkin = r => { const s = rowToSkin(r); return { ...pubSkin(s), id: s.id, active: s.active, owners: get('SELECT COUNT(*) AS n FROM user_items WHERE item_id = ?', s.id).n, onSale: s.active && inWindow(s) }; };
+  const skinRows = () => all('SELECT id, slot, name, coins, premium, active, tag, starts_at, ends_at, data, ver, (img IS NOT NULL) AS hasImg, (font IS NOT NULL) AS hasFont FROM store_items ORDER BY id DESC');
+  app.get('/api/admin/store-items', auth, adminOnly, (_req, res) => res.json({ items: skinRows().map(adminSkin), fonts: Object.keys(SKIN_FONTS), slots: SKIN_SLOTS }));
+  const saveSkin = (req, id) => {
+    const b = req.body || {}, cur = id ? get('SELECT * FROM store_items WHERE id = ?', id) : null;
+    if (id && !cur) bad('Item não encontrado', 404);
+    const slot = cur ? cur.slot : String(b.slot || ''); if (!SKIN_SLOTS.includes(slot)) bad('Tipo de item inválido');
+    const name = String(b.name !== undefined ? b.name : (cur ? cur.name : '')).trim().slice(0, 40); if (name.length < 2) bad('Dê um nome ao item (mínimo 2 letras)');
+    const coins = b.coins !== undefined ? Number(b.coins) : (cur ? cur.coins : 0); if (!Number.isInteger(coins) || coins < 0 || coins > 100000) bad('Preço em moedas inválido (0 a 100000)');
+    const data = b.data !== undefined ? cleanData(slot, b.data) : parseJ(cur && cur.data, {});
+    const img = imgIn(b.img, cur ? cur.img : null), font = slot === 'theme' ? fontIn(b.font, cur ? cur.font : null) : null;
+    const starts = b.starts_at !== undefined ? dateIn(b.starts_at, 'Início') : (cur ? cur.starts_at : null), ends = b.ends_at !== undefined ? dateIn(b.ends_at, 'Fim') : (cur ? cur.ends_at : null);
+    if (starts && ends && ends < starts) bad('A data final não pode ser antes da inicial');
+    if (slot === 'frame' && !img && !data.glow) bad('Moldura: coloque uma imagem ou escolha a cor do brilho');
+    if (slot === 'banner' && !img && !data.c1) bad('Fundo: coloque uma imagem ou escolha ao menos a cor 1');
+    if (slot === 'theme' && !data.accent) bad('Tema: escolha a cor principal');
+    const premium = b.premium !== undefined ? (b.premium ? 1 : 0) : (cur ? cur.premium : 0), active = b.active !== undefined ? (b.active ? 1 : 0) : (cur ? cur.active : 1);
+    const tag = String(b.tag !== undefined ? b.tag : (cur ? cur.tag : '')).trim().slice(0, 24);
+    if (cur) {
+      const visual = img !== cur.img || font !== cur.font || JSON.stringify(data) !== cur.data;
+      run("UPDATE store_items SET name = ?, coins = ?, premium = ?, active = ?, tag = ?, starts_at = ?, ends_at = ?, data = ?, img = ?, font = ?, ver = ver + ?, updated_at = datetime('now') WHERE id = ?", name, coins, premium, active, tag, starts, ends, JSON.stringify(data), img, font, visual ? 1 : 0, cur.id);
+      return cur.id;
+    }
+    if (get('SELECT COUNT(*) AS n FROM store_items').n >= 300) bad('Limite de 300 itens criados');
+    return run('INSERT INTO store_items (slot, name, coins, premium, active, tag, starts_at, ends_at, data, img, font) VALUES (?,?,?,?,?,?,?,?,?,?,?)', slot, name, coins, premium, active, tag, starts, ends, JSON.stringify(data), img, font).lastInsertRowid;
+  };
+  const lastSkin = id => adminSkin(get('SELECT id, slot, name, coins, premium, active, tag, starts_at, ends_at, data, ver, (img IS NOT NULL) AS hasImg, (font IS NOT NULL) AS hasFont FROM store_items WHERE id = ?', id));
+  app.post('/api/admin/store-items', auth, adminOnly, wrap((req, res) => {
+    const id = Number(saveSkin(req, 0)); skinDirty();
+    const it = lastSkin(id); logAct(req, 'Loja: item criado', `${it.name} (${it.slot})`);
+    res.json({ ok: true, item: it });
+  }));
+  app.put('/api/admin/store-items/:id', auth, adminOnly, wrap((req, res) => {
+    const id = int(req.params.id, 'id'); saveSkin(req, id); skinDirty();
+    const it = lastSkin(id); logAct(req, 'Loja: item editado', `${it.name} (${it.slot})`);
+    res.json({ ok: true, item: it });
+  }));
+  app.delete('/api/admin/store-items/:id', auth, adminOnly, wrap((req, res) => {
+    confirmCheck(req);
+    const id = int(req.params.id, 'id'), r = get('SELECT * FROM store_items WHERE id = ?', id);
+    if (!r) bad('Item não encontrado', 404);
+    const key = 'c' + id;
+    for (const sl of SKIN_SLOTS) run(`UPDATE users SET ${sl} = NULL WHERE ${sl} = ?`, key);
+    const owners = get('SELECT COUNT(*) AS n FROM user_items WHERE item_id = ?', key).n;
+    run('DELETE FROM user_items WHERE item_id = ?', key); run('DELETE FROM store_items WHERE id = ?', id); skinDirty();
+    logAct(req, 'Loja: item apagado', `${r.name} (${r.slot}) · ${owners} jogador(es) tinham`);
+    res.json({ ok: true, owners });
   }));
 }
