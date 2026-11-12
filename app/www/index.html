@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="99061eef2d2b">
+<meta name="gp-ui" content="aa3104333c0a">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -1542,7 +1542,7 @@ function home(){
  if(S.q||S.hcat){var q=(S.q||'').toLowerCase(),rs=featFirst(all()).filter(function(g){return (!q||(g.title+' '+g.genre+' '+(g.cat||'')).toLowerCase().indexOf(q)>-1)&&(!S.hcat||g.cat===S.hcat)});
   return '<div class="row" style="margin:2px 0 10px"><h1 class="h1s" style="margin:0">'+(S.hcat&&!q?esc(S.hcat):'Resultados')+'</h1>'+(S.hcat?'<button class="chip" data-a="hcatx" aria-pressed="true">'+esc(S.hcat)+' ×</button>':'')+'</div>'+(rs.length?'<div class="grid">'+rs.map(card).join('')+'</div>':'<div class="empty">Nenhum jogo encontrado para “'+esc(S.q)+'”.</div>')}
  var rel_=released(),free=rel_.filter(function(g){return !gPrice(g)&&!gEarly(g)}),early=rel_.filter(gEarly),upd=updatedGames();
- return updBanner()+platNotice()+(uiShow('hero')?heroBlock():'')+homeShare()+homeShort()
+ return updBanner()+otaBanner()+platNotice()+(uiShow('hero')?heroBlock():'')+homeShare()+homeShort()
  +(uiShow('upd')&&upd.length?'<div class="sec"><h2>Atualizações de jogos</h2></div><div class="list">'+upd.map(function(g){return '<button class="li upl" data-a="open" data-v="'+g.id+'">'+cover(g)+'<div class="body"><b>'+esc(g.title)+'</b><span class="note">Versão '+esc(g.ver||'')+' · '+esc(rel(g.upd))+'</span>'+(g.cfg&&g.cfg.notes?'<span class="unote">'+esc(g.cfg.notes)+'</span>':'')+'</div>'+ic('chev','chv')+'</button>'}).join('')+'</div>':'')
  +(uiShow('cats')?'<div class="sec"><h2>Categorias</h2></div><div class="cats">'+CATL().map(function(c){return '<button class="cat" data-a="cat" data-v="'+c[0]+'">'+ic(c[1])+c[0]+'</button>'}).join('')+'</div>':'')
  +(uiShow('rel')?'<div class="sec" id="lancados"><h2>Jogos lançados</h2></div>'+(free.length?'<div class="grid sm">'+featFirst(free).slice(0,8).map(card).join('')+'</div>':rel_.length?'<div class="empty">Os jogos gratuitos aparecem aqui. Os pagos ficam na Loja.</div>':'<div class="empty">Ainda não há jogos publicados.<br>Seja o primeiro: crie e publique o seu no Game Studio.'+(studioOn()?'<div style="margin-top:12px"><button class="btn sm" data-a="go" data-v="studio">'+ic('studio')+'Criar um jogo</button></div>':'<div style="margin-top:12px"><button class="btn sm" data-a="plans">Ver planos do Studio</button></div>')+'</div>'):'')
@@ -3744,9 +3744,18 @@ async function otaFetch(u){
   try{localStorage.setItem('gp_ota_html',html);localStorage.setItem('gp_ota',JSON.stringify({v:u.version,sha:h,forBuild:curBuild(),at:Date.now()}));localStorage.removeItem('gp_ota_try')}
   catch(q){try{localStorage.removeItem('gp_ota_html');localStorage.removeItem('gp_ota')}catch(e2){}throw new Error('sem espaço para guardar a interface')}
   SY.otaReady=u.version;syncEvent('ota',1,u.version);
-  toast('Interface atualizada. Ela entra ao reabrir o app.');render(true);
+  /* app recém-aberto e parado na Início: aplica sozinho (uma vez por versão), sem pedir para fechar o app */
+  try{var pl0=document.getElementById('player'),ae=document.activeElement;
+   if(performance.now()<45000&&(!pl0||pl0.hidden)&&!(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))&&sessionStorage.getItem('gp_ota_auto')!==u.version){
+    sessionStorage.setItem('gp_ota_auto',u.version);SY.ota=0;toast('Interface nova! Reiniciando…');setTimeout(function(){location.reload()},900);return}
+  }catch(e3){}
+  toast('Interface nova pronta. Toque em Reiniciar na Início.');render(true);
  }catch(e){syncEvent('ota_fail',0,String(e.message||e))}
  SY.ota=0;
+}
+function otaBanner(){
+ if(!SY.otaReady||!native())return '';
+ return '<div class="panel upd"><div><b>Interface nova pronta</b><div class="note" style="margin:2px 0 0">Toque em Reiniciar para ver as novidades. Seus dados e jogos continuam.</div></div><button class="btn sm" data-a="otareload">Reiniciar agora</button></div>';
 }
 function otaApplyNow(){if(SY.otaReady){var pl=document.getElementById('player');if(pl&&!pl.hidden)return;location.reload()}}
 function otaBoot(){
@@ -3862,8 +3871,8 @@ function updView(){
  var main;
  if(new_)main='<div class="panel"><div class="row" style="margin:0 0 4px"><b>Nova versão disponível</b>'+st+'</div>'+updBody(false)+'</div>';
  else main='<div class="panel"><div class="row" style="margin:0"><b>'+(cb?(u.st==='err'?'Não consegui verificar':'Você está na última versão'):(SY.uiNew?'Há uma interface nova':'Você usa a versão de navegador'))+'</b>'+st+'</div>'
-  +'<p class="note" style="margin:6px 0 0">'+(cb?'Versão instalada: 1.2 · build '+cb+'.':'No navegador o app abre sempre na última versão.')+(SY.otaReady?' Uma interface nova está pronta e entra ao reabrir.':'')+(SY.uiNeedsApk?' A próxima interface exige um app mais novo: atualize o app.':'')+'</p>'
-  +(SY.uiNew&&!cb?'<div class="dev" style="margin-top:10px"><button class="btn sm" data-a="uireload">Recarregar agora</button></div>':'')+'</div>';
+  +'<p class="note" style="margin:6px 0 0">'+(cb?'Versão instalada: 1.2 · build '+cb+'.':'No navegador o app abre sempre na última versão.')+(SY.otaReady?' Uma interface nova está pronta.':'')+(SY.uiNeedsApk?' A próxima interface exige um app mais novo: atualize o app.':'')+'</p>'
+  +(SY.uiNew&&!cb?'<div class="dev" style="margin-top:10px"><button class="btn sm" data-a="uireload">Recarregar agora</button></div>':'')+(SY.otaReady&&cb?'<div class="dev" style="margin-top:10px"><button class="btn sm" data-a="otareload">Reiniciar agora</button></div>':'')+'</div>';
  var adm=wsIsAdmin();
  var net='<div class="panel" style="margin-top:12px"><div class="f" style="margin:0 0 6px;font-weight:700">'+(adm?'Conexão com o servidor':'Conexão')+'</div><dl class="kv">'+(adm?'<dt>Servidor</dt><dd>'+esc((base()||location.origin).replace(/^https?:\/\//,''))+'</dd>':'')+'<dt>Estado</dt><dd>'+(SY.offline?'Sem internet (usando dados salvos)':SY.fails?'Sem resposta (tentando de novo)':S.srvOk||SY.at?'Conectado':'Verificando…')+'</dd><dt>Última verificação</dt><dd>'+ago(SY.at)+'</dd>'+(adm?'<dt>Segurança</dt><dd>'+(srvSecure()?'HTTPS':'Sem HTTPS')+(m?' · respostas conferidas':'')+'</dd>':'')+'</dl>'
   +(SY.err&&adm?'<p class="note" style="margin:6px 0 0">'+esc(SY.err)+'</p>':'')+'<div class="dev" style="margin-top:10px"><button class="btn ghost sm" data-a="chkupd">Verificar agora</button></div></div>';
@@ -4359,6 +4368,7 @@ function gpAct(a,v,t){
    if(v==='rules'){goSub(v);rulesLoad();return true}
    return false;
   case 'uireload':location.reload();return true;
+  case 'otareload':{var pl1=document.getElementById('player');if(pl1&&!pl1.hidden){toast('Feche o jogo antes de reiniciar');return true}location.reload();return true}
   case 'uitab':S.uiTab=v;render(true);return true;
   case 'uitheme':S.ui.theme=v;S.ui.bgc='';uiApply();uiSave();render(true);return true;
   case 'uiacc':S.ui.acc=v;uiApply();uiSave();render(true);return true;

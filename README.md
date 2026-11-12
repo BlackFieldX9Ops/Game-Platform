@@ -332,3 +332,7 @@ Ao publicar (ou editar) um jogo, o servidor lê o arquivo (`server/src/scan.js`)
 - Sem configuração, aparece um slide só, o padrão de sempre (frase da plataforma, Jogar agora, Criar um jogo).
 - O administrador edita pelo lápis no canto do banner ou em **Perfil → Configurações → Banner de boas-vindas** (funciona no celular): adicionar até 8 slides, trocar imagem (JPG/PNG/WebP são reduzidos e comprimidos; GIF/WebP animado até 500 KB), reordenar, ocultar, apagar, escolher o tempo de giro e "Voltar ao padrão".
 - API: `GET /api/banners` (público, só slides visíveis), `GET /api/banners/img/:id` (imagem com cache), `GET/PUT /api/admin/banners` (admin; validação de links https, ids de jogo, tamanho de imagem; a alteração entra no histórico de atividades).
+
+## Atualização da interface (OTA) sem confusão
+- Quando o servidor tem uma interface mais nova que a do APK, o app baixa e guarda. Se o app acabou de abrir (menos de 45 s) e está parado fora de jogo, reinicia sozinho uma vez por versão; senão a Início mostra **Interface nova pronta · Reiniciar agora** (também em Atualização do app). Se o app ficar mais de 30 s em segundo plano, também aplica ao voltar.
+- Para a primeira vez, quando o app instalado ainda é de uma versão sem esse aviso: feche o app por completo e abra duas vezes (a 1ª baixa, a 2ª aplica).
