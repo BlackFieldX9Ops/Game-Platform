@@ -462,6 +462,72 @@ async function main() {
   ok('sem erros no botão do jogo', ph.errs.length === 0, ph.errs.join('|'));
   await ph.context().close();
 
+  // ---------- banner de boas-vindas (carrossel e editor) ----------
+  const PNG1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+  let pb = await page(phone, seed(ana));
+  await goto(pb);
+  ok('banner padrão: um slide só, sem pontinhos, sem lápis para jogador', await pb.evaluate(() => document.querySelectorAll('.bnt>.hero').length === 1 && !document.querySelector('.bnd') && !document.querySelector('.bned')));
+  ok('banner padrão mostra Jogar agora', /Jogar agora/.test(await txt(pb, '.bn')));
+  await pb.context().close();
+  const bput = await api('PUT', '/admin/banners', { auto: 3, slides: [
+    { title: 'Bem-vindo à Arena', text: 'Jogue e crie', b1: { act: 'playnow', label: 'Jogar já' }, b2: { act: 'url', label: 'Site', val: 'https://exemplo.com' } },
+    { title: 'Novo jogo', image: 'data:image/png;base64,' + PNG1.toString('base64'), b1: { act: 'tab', label: 'Ver na Loja', val: 'store' } },
+    { title: 'Terceiro slide' }] }, adm.token);
+  ok('admin salva o banner pela API', !!bput.ok, JSON.stringify(bput).slice(0, 100));
+  pb = await page(phone, seed(ana));
+  await goto(pb);
+  const bst = () => pb.evaluate(() => ({ n: document.querySelectorAll('.bnt>.hero').length, i: [...document.querySelectorAll('.bnd i')].findIndex(x => x.classList.contains('on')), dots: document.querySelectorAll('.bnd i').length }));
+  let b0 = await bst();
+  ok('banner configurado vira carrossel com pontinhos', b0.n === 3 && b0.dots === 3, JSON.stringify(b0));
+  ok('o título e o botão configurados aparecem', /Bem-vindo à Arena/.test(await txt(pb, '.bn')) && /Jogar já/.test(await txt(pb, '.bn')));
+  ok('slide com imagem usa a imagem do servidor', await pb.evaluate(() => { const i = document.querySelector('.bnimg'); return !!i && /\/api\/banners\/img\//.test(i.src); }));
+  const i0 = (await bst()).i;
+  await pb.waitForTimeout(3800);
+  const i1 = (await bst()).i;
+  ok('o carrossel gira sozinho', i1 !== i0, i0 + '->' + i1);
+  const cdpB = await pb.context().newCDPSession(pb);
+  const swipe = async (x1, x2, y) => { await cdpB.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x1, y }] }); for (let k = 1; k <= 8; k++) await cdpB.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x1 + (x2 - x1) * k / 8, y }] }); await cdpB.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); };
+  const by = await pb.evaluate(() => { const r = document.querySelector('.bn').getBoundingClientRect(); return r.y + 40; });
+  const s0 = (await bst()).i;
+  await swipe(320, 60, by); await pb.waitForTimeout(700);
+  const s1 = (await bst()).i;
+  ok('arrastar para a esquerda avança o slide', s1 === (s0 + 1) % 3, s0 + '->' + s1);
+  await swipe(60, 320, by); await pb.waitForTimeout(700);
+  ok('arrastar para a direita volta o slide', (await bst()).i === s0);
+  await pb.evaluate(() => [...document.querySelectorAll('.bnd i')][1].click()); await pb.waitForTimeout(500);
+  ok('tocar no pontinho vai direto ao slide', (await bst()).i === 1);
+  ok('jogador comum não vê o lápis de editar', !(await pb.$('.bned')));
+  ok('sem erros no carrossel', pb.errs.length === 0, pb.errs.join('|'));
+  await pb.context().close();
+  // editor (administrador, no celular)
+  let pe = await page(phone, seed(adm));
+  await goto(pe);
+  ok('administrador vê o lápis de editar no banner', !!(await pe.$('.bned')));
+  await pe.evaluate(() => document.querySelector('.bned').click()); await pe.waitForTimeout(900);
+  ok('o editor abre com os slides e o giro', /Banner de boas-vindas/.test(await txt(pe, '#view')) && (await pe.$$('.bnc-card')).length === 3 && !!(await pe.$('#bnAuto')));
+  await pe.fill('[data-bn=title][data-i="0"]', 'Título editado no teste'); await pe.waitForTimeout(200);
+  ok('a prévia do slide muda enquanto digita', /Título editado no teste/.test(await txt(pe, '.bnpv[data-pv="0"]')));
+  await pe.selectOption('[data-bn="b2.act"][data-i="0"]', 'none'); await pe.waitForTimeout(300);
+  ok('trocar o botão para "Sem botão" tira o botão da prévia', !/Site/.test(await txt(pe, '.bnpv[data-pv="0"]')));
+  const [fc] = await Promise.all([pe.waitForEvent('filechooser'), pe.evaluate(() => document.querySelector('[data-a=bnimg][data-v="2"]').click())]);
+  await fc.setFiles({ name: 'capa.png', mimeType: 'image/png', buffer: PNG1 }); await pe.waitForTimeout(900);
+  ok('escolher imagem mostra a imagem na prévia', await pe.evaluate(() => !!document.querySelector('.bnpv[data-pv="2"] .bnimg')));
+  await pe.evaluate(() => document.querySelector('[data-a=bnadd]').click()); await pe.waitForTimeout(300);
+  ok('novo slide é adicionado', (await pe.$$('.bnc-card')).length === 4);
+  await pe.evaluate(() => document.querySelector('[data-a=bndel][data-v="3"]').click()); await pe.waitForTimeout(300);
+  ok('slide pode ser apagado', (await pe.$$('.bnc-card')).length === 3);
+  await pe.evaluate(() => document.querySelector('[data-a=bnmv][data-v="0_1"]').click()); await pe.waitForTimeout(300);
+  ok('slide pode ser movido para baixo', /Novo jogo/.test(await txt(pe, '.bnpv[data-pv="0"]')));
+  await pe.selectOption('#bnAuto', '0');
+  await pe.evaluate(() => document.querySelector('[data-a=bnsave]').click()); await pe.waitForTimeout(1500);
+  const after = await api('GET', '/banners');
+  ok('salvar grava as mudanças no servidor', after.slides.length === 3 && after.slides[1].title === 'Título editado no teste' && after.auto === 0 && after.slides[1].b2.act === 'none', JSON.stringify(after).slice(0, 200));
+  ok('o slide com imagem nova foi salvo com imagem', !!after.slides[2].image);
+  ok('depois de salvar volta para a Início com o banner novo', /Novo jogo/.test(await txt(pe, '.bn')) || /Título editado/.test(await txt(pe, '.bn')));
+  ok('sem erros no editor do banner', pe.errs.length === 0, pe.errs.join('|'));
+  await pe.context().close();
+  await api('PUT', '/admin/banners', { auto: 6, slides: [] }, adm.token);
+
   // Studio: Bibliotecas dentro de Avançado, dimensão Misto e tipo de projeto
   await api('POST', '/admin/studio-defaults', {}, adm.token);
   ok('categorias novas existem por padrão', (await api('GET', '/categories')).categories.some(c => /Battle Royale/.test(c)) && (await api('GET', '/categories')).categories.includes('Engine HTML'));

@@ -1,6 +1,7 @@
 // Configurações gerais do administrador: identidade da plataforma, regras de uso e aparelhos compatíveis,
 // lançamento global e formatação protegida (compras e atividade) com senha, frase e backup antes.
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import { CATS } from './push.js';
 import { GROUPS, FIELDS } from './settings.js';
 
@@ -23,6 +24,7 @@ export const RULES_DEF = {
     { name: 'Computador / navegador', req: 'Chrome, Edge ou Firefox atualizados', rec: 'Chrome ou Edge', note: 'O painel de gestão é para telas largas (a partir de 1000 px).' },
   ],
 };
+export const BANNERS_DEF = { auto: 6, slides: [] };
 export const PLATFORM_DEF = { name: 'Game Platform', tagline: 'Jogue. Crie. Compartilhe.', supportEmail: '', termsUrl: '', privacyUrl: '', welcome: '' };
 
 export function mountAdminX(c) {
@@ -34,6 +36,57 @@ export function mountAdminX(c) {
 
   // ---------- identidade e regras (públicas para leitura) ----------
   app.get('/api/platform', (_req, res) => res.json({ platform: kv('platform', PLATFORM_DEF), launched: !!get("SELECT 1 FROM settings WHERE key = 'launched'"), notice: cfg.val('homeNotice'), appSig: cfg.val('appSig'), feat: { chat: !!cfg.val('featChat'), missions: !!cfg.val('featMissions'), shortcuts: !!cfg.val('featShortcuts') } }));
+  // ---------- banner de boas-vindas (carrossel da Início) ----------
+  const BN_MAX = 8, BN_IMG_MAX = 700_000, BN_IMG_RE = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/;
+  const BN_TABS = ['home', 'store', 'library', 'chat', 'profile', 'studio'];
+  const bnBtn = (b, nm) => {
+    const act = ['none', 'playnow', 'studio', 'game', 'tab', 'url'].includes(b && b.act) ? b.act : 'none';
+    if (act === 'none') return { act: 'none', label: '', val: '' };
+    const label = txt(b.label, 24);
+    if (!label) bad(nm + ': escreva o texto do botão');
+    let val = '';
+    if (act === 'game') { val = txt(b.val, 12); if (!/^\d+$/.test(val)) bad(nm + ': escolha um jogo válido'); }
+    if (act === 'tab') { val = txt(b.val, 12); if (!BN_TABS.includes(val)) bad(nm + ': aba inválida'); }
+    if (act === 'url') val = url(b.val, nm + ': o link');
+    if (act === 'url' && !val) bad(nm + ': informe o link');
+    return { act, label, val };
+  };
+  const bnPublic = (s, adm) => ({ id: s.id, title: s.title, text: s.text, on: s.on !== false, b1: s.b1, b2: s.b2, image: s.img ? '/api/banners/img/' + s.id + '?v=' + s.ver : '' });
+  app.get('/api/banners', (_req, res) => {
+    const d = kv('banners', BANNERS_DEF);
+    res.set('Cache-Control', 'no-cache').json({ auto: d.auto, slides: (d.slides || []).filter(s => s.on !== false).map(s => bnPublic(s)) });
+  });
+  app.get('/api/banners/img/:id', (req, res) => {
+    const s = (kv('banners', BANNERS_DEF).slides || []).find(x => x.id === req.params.id);
+    const m = s && s.img && /^data:(image\/[a-z]+);base64,(.+)$/.exec(s.img);
+    if (!m) return res.status(404).end();
+    res.set({ 'Content-Type': m[1], 'Cache-Control': 'public, max-age=86400, immutable', 'X-Content-Type-Options': 'nosniff' }).send(Buffer.from(m[2], 'base64'));
+  });
+  app.get('/api/admin/banners', auth, adminOnly, (_req, res) => { const d = kv('banners', BANNERS_DEF); res.json({ auto: d.auto, slides: (d.slides || []).map(s => bnPublic(s)), max: BN_MAX }); });
+  app.put('/api/admin/banners', auth, adminOnly, wrap((req, res) => {
+    const b = req.body || {}, cur = kv('banners', BANNERS_DEF), old = {};
+    (cur.slides || []).forEach(s => { old[s.id] = s; });
+    if (!Array.isArray(b.slides) || b.slides.length > BN_MAX) bad('Use até ' + BN_MAX + ' slides');
+    const auto = Math.max(0, Math.min(30, parseInt(b.auto, 10) || 0));
+    const slides = b.slides.map((x, i) => {
+      const nm = 'Slide ' + (i + 1);
+      if (!x || typeof x !== 'object') bad(nm + ' inválido');
+      const prev = x.id && old[x.id];
+      let id = prev ? prev.id : crypto.randomBytes(4).toString('hex'), img = '', ver = '';
+      if (typeof x.image === 'string' && x.image.startsWith('data:')) {
+        if (x.image.length > BN_IMG_MAX || !BN_IMG_RE.test(x.image)) bad(nm + ': imagem inválida ou pesada demais (use JPG, PNG, WebP ou GIF de até 500 KB)');
+        img = x.image; ver = crypto.createHash('sha1').update(img).digest('hex').slice(0, 8);
+        if (prev) id = crypto.randomBytes(4).toString('hex');
+      } else if (x.image === 'keep' && prev && prev.img) { img = prev.img; ver = prev.ver; }
+      const title = txt(x.title, 60), text = txt(x.text, 140);
+      if (!title && !img) bad(nm + ': escreva um título ou escolha uma imagem');
+      return { id, title, text, on: x.on !== false, b1: bnBtn(x.b1, nm + ', botão 1'), b2: bnBtn(x.b2, nm + ', botão 2'), img, ver };
+    });
+    put('banners', { auto, slides });
+    logAct(req, 'Banner de boas-vindas alterado', slides.length + ' slide(s), giro de ' + auto + 's');
+    res.json({ ok: true, auto, slides: slides.map(s => bnPublic(s)) });
+  }));
+
   app.get('/api/rules', (_req, res) => { const r = kv('rules', RULES_DEF); res.json({ rules: { intro: r.intro, sections: r.sections, devices: r.devices, updated_at: r.updated_at || null } }); });
   app.get('/api/admin/platform', auth, adminOnly, (_req, res) => res.json({ platform: kv('platform', PLATFORM_DEF), rules: kv('rules', RULES_DEF), defaults: { rules: RULES_DEF } }));
   app.post('/api/admin/platform', auth, adminOnly, wrap((req, res) => {

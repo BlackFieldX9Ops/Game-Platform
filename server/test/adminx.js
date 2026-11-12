@@ -109,6 +109,39 @@ async function main() {
   r = await call('GET', '/api/admin/reset', null, ADM);
   ok('a prévia informa que já foi lançado', !!r.j.launched);
 
+  // banner de boas-vindas (carrossel)
+  const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  r = await call('GET', '/api/banners');
+  ok('banner: sem configuração a lista vem vazia (o app mostra o padrão)', r.s === 200 && Array.isArray(r.j.slides) && r.j.slides.length === 0);
+  r = await call('PUT', '/api/admin/banners', { auto: 5, slides: [] }, A);
+  ok('banner: jogador comum não edita', r.s === 403);
+  r = await call('PUT', '/api/admin/banners', { auto: 5, slides: [{ title: 'Olá', text: 'oi', b1: { act: 'playnow', label: 'Jogar agora' }, b2: { act: 'url', label: 'Site', val: 'http://inseguro.com' } }] }, ADM);
+  ok('banner: link sem https é recusado', r.s === 400, r.txt);
+  r = await call('PUT', '/api/admin/banners', { auto: 5, slides: [{ title: 'Olá', b1: { act: 'game', label: 'Abrir', val: 'abc' } }] }, ADM);
+  ok('banner: botão de jogo exige id numérico', r.s === 400, r.txt);
+  r = await call('PUT', '/api/admin/banners', { auto: 5, slides: [{ title: '', text: 'sem título e sem imagem' }] }, ADM);
+  ok('banner: slide vazio é recusado', r.s === 400, r.txt);
+  r = await call('PUT', '/api/admin/banners', { auto: 5, slides: [{ title: 'x', image: 'data:text/html;base64,PGI+' }] }, ADM);
+  ok('banner: imagem que não é imagem é recusada', r.s === 400, r.txt);
+  r = await call('PUT', '/api/admin/banners', { auto: 5, slides: Array.from({ length: 9 }, () => ({ title: 'x' })) }, ADM);
+  ok('banner: no máximo 8 slides', r.s === 400, r.txt);
+  r = await call('PUT', '/api/admin/banners', { auto: 99, slides: [
+    { title: 'Bem-vindo', text: 'Jogue agora', b1: { act: 'playnow', label: 'Jogar agora' }, b2: { act: 'tab', label: 'Loja', val: 'store' } },
+    { title: 'Novo jogo', image: PNG, b1: { act: 'game', label: 'Ver', val: '12' }, on: true },
+    { title: 'Escondido', on: false }] }, ADM);
+  ok('banner: administrador salva os slides', r.s === 200 && r.j.slides.length === 3 && r.j.auto === 30, r.txt);
+  const img = r.j.slides[1];
+  r = await call('GET', '/api/banners');
+  ok('banner: público só vê slides ligados', r.j.slides.length === 2 && r.j.slides[0].title === 'Bem-vindo');
+  ok('banner: a imagem vira um link com versão', /^\/api\/banners\/img\/[a-f0-9]{8}\?v=[a-f0-9]{8}$/.test(r.j.slides[1].image) && !r.txt.includes('base64'), r.txt.slice(0, 200));
+  const ir = await fetch(BASE + img.image);
+  ok('banner: a imagem é servida com cache', ir.status === 200 && ir.headers.get('content-type') === 'image/png' && /immutable/.test(ir.headers.get('cache-control')));
+  ok('banner: id de imagem inválido dá 404', (await fetch(BASE + '/api/banners/img/zzzz')).status === 404);
+  r = await call('GET', '/api/admin/banners', null, ADM);
+  ok('banner: o admin vê também os slides desligados', r.j.slides.length === 3);
+  r = await call('PUT', '/api/admin/banners', { auto: 4, slides: r.j.slides.map(s => ({ ...s, image: s.image ? 'keep' : '' })) }, ADM);
+  ok('banner: reenviar com "keep" mantém a imagem', r.s === 200 && !!r.j.slides[1].image && r.j.auto === 4, r.txt);
+
   console.log(`\n${pass} ok, ${fail} falhas`);
   srv.kill(); process.exit(fail ? 1 : 0);
 }
