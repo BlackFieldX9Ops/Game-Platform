@@ -8,12 +8,14 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInstaller;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Base64;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -28,8 +30,10 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.getcapacitor.BridgeActivity;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -321,6 +325,90 @@ public class MainActivity extends BridgeActivity {
     }
   }
 
+
+  // ---------- Pastas dos jogos: GamePlatform/<nome do jogo>/ ----------
+  private static final long GAME_FILE_MAX = 50L * 1024 * 1024;
+  private static final long GAME_DIR_MAX = 300L * 1024 * 1024;
+
+  private File gamesRoot() {
+    File b = getExternalFilesDir(null);
+    if (b == null) b = getFilesDir();
+    File r = new File(b, "GamePlatform");
+    if (!r.exists()) r.mkdirs();
+    return r;
+  }
+
+  private static String cleanGameName(String s) {
+    if (s == null) return "";
+    String c = s.replaceAll("[^\\p{L}\\p{N} _.()-]", "").trim();
+    while (c.startsWith(".")) c = c.substring(1);
+    if (c.length() > 60) c = c.substring(0, 60).trim();
+    return c;
+  }
+
+  /** Resolve um arquivo dentro da pasta do jogo e recusa qualquer caminho que escape dela. */
+  private File gameFile(String game, String rel, boolean create) throws IOException {
+    String g = cleanGameName(game);
+    if (g.isEmpty()) throw new IOException("nome do jogo invalido");
+    File dir = new File(gamesRoot(), g);
+    if (create && !dir.exists()) dir.mkdirs();
+    String r = rel == null ? "" : rel.trim();
+    if (!r.isEmpty()) {
+      if (r.length() > 200 || r.startsWith("/") || r.contains("\\") || !r.matches("[\\p{L}\\p{N} _.()/-]+")) throw new IOException("caminho invalido");
+      for (String part : r.split("/")) if (part.equals("..") || part.equals(".") || part.isEmpty()) throw new IOException("caminho invalido");
+    }
+    File f = r.isEmpty() ? dir : new File(dir, r);
+    String base = dir.getCanonicalPath() + File.separator;
+    if (!(f.getCanonicalPath() + File.separator).startsWith(base)) throw new IOException("caminho invalido");
+    return f;
+  }
+
+  private static long dirSize(File f) {
+    if (f == null || !f.exists()) return 0;
+    if (f.isFile()) return f.length();
+    long t = 0;
+    File[] l = f.listFiles();
+    if (l != null) for (File x : l) t += dirSize(x);
+    return t;
+  }
+
+  private static int fileCount(File f) {
+    if (f == null || !f.exists()) return 0;
+    if (f.isFile()) return 1;
+    int t = 0;
+    File[] l = f.listFiles();
+    if (l != null) for (File x : l) t += fileCount(x);
+    return t;
+  }
+
+  private static boolean deleteAll(File f) {
+    if (f.isDirectory()) {
+      File[] l = f.listFiles();
+      if (l != null) for (File x : l) deleteAll(x);
+    }
+    return f.delete();
+  }
+
+  private static byte[] readAll(InputStream in, long max) throws IOException {
+    ByteArrayOutputStream o = new ByteArrayOutputStream();
+    byte[] b = new byte[16384];
+    int n;
+    long t = 0;
+    while ((n = in.read(b)) > 0) {
+      t += n;
+      if (t > max) throw new IOException("arquivo grande demais");
+      o.write(b, 0, n);
+    }
+    return o.toByteArray();
+  }
+
+  private void fileCallback(final String id, final boolean ok, final String msg) {
+    runOnUiThread(() -> {
+      WebView web = getBridge() != null ? getBridge().getWebView() : null;
+      if (web != null) web.evaluateJavascript("window.GPFile&&GPFile(" + JSONObject.quote(id) + "," + ok + "," + JSONObject.quote(msg == null ? "" : msg) + ")", null);
+    });
+  }
+
   /** Ponte chamada pelo app web (window.GPNative). */
   private class Native {
     @JavascriptInterface
@@ -328,6 +416,162 @@ public class MainActivity extends BridgeActivity {
       String c = pendingAuth;
       pendingAuth = null;
       return c == null ? "" : c;
+    }
+
+
+    // ----- arquivos dos jogos (cada jogo só enxerga a própria pasta) -----
+    @JavascriptInterface
+    public String gamesPath() {
+      try { return gamesRoot().getAbsolutePath(); } catch (Exception e) { return ""; }
+    }
+
+    @JavascriptInterface
+    public String gameWrite(String game, String rel, String data, boolean b64) {
+      try {
+        byte[] bytes = b64 ? Base64.decode(data == null ? "" : data, Base64.DEFAULT) : (data == null ? "" : data).getBytes("UTF-8");
+        if (bytes.length > GAME_FILE_MAX) return "err:arquivo grande demais (maximo 50 MB)";
+        File f = gameFile(game, rel, true);
+        if (f.isDirectory()) return "err:e uma pasta";
+        long used = dirSize(gameFile(game, "", true)) - (f.exists() ? f.length() : 0);
+        if (used + bytes.length > GAME_DIR_MAX) return "err:pasta do jogo cheia (maximo 300 MB)";
+        File par = f.getParentFile();
+        if (par != null && !par.exists()) par.mkdirs();
+        File tmp = new File(f.getPath() + ".tmp");
+        FileOutputStream o = new FileOutputStream(tmp);
+        try { o.write(bytes); o.getFD().sync(); } finally { o.close(); }
+        if (f.exists() && !f.delete()) return "err:nao foi possivel gravar";
+        if (!tmp.renameTo(f)) return "err:nao foi possivel gravar";
+        return "ok";
+      } catch (Exception e) {
+        return "err:" + (e.getMessage() == null ? "falha" : e.getMessage());
+      }
+    }
+
+    /** Devolve o conteúdo (texto ou base64) ou null se o arquivo não existe. */
+    @JavascriptInterface
+    public String gameRead(String game, String rel, boolean b64) {
+      try {
+        File f = gameFile(game, rel, false);
+        if (!f.isFile()) return null;
+        InputStream in = new FileInputStream(f);
+        try {
+          byte[] bytes = readAll(in, 30L * 1024 * 1024);
+          return b64 ? Base64.encodeToString(bytes, Base64.NO_WRAP) : new String(bytes, "UTF-8");
+        } finally { in.close(); }
+      } catch (Exception e) {
+        return null;
+      }
+    }
+
+    @JavascriptInterface
+    public String gameList(String game, String rel) {
+      JSONArray a = new JSONArray();
+      try {
+        File d = gameFile(game, rel, false);
+        File[] l = d.isDirectory() ? d.listFiles() : null;
+        if (l != null) for (File x : l) {
+          if (x.getName().endsWith(".tmp")) continue;
+          JSONObject o = new JSONObject();
+          o.put("n", x.getName());
+          o.put("d", x.isDirectory());
+          o.put("s", x.isDirectory() ? dirSize(x) : x.length());
+          o.put("t", x.lastModified());
+          a.put(o);
+        }
+      } catch (Exception ignored) { }
+      return a.toString();
+    }
+
+    /** rel vazio apaga a pasta inteira do jogo. */
+    @JavascriptInterface
+    public boolean gameRemove(String game, String rel) {
+      try {
+        File f = gameFile(game, rel, false);
+        return !f.exists() || deleteAll(f);
+      } catch (Exception e) {
+        return false;
+      }
+    }
+
+    @JavascriptInterface
+    public String gamesIndex() {
+      JSONArray a = new JSONArray();
+      try {
+        File[] l = gamesRoot().listFiles();
+        if (l != null) for (File x : l) {
+          if (!x.isDirectory()) continue;
+          JSONObject o = new JSONObject();
+          o.put("n", x.getName());
+          o.put("s", dirSize(x));
+          o.put("c", fileCount(x));
+          o.put("t", x.lastModified());
+          a.put(o);
+        }
+      } catch (Exception ignored) { }
+      return a.toString();
+    }
+
+    /** Baixa um arquivo (https) direto para a pasta do jogo. O resultado volta por GPFile(id, ok, mensagem). */
+    @JavascriptInterface
+    public void gameDownload(final String game, final String rel, final String url, final String id) {
+      if (url == null || !url.startsWith("https://") || id == null) { fileCallback(String.valueOf(id), false, "so https"); return; }
+      new Thread(() -> {
+        File tmp = null;
+        try {
+          File f = gameFile(game, rel, true);
+          if (f.isDirectory()) throw new IOException("e uma pasta");
+          File par = f.getParentFile();
+          if (par != null && !par.exists()) par.mkdirs();
+          tmp = new File(f.getPath() + ".tmp");
+          HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+          c.setConnectTimeout(15000);
+          c.setReadTimeout(30000);
+          c.setInstanceFollowRedirects(true);
+          if (c.getResponseCode() != 200) throw new IOException("servidor respondeu " + c.getResponseCode());
+          long used = dirSize(gameFile(game, "", true)) - (f.exists() ? f.length() : 0);
+          long total = 0;
+          InputStream in = c.getInputStream();
+          FileOutputStream o = new FileOutputStream(tmp);
+          try {
+            byte[] b = new byte[32768];
+            int n;
+            while ((n = in.read(b)) > 0) {
+              total += n;
+              if (total > 100L * 1024 * 1024 || used + total > GAME_DIR_MAX) throw new IOException("limite de tamanho");
+              o.write(b, 0, n);
+            }
+            o.getFD().sync();
+          } finally { o.close(); in.close(); }
+          if (f.exists() && !f.delete()) throw new IOException("nao foi possivel gravar");
+          if (!tmp.renameTo(f)) throw new IOException("nao foi possivel gravar");
+          fileCallback(id, true, String.valueOf(total));
+        } catch (Exception e) {
+          if (tmp != null) tmp.delete();
+          fileCallback(id, false, e.getMessage() == null ? "falha no download" : e.getMessage());
+        }
+      }).start();
+    }
+
+    /** SHA-256 do certificado que assinou este app (igual ao "SHA256" do keytool). */
+    @JavascriptInterface
+    public String getSignature() {
+      try {
+        android.content.pm.Signature[] sg;
+        boolean multi = false;
+        if (Build.VERSION.SDK_INT >= 28) {
+          android.content.pm.SigningInfo si = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNING_CERTIFICATES).signingInfo;
+          if (si == null) sg = null; else { multi = si.hasMultipleSigners(); sg = multi ? si.getApkContentsSigners() : si.getSigningCertificateHistory(); }
+        } else {
+          sg = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+        }
+        if (sg == null || sg.length == 0) return "";
+        byte[] d = MessageDigest.getInstance("SHA-256").digest(sg[multi ? 0 : sg.length - 1].toByteArray());
+        StringBuilder b = new StringBuilder();
+        for (byte x : d) b.append(String.format("%02X", x));
+        return b.toString();
+      } catch (Exception e) {
+        return "";
+      }
     }
 
     @JavascriptInterface

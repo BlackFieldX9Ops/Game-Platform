@@ -36,6 +36,7 @@ export const FIELDS = [
   { key: 'featChat', group: 'app', type: 'bool', def: FEAT_DEF, label: 'Chat liberado', help: 'Desligado: a aba Chat mostra "Em desenvolvimento, em breve será lançado".' },
   { key: 'featMissions', group: 'app', type: 'bool', def: FEAT_DEF, label: 'Missões liberadas', help: 'Desligado: as missões da plataforma ficam escondidas no app.' },
   { key: 'featShortcuts', group: 'app', type: 'bool', def: FEAT_DEF, label: 'Atalhos na tela inicial', help: 'Desligado: os atalhos saem da Início e da personalização.' },
+  { key: 'appSig', group: 'app', type: 'text', def: process.env.APP_SIG || 'A31C58B91E9672285B221A2F33E37BA3203030A038ECFD3ABB434002EAF49B93', max: 200, label: 'Assinaturas oficiais do app (SHA-256)', help: 'O app compara a própria assinatura com esta lista (separe com vírgula) e avisa o jogador quando a cópia não é a oficial. Deixe vazio para desligar o aviso.' },
   { key: 'homeNotice', group: 'app', type: 'text', def: '', max: 160, label: 'Aviso na tela inicial', help: 'Aparece no topo da Início para todos. Deixe vazio para esconder.' },
 ];
 const BY = Object.fromEntries(FIELDS.map(f => [f.key, f]));

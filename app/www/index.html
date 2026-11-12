@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="e0477230d03e">
+<meta name="gp-ui" content="5180bcff57fb">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -1125,6 +1125,18 @@ html.lt .cover svg{color:#fff}
 .scard .sprow{margin-top:2px;align-items:center}
 .scard .ptag.own{color:var(--ok)}
 .scard .lvl{font-size:calc(10.5px*var(--ts,1));padding:1px 8px}
+
+/* botão do jogo arrastável e menu compacto */
+#pHandle{width:40px;height:40px;touch-action:none;cursor:grab;opacity:.42;transition:opacity .2s,transform .15s;-webkit-tap-highlight-color:transparent}
+#pHandle:active,#pHandle.drag{opacity:.95;transform:scale(1.12);cursor:grabbing}
+#player.bar #pHandle{opacity:.9;pointer-events:auto}
+#player > .pb{right:auto;width:auto;max-width:calc(100% - 8px);padding:6px;gap:6px;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px #000a;transform:scale(.92);opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;background:var(--surface)}
+#player.bar > .pb{transform:none;opacity:1;pointer-events:auto}
+#player > .pb strong{display:none}
+#player > .pb .pexit{white-space:nowrap}
+
+/* tela Pastas dos jogos */
+.fic{width:16px;height:16px;flex:none;vertical-align:-3px;margin-right:4px;color:var(--accent2,#8b6cff)}
 </style>
 
 <div id="ws" hidden></div>
@@ -1962,7 +1974,7 @@ function settings(){
  +'<div class="panel" style="margin-top:14px;padding-top:2px"><div class="f" style="margin-top:8px;font-weight:700">Tela</div>'+sw('Tela cheia automática','fs')+'<div class="f" style="margin-bottom:6px">Orientação nos jogos</div><div class="seg">'+[['auto','O jogo decide'],['portrait','Sempre em pé'],['landscape','Sempre deitado']].map(function(o){return '<button data-a="ori" data-v="'+o[0]+'" aria-pressed="'+(S.cfg.ori===o[0])+'">'+o[1]+'</button>'}).join('')+'</div><p class="note">Fora dos jogos o app fica sempre em pé. Ao abrir um jogo, ele gira sozinho para a posição que o jogo pede (retrato ou paisagem). '+(native()?'Recursos do Android ativos.':'Neste navegador a rotação depende do aparelho.')+'</p></div>'
  +(wsIsStaff()?'<div class="panel" style="margin-top:14px"><div class="row"><span><b>Painel de gestão</b><span class="note" style="display:block;margin:2px 0 0">Usuários, moderação, compras, configurações e mais. Funciona no celular e no computador.</span></span><button class="btn ghost sm" data-a="w_enter">Abrir painel</button></div></div>':'')
 +'<div class="panel" style="margin-top:14px;padding-top:2px;padding-bottom:2px">'+sw('Som nos jogos','sound')+sw('Notificações','notif')+sw('Economia de dados','saver')+(on()?'':sw('Modo administrador (local)','admin'))+'</div>'+admBox()
- +'<div class="stack" style="margin-top:14px">'+mrow('sliders','Aparência e tamanho','sub','uiprefs')+mrow('bell','Notificações','sub','notifprefs')+mrow('shield','Regras e requisitos','sub','rules')+mrow('upd','Atualização do app','sub','update',S.upv&&S.upv.st==='new'?'Nova':'')+'</div>'
+ +'<div class="stack" style="margin-top:14px">'+mrow('sliders','Aparência e tamanho','sub','uiprefs')+mrow('bell','Notificações','sub','notifprefs')+mrow('shield','Regras e requisitos','sub','rules')+mrow('folder','Pastas dos jogos','sub','files')+mrow('upd','Atualização do app','sub','update',S.upv&&S.upv.st==='new'?'Nova':'')+'</div>'
  +updBanner()+updPanel()
  +'<dl class="panel kv" style="margin-top:12px"><dt>Tema</dt><dd>Escuro</dd><dt>Idioma</dt><dd>Português (Brasil)</dd><dt>Versão</dt><dd>1.2'+(curBuild()?' (build '+curBuild()+')':'')+'</dd></dl>'
  +'<div class="sec"><h2>Dados deste aparelho</h2></div>'
@@ -2065,7 +2077,7 @@ function render(keep){
  if(S.detail){var g=find(S.detail);html=g?detail(g):home()}
  else if(S.sub&&!featOn('chat')&&SUBTAB[S.sub]==='chat')html=chatSoon();
  else if(S.sub==='missions'&&!featOn('missions'))html=subhead('Missões')+'<div class="soon">'+ic('star')+'<h2>Missões em breve</h2><p>Este recurso está desativado por enquanto.</p></div>';
- else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,pay:payView,editprof:editprof,update:updView,uiprefs:uiView,notifprefs:npView,rules:rulesView}[S.sub]()}
+ else if(S.sub){html={missions:missions,community:community,space:spaceView,cform:cformView,chat:chat,ach:ach,wish:wish,settings:settings,admin:admin,upd:upd,auth:authView,pay:payView,editprof:editprof,update:updView,uiprefs:uiView,notifprefs:npView,rules:rulesView,files:filesView}[S.sub]()}
  else if(S.tab==='chat'&&!featOn('chat'))html=chatSoon();
  else html={home:home,store:store,lib:library,studio:studio,profile:profile,chat:community}[S.tab]();
  view.innerHTML=(S.maint&&!ws0()?'<div class="warnbar">'+ic('alert')+'<div><b>Em manutenção</b>'+esc(S.maint.msg||'Voltamos já.')+'</div></div>':'')+offBar()+html;view.classList.toggle('cm',!!view.querySelector('.chatpg'));
@@ -4376,12 +4388,23 @@ uiApply();
 /* ---------- identidade da plataforma, aviso na tela inicial, "Jogue e compartilhe" e Regras e requisitos ---------- */
 S.plat=ld('gp_plat',null);S.rulesD=ld('gp_rulesD',null);
 function platLoad(){
- return api('GET','/platform').then(function(r){var was=JSON.stringify(S.plat&&S.plat.feat||null),oldN=S.plat&&S.plat.notice;S.plat={name:r.platform.name,tagline:r.platform.tagline,supportEmail:r.platform.supportEmail,termsUrl:r.platform.termsUrl,privacyUrl:r.platform.privacyUrl,welcome:r.platform.welcome,notice:r.notice||'',launched:!!r.launched,feat:r.feat||null};save('plat');if(was!==JSON.stringify(S.plat.feat)||oldN!==S.plat.notice||(S.tab==='home'&&!S.sub))render(true)}).catch(function(){});
+ return api('GET','/platform').then(function(r){var was=JSON.stringify(S.plat&&S.plat.feat||null),oldN=S.plat&&S.plat.notice;S.plat={name:r.platform.name,tagline:r.platform.tagline,supportEmail:r.platform.supportEmail,termsUrl:r.platform.termsUrl,privacyUrl:r.platform.privacyUrl,welcome:r.platform.welcome,notice:r.notice||'',launched:!!r.launched,feat:r.feat||null,appSig:r.appSig||''};save('plat');if(was!==JSON.stringify(S.plat.feat)||oldN!==S.plat.notice||(S.tab==='home'&&!S.sub))render(true)}).catch(function(){});
 }
 function featOn(k){var f=S.plat&&S.plat.feat;return f&&Object.prototype.hasOwnProperty.call(f,k)?!!f[k]:true}
 function chatSoon(){return '<div class="soon">'+ic('chat')+'<h2>Chat em desenvolvimento</h2><p>Em breve será lançado.</p></div>'}
 function platTag(){return (S.plat&&S.plat.tagline)||'Jogue. Crie. Compartilhe.'}
+/* confere se este app foi assinado com a chave oficial (só no app instalado; aviso, não bloqueio) */
+function appFake(){
+ try{
+  if(!native()||typeof GPNative.getSignature!=='function')return false;
+  var want=String((S.plat&&S.plat.appSig)||'').toUpperCase().replace(/[^0-9A-F,]/g,'').split(',').filter(function(x){return x.length===64});
+  if(!want.length)return false;
+  var got=String(GPNative.getSignature()||'').toUpperCase().replace(/[^0-9A-F]/g,'');
+  return got.length===64&&want.indexOf(got)<0;
+ }catch(e){return false}
+}
 function platNotice(){
+ if(appFake())return '<div class="warnbar notice" style="border-color:#f87171">'+ic('shield')+'<div><b>App não oficial</b>Esta cópia do app não foi assinada pela Game Platform. Para sua segurança, instale só pelo link oficial e não digite senhas aqui.</div></div>';
  var n=S.plat&&S.plat.notice;if(!n)return '';
  try{if(sessionStorage.getItem('gp_notice_x')===n)return ''}catch(e){}
  return '<div class="warnbar notice">'+ic('bell')+'<div><b>Aviso</b>'+esc(n)+'</div><button class="ib" data-a="noticex" aria-label="Fechar aviso" style="font-size:20px;line-height:1">×</button></div>';
@@ -4423,20 +4446,210 @@ function rulesView(){
 }
 setTimeout(function(){try{platLoad()}catch(e){}},200);
 
+/* ===== Botão do jogo: bolinha arrastável + menu compacto (não cobre os botões do jogo) ===== */
+(function(){
+ var KEY='gp_hpos',M=6,hn=$('#pHandle'),pl=$('#player'),pb=pl&&pl.querySelector('.pb');if(!hn||!pb)return;
+ var pos={s:'l',y:.5},moved=0,drag=null;
+ try{var q=JSON.parse(localStorage.getItem(KEY)||'null');if(q&&(q.s==='l'||q.s==='r')&&isFinite(q.y))pos={s:q.s,y:Math.min(1,Math.max(0,+q.y))}}catch(e){}
+ function inset(n){try{return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(n))||0}catch(e){return 0}}
+ function box(){var w=pl.clientWidth||window.innerWidth,h=pl.clientHeight||window.innerHeight,sz=hn.offsetWidth||38;
+  return{w:w,h:h,sz:sz,l:M+inset('--sal'),r:w-sz-M-inset('--sar'),t:M+inset('--sat'),b:h-sz-M-inset('--sab')}}
+ function place(){var b=box();var x=pos.s==='l'?b.l:b.r,y=b.t+(b.b-b.t)*pos.y;hn.style.left=x+'px';hn.style.top=Math.max(b.t,Math.min(b.b,y))+'px'}
+ function placeMenu(){place();var b=box(),x=parseFloat(hn.style.left)||0,y=parseFloat(hn.style.top)||0,mw=pb.offsetWidth||160,mh=pb.offsetHeight||48;
+  var left=pos.s==='l'?x+b.sz+8:x-mw-8;left=Math.max(4,Math.min(b.w-mw-4,left));
+  var top=Math.max(4,Math.min(b.h-mh-4,y+b.sz/2-mh/2));pb.style.left=left+'px';pb.style.top=top+'px'}
+ function save(){try{localStorage.setItem(KEY,JSON.stringify(pos))}catch(e){}}
+ showBar=function(on){pl.classList.toggle('bar',on);clearTimeout(barT);if(on){placeMenu();barT=setTimeout(function(){pl.classList.remove('bar')},4500);try{if(!localStorage.getItem('gp_hhint')){localStorage.setItem('gp_hhint','1');toast('Dica: arraste a bolinha para mudar de lugar')}}catch(e){}}};
+ /* o código original do botão roda depois deste bloco: assume o clique no fim da fila */
+ setTimeout(function(){hn.onclick=function(){if(moved){moved=0;return}showBar(!pl.classList.contains('bar'))}},0);
+ hn.addEventListener('pointerdown',function(e){drag={id:e.pointerId,x:e.clientX,y:e.clientY,l:parseFloat(hn.style.left)||0,t:parseFloat(hn.style.top)||0,on:0};try{hn.setPointerCapture(e.pointerId)}catch(x){}});
+ hn.addEventListener('pointermove',function(e){if(!drag||e.pointerId!==drag.id)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  if(!drag.on){if(Math.abs(dx)+Math.abs(dy)<8)return;drag.on=1;pl.classList.remove('bar');hn.classList.add('drag')}
+  var b=box();hn.style.left=Math.max(b.l,Math.min(b.r,drag.l+dx))+'px';hn.style.top=Math.max(b.t,Math.min(b.b,drag.t+dy))+'px';e.preventDefault()});
+ function end(e){if(!drag||e.pointerId!==drag.id)return;var was=drag.on;drag=null;hn.classList.remove('drag');
+  if(was){moved=1;setTimeout(function(){moved=0},350);var b=box(),x=parseFloat(hn.style.left)||0,y=parseFloat(hn.style.top)||0;
+   pos={s:x+b.sz/2<b.w/2?'l':'r',y:b.b>b.t?Math.min(1,Math.max(0,(y-b.t)/(b.b-b.t))):.5};save();place()}}
+ hn.addEventListener('pointerup',end);hn.addEventListener('pointercancel',end);
+ hn.addEventListener('dblclick',function(){pos={s:'l',y:.5};save();place()});
+ window.addEventListener('resize',function(){place();if(pl.classList.contains('bar'))placeMenu()});
+ try{new MutationObserver(place).observe(pl,{attributes:true,attributeFilter:['hidden']})}catch(e){}
+ place();
+})();
+
+/* ===== Pastas dos jogos (GamePlatform/<nome do jogo>) + ponte "GP" para os jogos ===== */
+if(!P.folder)P.folder='<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>';
+if(!P.file)P.file='<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>';
+if(!P.trash)P.trash='<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/>';
+function fsz(n){n=+n||0;return n>=1048576?(n/1048576).toFixed(1).replace('.',',')+' MB':n>=1024?Math.round(n/1024)+' KB':n+' B'}
+var GP_SHIM='<script>('+(function(){
+ if(window.GP)return;
+ var P={},n=0;
+ addEventListener('message',function(e){var m=e.data;if(!m||m.gp!=='rpc.r')return;var p=P[m.id];if(!p)return;delete P[m.id];clearTimeout(p.t);if(m.ok)p.ok(m.v);else p.no(new Error(m.err||'erro'))});
+ function call(op,a,ms){return new Promise(function(ok,no){var id=++n,p=P[id]={ok:ok,no:no};p.t=setTimeout(function(){if(P[id]){delete P[id];no(new Error('tempo esgotado'))}},ms||30000);try{parent.postMessage({gp:'rpc',id:id,op:op,a:a},'*')}catch(e){delete P[id];clearTimeout(p.t);no(e)}})}
+ function b64(buf){var u=new Uint8Array(buf),s='',i,c=32768;for(i=0;i<u.length;i+=c)s+=String.fromCharCode.apply(null,u.subarray(i,i+c));return btoa(s)}
+ function unb64(s){var b=atob(s),u=new Uint8Array(b.length),i;for(i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u.buffer}
+ function enc(d){
+  if(typeof d==='string')return Promise.resolve({t:d});
+  if(typeof Blob!=='undefined'&&d instanceof Blob)return d.arrayBuffer().then(function(b){return{b:b64(b)}});
+  if(d instanceof ArrayBuffer)return Promise.resolve({b:b64(d)});
+  if(d&&d.buffer instanceof ArrayBuffer)return Promise.resolve({b:b64(d.buffer.slice(d.byteOffset,d.byteOffset+d.byteLength))});
+  return Promise.resolve({t:JSON.stringify(d)});
+ }
+ window.GP={version:1,
+  files:{
+   write:function(path,data){return enc(data).then(function(x){return call('fw',{p:path,t:x.t,b:x.b})})},
+   read:function(path,as){var bin=as==='arraybuffer'||as==='blob'||as==='base64';return call('fr',{p:path,b:bin}).then(function(v){if(v==null)return null;if(as==='json')return JSON.parse(v);if(as==='base64')return v;if(as==='arraybuffer')return unb64(v);if(as==='blob')return new Blob([unb64(v)]);return v})},
+   list:function(dir){return call('fl',{p:dir||''})},
+   remove:function(path){return call('fd',{p:path})},
+   download:function(url,path){return call('fdl',{u:url,p:path},600000)}
+  },
+  info:function(){return call('info',{})}
+ };
+}).toString()+')()<\/script>';
+var FS={
+ nat:function(){return native()&&typeof GPNative.gameWrite==='function'},
+ ok:function(p){p=String(p==null?'':p);if(!p)return true;if(p.length>200||p.charAt(0)==='/'||!/^[\p{L}\p{N} _.()\/-]+$/u.test(p))return false;return p.split('/').every(function(x){return x&&x!=='.'&&x!=='..'})},
+ idb:null,
+ db:function(){return FS.idb||(FS.idb=new Promise(function(ok,no){try{var r=indexedDB.open('gp_files',1);r.onupgradeneeded=function(){r.result.createObjectStore('f',{keyPath:'k'})};r.onsuccess=function(){ok(r.result)};r.onerror=function(){no(r.error)}}catch(e){no(e)}}))},
+ all:function(){return FS.db().then(function(d){return new Promise(function(ok,no){var q=d.transaction('f','readonly').objectStore('f').getAll();q.onsuccess=function(){ok(q.result||[])};q.onerror=function(){no(q.error)}})})},
+ put:function(rec){return FS.db().then(function(d){return new Promise(function(ok,no){var t=d.transaction('f','readwrite');t.objectStore('f').put(rec);t.oncomplete=function(){ok()};t.onerror=function(){no(t.error)}})})},
+ get:function(k){return FS.db().then(function(d){return new Promise(function(ok,no){var q=d.transaction('f','readonly').objectStore('f').get(k);q.onsuccess=function(){ok(q.result)};q.onerror=function(){no(q.error)}})})},
+ del:function(keys){return FS.db().then(function(d){return new Promise(function(ok,no){var t=d.transaction('f','readwrite'),s=t.objectStore('f');keys.forEach(function(k){s.delete(k)});t.oncomplete=function(){ok()};t.onerror=function(){no(t.error)}})})},
+ write:function(f,p,t,b){
+  if(!FS.ok(p)||!p)return Promise.reject(new Error('caminho inválido'));
+  var size=b?Math.floor(b.length*3/4):(t||'').length;
+  if(size>50*1048576)return Promise.reject(new Error('arquivo grande demais (máximo 50 MB)'));
+  if(FS.nat()){var r=GPNative.gameWrite(f,p,b||t||'',!!b);return r==='ok'?Promise.resolve(true):Promise.reject(new Error(String(r).replace(/^err:/,'')))}
+  return FS.put({k:f+'/'+p,f:f,p:p,s:size,t:Date.now(),d:b?{b:b}:{t:t||''}}).then(function(){return true});
+ },
+ read:function(f,p,bin){
+  if(!FS.ok(p)||!p)return Promise.reject(new Error('caminho inválido'));
+  if(FS.nat())return Promise.resolve(GPNative.gameRead(f,p,!!bin));
+  return FS.get(f+'/'+p).then(function(r){if(!r)return null;var d=r.d||{};if(bin)return d.b!=null?d.b:btoa(unescape(encodeURIComponent(d.t||'')));return d.t!=null?d.t:decodeURIComponent(escape(atob(d.b||'')))});
+ },
+ list:function(f,dir){
+  if(!FS.ok(dir))return Promise.reject(new Error('caminho inválido'));
+  if(FS.nat()){try{return Promise.resolve(JSON.parse(GPNative.gameList(f,dir||'')))}catch(e){return Promise.resolve([])}}
+  var pre=f+'/'+(dir?dir+'/':'');
+  return FS.all().then(function(a){var seen={},out=[];a.forEach(function(r){if(r.k.indexOf(pre)!==0)return;var rest=r.k.slice(pre.length),i=rest.indexOf('/');if(i<0)out.push({n:rest,d:false,s:r.s||0,t:r.t||0});else{var n=rest.slice(0,i);if(!seen[n]){seen[n]={n:n,d:true,s:0,t:0};out.push(seen[n])}seen[n].s+=r.s||0;seen[n].t=Math.max(seen[n].t,r.t||0)}});return out});
+ },
+ remove:function(f,p){
+  if(!FS.ok(p))return Promise.reject(new Error('caminho inválido'));
+  if(FS.nat())return Promise.resolve(!!GPNative.gameRemove(f,p||''));
+  var pre=f+'/'+(p||'');
+  return FS.all().then(function(a){var ks=a.filter(function(r){return r.k===pre||r.k.indexOf(pre+'/')===0||!p}).map(function(r){return r.k});return FS.del(ks)}).then(function(){return true});
+ },
+ dl:{},
+ download:function(f,p,url){
+  if(!/^https:\/\//i.test(String(url||'')))return Promise.reject(new Error('só links https'));
+  if(!FS.ok(p)||!p)return Promise.reject(new Error('caminho inválido'));
+  if(FS.nat()&&typeof GPNative.gameDownload==='function'){
+   return new Promise(function(ok,no){var id='d'+Date.now()+Math.random().toString(36).slice(2,6);FS.dl[id]={ok:ok,no:no};GPNative.gameDownload(f,p,url,id)});
+  }
+  return fetch(url).then(function(r){if(!r.ok)throw new Error('servidor respondeu '+r.status);return r.arrayBuffer()}).then(function(buf){
+   if(buf.byteLength>50*1048576)throw new Error('arquivo grande demais (máximo 50 MB)');
+   var u=new Uint8Array(buf),s='',i;for(i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));
+   return FS.write(f,p,null,btoa(s)).then(function(){return buf.byteLength});
+  });
+ },
+ index:function(){
+  if(FS.nat()){try{return Promise.resolve(JSON.parse(GPNative.gamesIndex()))}catch(e){return Promise.resolve([])}}
+  return FS.all().then(function(a){var m={};a.forEach(function(r){var x=m[r.f]||(m[r.f]={n:r.f,s:0,c:0,t:0});x.s+=r.s||0;x.c++;x.t=Math.max(x.t,r.t||0)});
+   var fm=S.gfold||{};Object.keys(fm).forEach(function(k){var d=S.saves&&S.saves[k];if(d&&Object.keys(d).length){var n=fm[k],x=m[n]||(m[n]={n:n,s:0,c:0,t:0});x.s+=JSON.stringify(d).length;x.c++}});
+   return Object.keys(m).map(function(k){return m[k]})});
+ }
+};
+window.GPFile=function(id,ok,msg){var p=FS.dl[id];if(!p)return;delete FS.dl[id];if(ok)p.ok(+msg||0);else p.no(new Error(msg||'falha no download'))};
+function gFolder(g){
+ var k=String(g.key||g.id||g.title||'t');S.gfold=S.gfold||ld('gp_gfold',{});
+ if(S.gfold[k])return S.gfold[k];
+ var base=String(g.title||'Jogo').replace(/[^\p{L}\p{N} _.()-]/gu,'').trim().replace(/^\.+/,'').slice(0,60).trim()||'Jogo';
+ var used=Object.keys(S.gfold).map(function(x){return S.gfold[x].toLowerCase()}),n=base,i=2;
+ while(used.indexOf(n.toLowerCase())>=0){n=base+' '+i++}
+ S.gfold[k]=n;sv('gp_gfold',S.gfold);return n;
+}
+function metaWrite(g){
+ try{var c=g.cfg||{};GPNative.gameWrite(gFolder(g),'jogo.json',JSON.stringify({id:String(g.key||g.id||''),titulo:g.title||'',versao:g.version||(c&&c.version)||'',configuracoes:c,aberto_em:new Date().toISOString()},null,1),false)}catch(e){}
+}
+function kvLoad(g){
+ var k=g.key||g.id||'t';S.saves=S.saves||{};
+ if(FS.nat()){
+  var f=gFolder(g);metaWrite(g);
+  var r=null;try{r=GPNative.gameRead(f,'dados.json',false)}catch(e){}
+  if(r){try{var o=JSON.parse(r);if(o&&typeof o==='object')return o}catch(e){}}
+  var old=S.saves[k];
+  if(old&&Object.keys(old).length){try{GPNative.gameWrite(f,'dados.json',JSON.stringify(old),false)}catch(e){}return old}
+  return {};
+ }
+ return S.saves[k]||{};
+}
+function kvSave(g,data){
+ var k=g.key||g.id||'t';
+ if(FS.nat()){try{if(GPNative.gameWrite(gFolder(g),'dados.json',JSON.stringify(data||{}),false)==='ok')return}catch(e){}}
+ S.saves=S.saves||{};S.saves[k]=data;sv('gp_saves',S.saves);
+}
+function gpRpc(g,op,a){
+ var f=gFolder(g);
+ switch(op){
+  case 'fw':return FS.write(f,a.p,a.t,a.b);
+  case 'fr':return FS.read(f,a.p,!!a.b);
+  case 'fl':return FS.list(f,a.p||'');
+  case 'fd':if(!a.p)return Promise.reject(new Error('informe o arquivo'));return FS.remove(f,a.p);
+  case 'fdl':return FS.download(f,a.p,a.u);
+  case 'info':return FS.list(f,'').then(function(l){return{pasta:f,app:FS.nat(),arquivos:l.length,usado:l.reduce(function(t,x){return t+(x.s||0)},0)}});
+ }
+ return Promise.reject(new Error('operação desconhecida'));
+}
+window.addEventListener('message',function(e){
+ var d=e.data;if(!d||d.gp!=='rpc'||!cur)return;
+ var fr=$('#frame');if(!fr||!fr.contentWindow||e.source!==fr.contentWindow)return;
+ var g=cur,src=e.source;
+ function reply(ok,v,err){try{src.postMessage({gp:'rpc.r',id:d.id,ok:ok,v:v,err:err},'*')}catch(x){}}
+ Promise.resolve().then(function(){return gpRpc(g,String(d.op||''),d.a&&typeof d.a==='object'?d.a:{})}).then(function(v){reply(true,v===undefined?null:v)},function(er){reply(false,null,String(er&&er.message||er||'erro'))});
+});
+/* tela "Pastas dos jogos" */
+function filesLoad(){
+ S.fl={busy:1,list:[],open:'',files:[],conf:''};render(true);
+ FS.index().then(function(l){S.fl.list=l.sort(function(a,b){return (b.t||0)-(a.t||0)});S.fl.busy=0;if(S.sub==='files')render(true)},function(){S.fl.busy=0;if(S.sub==='files')render(true)});
+}
+function filesView(){
+ var l=S.fl||{busy:1,list:[]},h=subhead('Pastas dos jogos'),nat=FS.nat(),tot=l.list.reduce(function(t,x){return t+(x.s||0)},0);
+ var root='<div class="panel"><div class="row" style="margin:0 0 4px"><b>'+ic('folder','fic')+' GamePlatform</b><span class="badge">'+l.list.length+' '+(l.list.length===1?'jogo':'jogos')+' · '+fsz(tot)+'</span></div>'
+  +'<p class="note" style="margin:4px 0 0">'+(nat?'Cada jogo tem a própria pasta no celular, com os dados salvos dele e o que ele baixou. Local: <span style="word-break:break-all">'+esc((function(){try{return GPNative.gamesPath()}catch(e){return ''}})())+'</span>':'No navegador os dados ficam guardados no próprio navegador. No app instalado cada jogo ganha uma pasta no celular.')+'</p></div>';
+ var body;
+ if(l.busy)body='<p class="note" style="margin-top:14px">Carregando…</p>';
+ else if(!l.list.length)body='<div class="panel" style="margin-top:14px"><b>Nenhuma pasta ainda</b><p class="note" style="margin:4px 0 0">Abra um jogo: a pasta dele é criada na hora.</p></div>';
+ else body='<div class="stack" style="margin-top:14px">'+l.list.map(function(x){
+  var op=l.open===x.n;
+  return '<div class="panel mini" style="padding:10px 12px"><button class="mrow" data-a="fopen" data-v="'+esc(x.n)+'" style="width:100%">'+ic('folder')+'<span>'+esc(x.n)+'</span><em>'+fsz(x.s)+'</em>'+ic('chev','chv')+'</button>'
+   +(op?'<div style="margin-top:8px">'+(l.files.length?l.files.map(function(y){return '<div class="row" style="margin:4px 0"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ic(y.d?'folder':'file','fic')+' '+esc(y.n)+'</span><span class="note" style="margin:0;white-space:nowrap">'+fsz(y.s)+'</span></div>'}).join(''):'<p class="note" style="margin:4px 0">Pasta vazia.</p>')
+    +'<div class="dev" style="margin-top:10px"><button class="btn ghost sm" data-a="fclear" data-v="'+esc(x.n)+'">'+ic('trash')+(l.conf===x.n?'Toque de novo para apagar tudo':'Limpar dados do jogo')+'</button></div></div>':'')+'</div>';
+ }).join('')+'</div>';
+ return h+root+body+'<p class="note" style="margin-top:14px">Os jogos só enxergam a própria pasta. Limpar apaga o progresso salvo e os arquivos baixados por ele; o jogo continua instalado.</p>';
+}
+(function(){var old=gpAct;gpAct=function(a,v,t){
+ if(a==='sub'&&v==='files'){navMark(v);goSub(v);filesLoad();return true}
+ if(a==='fopen'){var l=S.fl||(S.fl={list:[]});if(l.open===v){l.open='';l.files=[];render(true);return true}l.open=v;l.files=[];l.conf='';render(true);
+   if(FS.nat()){try{l.files=JSON.parse(GPNative.gameList(v,''))}catch(e){}render(true)}else{FS.list(v,'').then(function(f){l.files=f;render(true)})}return true}
+ if(a==='fclear'){var l2=S.fl||{};if(l2.conf!==v){l2.conf=v;render(true);setTimeout(function(){if(S.fl&&S.fl.conf===v){S.fl.conf='';if(S.sub==='files')render(true)}},4000);return true}
+   l2.conf='';var done=function(){toast('Dados do jogo apagados');var k=Object.keys(S.gfold||{}).filter(function(x){return S.gfold[x]===v})[0];if(k&&S.saves&&S.saves[k]){delete S.saves[k];sv('gp_saves',S.saves)}l2.open='';l2.files=[];filesLoad()};
+   FS.remove(v,'').then(done,function(){toast('Não foi possível apagar')});return true}
+ return old(a,v,t)}})();
+
 /* ---------- player ---------- */
 var cur=null;
 var ORI_SHIM='<script>(function(){try{var o=screen.orientation;if(o){o.lock=function(m){parent.postMessage({gp:"orient",m:String(m)},"*");return Promise.resolve()};o.unlock=function(){parent.postMessage({gp:"orient",m:"any"},"*")}}}catch(e){}})()<\/script>';
 function saveShim(data){return '<script>(function(){try{var d='+JSON.stringify(data||{}).replace(/</g,'\\u003c')+',t=0;function push(){clearTimeout(t);t=setTimeout(function(){try{parent.postMessage({gp:"save",data:d},"*")}catch(e){}},400)}var s={getItem:function(k){return k in d?String(d[k]):null},setItem:function(k,v){d[k]=String(v);push()},removeItem:function(k){delete d[k];push()},clear:function(){d={};push()},key:function(i){return Object.keys(d)[i]||null},get length(){return Object.keys(d).length}};Object.defineProperty(window,"localStorage",{configurable:true,get:function(){return s}})}catch(e){}})()<\/script>'}
 function extTags(ext){return (ext||[]).map(function(x){return x.u?'<script src="'+String(x.u).replace(/"/g,'&quot;')+'"><\/script>':'<script>'+String(x.c||'').replace(/<\/script/gi,'<\\/script')+'<\/script>'}).join('')}
 function wrap(code,libs,ext,save){
- var tags=ORI_SHIM+(save?saveShim(save):'')+LIBS.filter(function(l){return libs&&libs[l[0]]}).map(function(l){return '<script src="'+l[2]+'"><\/script>'}).join('')+extTags(ext);
+ var tags=ORI_SHIM+(typeof GP_SHIM==='string'?GP_SHIM:'')+(save?saveShim(save):'')+LIBS.filter(function(l){return libs&&libs[l[0]]}).map(function(l){return '<script src="'+l[2]+'"><\/script>'}).join('')+extTags(ext);
  var isDoc=/<\s*(html|!doctype|canvas|body|script)/i.test(code);
  if(!isDoc)return '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;background:#0b0e1f;overflow:hidden}</style>'+tags+'<script>'+code+'<\/script>';
  if(/<head[^>]*>/i.test(code))return code.replace(/<head[^>]*>/i,function(m){return m+tags});
  if(/<!doctype[^>]*>/i.test(code))return code.replace(/<!doctype[^>]*>/i,function(m){return m+tags});
  return tags+code;
 }
-function gameDoc(g){var c=g.cfg||{};return wrap(g.code,g.libs,g.ext||c.ext,c.saveProgress?(S.saves[g.key||g.id||'t']||{}):null)}
+function gameDoc(g){var c=g.cfg||{};return wrap(g.code,g.libs,g.ext||c.ext,kvLoad(g))}
 function oriDetect(code){
  var m=/orientation["']?\s*[:=]\s*["']?(landscape|portrait)|\block\(\s*["']?(landscape|portrait)|screen-orientation["']?\s+content=["'](landscape|portrait)|data-orientation=["'](landscape|portrait)/i.exec(String(code||'').slice(0,400000));
  return m?(m[1]||m[2]||m[3]||m[4]).toLowerCase():'';
@@ -4486,7 +4699,7 @@ window.addEventListener('popstate',function(){
 });
 function closeGame(){if(S.playingRid&&S.token){var pr=S.playingRid;S.playingRid=null;try{fetch((S.server||'').replace(/\/+$/,'')+'/api/games/'+pr+'/leave',{method:'POST',headers:{authorization:'Bearer '+S.token,'content-type':'application/json'},body:'{}'}).catch(function(){})}catch(e){}}if(cur&&cur.id&&gT0){S.tm[cur.id]=(S.tm[cur.id]||0)+Math.max(0,Math.round((Date.now()-gT0)/1000));sv('gp_tm',S.tm)}gT0=0;gLock=false;lockNative();$('#player').hidden=true;$('#player').classList.remove('bar');$('#frame').srcdoc='';cur=null;applyNative();if(typeof misClaim==='function')misClaim();render(true)}
 window.addEventListener('message',function(e){
- var d=e.data;if(d&&d.gp==='save'&&cur&&cur.cfg&&cur.cfg.saveProgress){var f0=$('#frame');if(f0.contentWindow&&e.source!==f0.contentWindow)return;if(JSON.stringify(d.data||{}).length>1e6)return;S.saves[cur.key||cur.id||'t']=d.data;sv('gp_saves',S.saves);return}
+ var d=e.data;if(d&&d.gp==='save'&&cur){var f0=$('#frame');if(f0.contentWindow&&e.source!==f0.contentWindow)return;if(JSON.stringify(d.data||{}).length>2e6)return;kvSave(cur,d.data);return}
  if(!d||d.gp!=='orient'||!cur)return;
  var f=$('#frame');if(f.contentWindow&&e.source!==f.contentWindow)return;
  if(S.cfg.ori==='portrait'||S.cfg.ori==='landscape')return;

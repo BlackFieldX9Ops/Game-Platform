@@ -94,6 +94,11 @@ jobs:
           open(p, 'w').write(s[:i] + '\n                ' + flt + s[i:])
           PY
           grep -q 'android:scheme="gameplatform"' "$M" || { echo "Link de retorno do login não entrou no manifesto"; exit 1; }
+          # Endurecimento: sem backup do Android (ninguém copia os dados do app), sem tráfego sem HTTPS
+          sed -i 's#android:allowBackup="true"#android:allowBackup="false"#' "$M"
+          grep -q 'android:allowBackup="false"' "$M" || { echo "allowBackup não ficou desligado"; exit 1; }
+          sed -i '0,/<application/s#<application#<application android:usesCleartextTraffic="false"#' "$M"
+          grep -q 'usesCleartextTraffic="false"' "$M" || { echo "tráfego sem HTTPS não foi bloqueado"; exit 1; }
           grep -q REQUEST_INSTALL_PACKAGES "$M" || { echo "Permissão de instalação não entrou no manifesto"; exit 1; }
           if [ "${{ steps.fcm.outputs.on }}" = "1" ]; then
             cp /tmp/google-services.json android/app/google-services.json
@@ -123,6 +128,11 @@ jobs:
                       storePassword 'android'
                       keyAlias 'androiddebugkey'
                       keyPassword 'android'
+                  }
+              }
+              buildTypes {
+                  debug {
+                      debuggable false
                   }
               }
           }
@@ -156,6 +166,9 @@ jobs:
           GOT=$("$SIGNER" verify --print-certs "$APK" | grep -m1 'SHA-256 digest' | sed 's/.*: *//' | tr -d ':' | tr 'a-f' 'A-F')
           echo "esperada: $WANT"; echo "do APK:   $GOT"
           [ -n "$WANT" ] && [ "$WANT" = "$GOT" ] || { echo "A assinatura do APK não é a da chave fixa"; exit 1; }
+          AAPT=$(ls "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/*/aapt2 | sort -V | tail -1)
+          if "$AAPT" dump badging "$APK" | grep -q "application-debuggable"; then echo "O APK saiu depurável (qualquer um poderia abrir os dados do app)"; exit 1; fi
+          echo "APK não depurável: ok"
 
       - name: Guardar o APK na execução
         uses: actions/upload-artifact@v4

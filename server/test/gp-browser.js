@@ -370,6 +370,98 @@ async function main() {
   ok('sem erros na Loja', ls.errs.length === 0, ls.errs.join('|'));
   await ls.context().close();
 
+  // ---------- botão do jogo arrastável, pastas dos jogos, ponte GP e app oficial ----------
+  const gcode = '<!doctype html><body><div id=hud style="position:absolute;top:8px;left:8px">HUD</div><script>localStorage.setItem("nivel","7")</script></body>';
+  const gj = await api('POST', '/games', { title: 'Jogo Pasta', description: 'jogo de teste das pastas', category: 'Ação', age: 'Livre', dim: '2D', libs: [], code: gcode, orientation: 'auto', tags: ['pasta'], version: '1.0.0', visibility: 'public', settings: { kind: 'Jogo' } }, adm.token);
+  const gid = String((gj.game && gj.game.id) || gj.id);
+  // simulação do Android: pastas em memória com as mesmas regras do código nativo
+  const NATFS = `(function(){var F={};var ok=function(p){p=String(p||'');return !p||(p.length<=200&&p[0]!=='/'&&!/\\\\/.test(p)&&p.split('/').every(function(x){return x&&x!=='.'&&x!=='..'}))};var k=function(g,p){return g+'/'+p};window.__fs=F;
+   window.GPNative={platform:'android',getBuild:function(){return 99},canInstall:function(){return true},openUrl:function(){},installApk:function(){},installApkVerified:function(){},setFullscreen:function(){},setOrientation:function(){},takeAuth:function(){return ''},getInstaller:function(){return ''},openInstallSettings:function(){},
+   getSignature:function(){return window.__sig||'A31C58B91E9672285B221A2F33E37BA3203030A038ECFD3ABB434002EAF49B93'},gamesPath:function(){return '/sdcard/Android/data/app/files/GamePlatform'},
+   gameWrite:function(g,p,d,b){if(!ok(p)||!p)return 'err:caminho invalido';F[k(g,p)]={d:d,b:b,s:b?Math.floor(d.length*3/4):d.length,t:Date.now()};return 'ok'},
+   gameRead:function(g,p,b){var r=F[k(g,p)];if(!r||!ok(p))return null;return r.d},
+   gameList:function(g,p){var pre=g+'/'+(p?p+'/':''),seen={},o=[];Object.keys(F).forEach(function(x){if(x.indexOf(pre)!==0)return;var rest=x.slice(pre.length),i=rest.indexOf('/');if(i<0)o.push({n:rest,d:false,s:F[x].s,t:F[x].t});else if(!seen[rest.slice(0,i)]){seen[rest.slice(0,i)]=1;o.push({n:rest.slice(0,i),d:true,s:0,t:0})}});return JSON.stringify(o)},
+   gameRemove:function(g,p){var pre=g+'/'+(p||'');Object.keys(F).forEach(function(x){if(x===pre||x.indexOf(pre+'/')===0||!p&&x.indexOf(g+'/')===0)delete F[x]});return true},
+   gamesIndex:function(){var m={};Object.keys(F).forEach(function(x){var g=x.split('/')[0];(m[g]=m[g]||{n:g,s:0,c:0,t:0}).s+=F[x].s;m[g].c++});return JSON.stringify(Object.keys(m).map(function(g){return m[g]}))},
+   gameDownload:function(g,p,u,id){setTimeout(function(){if(/ruim/.test(u)){window.GPFile(id,false,'servidor respondeu 404');return}F[k(g,p)]={d:'baixado',b:false,s:7,t:Date.now()};window.GPFile(id,true,'7')},50)}}})();`;
+  const runGame = async (pg) => { await pg.evaluate(id => { const b = document.querySelector('[data-a=open][data-v="' + id + '"]') || document.querySelector('[data-a=open]'); if (b && !document.querySelector('[data-a=play]')) b.click(); }, gid); await pg.waitForTimeout(700); await pg.evaluate(() => document.querySelector('[data-a=play]').click()); await pg.waitForTimeout(1500); };
+  const inGame = (pg, fn, arg) => pg.frames().find(f => f !== pg.mainFrame()).evaluate(fn, arg);
+  let pn = await page(phone, seed(ana) + NATFS);
+  await goto(pn); await pn.waitForTimeout(500);
+  await runGame(pn);
+  ok('jogo recebe a ponte GP', await inGame(pn, () => typeof GP === 'object' && typeof GP.files.write === 'function'));
+  await pn.waitForTimeout(700);
+  ok('dados do jogo vão para a pasta do jogo no celular', /"nivel"/.test((await pn.evaluate(() => (window.__fs['Jogo Pasta/dados.json'] || {}).d)) || ''));
+  ok('a pasta guarda as configurações do jogo (jogo.json)', /Jogo Pasta/.test((await pn.evaluate(() => (window.__fs['Jogo Pasta/jogo.json'] || {}).d)) || ''));
+  ok('GP.files grava e lê', await inGame(pn, async () => { await GP.files.write('saves/a.json', JSON.stringify({ x: 1 })); return (await GP.files.read('saves/a.json', 'json')).x === 1; }));
+  ok('o arquivo foi para a pasta certa', await pn.evaluate(() => !!window.__fs['Jogo Pasta/saves/a.json']));
+  ok('GP.files bloqueia caminhos perigosos', await inGame(pn, async () => { const r = []; for (const bad of ['../x', '/etc/a', 'a/../b', 'a\\b']) { try { await GP.files.write(bad, 'z'); r.push('aceitou ' + bad); } catch (e) { } } return r.length === 0; }));
+  ok('GP.files.download baixa para a pasta', await inGame(pn, async () => (await GP.files.download('https://exemplo.com/a.bin', 'dl/a.bin')) === 7));
+  ok('GP.files.download recusa link sem https', await inGame(pn, async () => { try { await GP.files.download('http://exemplo.com/a.bin', 'dl/b.bin'); return false; } catch (e) { return true; } }));
+  ok('GP.files.download informa erro do servidor', await inGame(pn, async () => { try { await GP.files.download('https://exemplo.com/ruim', 'dl/c.bin'); return false; } catch (e) { return /404/.test(e.message); } }));
+  ok('GP.info mostra a pasta', await inGame(pn, async () => (await GP.info()).pasta === 'Jogo Pasta'));
+  ok('GP.files.list lista a pasta', await inGame(pn, async () => (await GP.files.list('')).some(x => x.n === 'saves' && x.d)));
+  await pn.evaluate(() => document.getElementById('pClose').click()); await pn.waitForTimeout(600);
+  await runGame(pn);
+  ok('ao reabrir, o progresso volta da pasta', await inGame(pn, () => localStorage.getItem('nivel')) === '7');
+  await pn.evaluate(() => document.getElementById('pClose').click()); await pn.waitForTimeout(600);
+  await pn.evaluate(() => document.querySelector('#nav [data-v=profile]').click()); await pn.waitForTimeout(500);
+  await pn.evaluate(() => document.querySelector('[data-a=sub][data-v=settings]').click()); await pn.waitForTimeout(400);
+  ok('Configurações tem "Pastas dos jogos"', !!(await pn.$('[data-a=sub][data-v=files]')));
+  await pn.evaluate(() => document.querySelector('[data-a=sub][data-v=files]').click()); await pn.waitForTimeout(700);
+  let ft2 = await txt(pn, '#view');
+  ok('Pastas dos jogos lista GamePlatform e o jogo', /GamePlatform/.test(ft2) && /Jogo Pasta/.test(ft2) && /GamePlatform/.test(ft2), ft2.slice(0, 120));
+  ok('Pastas dos jogos mostra o caminho no celular', /Android\/data\/app\/files\/GamePlatform/.test(ft2));
+  await pn.evaluate(() => document.querySelector('[data-a=fopen]').click()); await pn.waitForTimeout(500);
+  ok('abrir a pasta mostra os arquivos', /dados\.json/.test(await txt(pn, '#view')) && /saves/.test(await txt(pn, '#view')));
+  ok('os ícones das pastas têm tamanho de ícone', await pn.evaluate(() => [...document.querySelectorAll('#view svg.fic')].every(s => s.getBoundingClientRect().width <= 24)));
+  await pn.evaluate(() => document.querySelector('[data-a=fclear]').click()); await pn.waitForTimeout(300);
+  ok('limpar pede confirmação antes de apagar', /Toque de novo/.test(await txt(pn, '#view')) && await pn.evaluate(() => Object.keys(window.__fs).length > 0));
+  await pn.evaluate(() => document.querySelector('[data-a=fclear]').click()); await pn.waitForTimeout(700);
+  ok('confirmar apaga os dados do jogo', await pn.evaluate(() => Object.keys(window.__fs).filter(k => k.indexOf('Jogo Pasta/') === 0).length === 0));
+  ok('sem erros com as pastas dos jogos', pn.errs.length === 0, pn.errs.join('|'));
+  await pn.context().close();
+  // app oficial x cópia
+  let pg2 = await page(phone, seed(ana) + NATFS + "window.__sig='" + 'B'.repeat(64) + "';");
+  await goto(pg2); await pg2.waitForTimeout(500);
+  ok('cópia com outra assinatura recebe aviso de app não oficial', /App não oficial/.test(await txt(pg2, '#view')));
+  await pg2.context().close();
+  pg2 = await page(phone, seed(ana) + NATFS);
+  await goto(pg2); await pg2.waitForTimeout(500);
+  ok('app com a assinatura oficial não mostra aviso', !/App não oficial/.test(await txt(pg2, '#view')));
+  await pg2.context().close();
+  // navegador (sem app): a ponte GP usa o armazenamento do navegador
+  let pw = await page(phone, seed(ana));
+  await goto(pw); await pw.waitForTimeout(500);
+  await runGame(pw);
+  ok('no navegador GP.files também funciona', await inGame(pw, async () => { await GP.files.write('x/y.txt', 'oi'); return (await GP.files.read('x/y.txt')) === 'oi' && (await GP.files.list('x')).length === 1; }));
+  ok('no navegador o binário volta igual', await inGame(pw, async () => { await GP.files.write('b.bin', new Uint8Array([1, 2, 250]).buffer); return Array.from(new Uint8Array(await GP.files.read('b.bin', 'arraybuffer'))).join() === '1,2,250'; }));
+  ok('sem erros no navegador', pw.errs.length === 0, pw.errs.join('|'));
+  await pw.context().close();
+  // botão do jogo arrastável
+  let ph = await page({ viewport: { width: 800, height: 360 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 }, seed(ana));
+  await goto(ph); await ph.waitForTimeout(500);
+  await runGame(ph);
+  await ph.waitForTimeout(4800);
+  const hrect = () => ph.evaluate(() => { const h = document.getElementById('pHandle').getBoundingClientRect(), m = document.querySelector('#player .pb').getBoundingClientRect(), u = document.getElementById('hud') ? 0 : 0; return { hx: h.x, hy: h.y, hw: h.width, mx: m.x, my: m.y, mw: m.width, open: document.getElementById('player').classList.contains('bar') }; });
+  let hr = await hrect();
+  ok('o botão do jogo não fica no canto superior esquerdo (HUD do jogo)', hr.hy > 60);
+  await ph.evaluate(() => document.getElementById('pHandle').click()); await ph.waitForTimeout(350);
+  hr = await hrect();
+  ok('o menu abre pequeno ao lado do botão, sem cobrir o topo', hr.open && hr.mw < 260 && hr.my > 20);
+  await ph.waitForTimeout(5200);
+  const c0 = await hrect();
+  await ph.mouse.move(c0.hx + c0.hw / 2, c0.hy + c0.hw / 2); await ph.mouse.down(); await ph.mouse.move(400, 150, { steps: 5 }); await ph.mouse.move(760, 200, { steps: 5 }); await ph.mouse.up(); await ph.waitForTimeout(300);
+  hr = await hrect();
+  ok('arrastar leva o botão para a lateral direita', hr.hx > 700);
+  ok('arrastar não abre o menu sem querer', !hr.open);
+  ok('a posição fica salva', /"s":"r"/.test(await ph.evaluate(() => localStorage.getItem('gp_hpos'))));
+  await ph.evaluate(() => document.getElementById('pHandle').click()); await ph.waitForTimeout(350);
+  hr = await hrect();
+  ok('com o botão na direita o menu abre para a esquerda', hr.open && hr.mx + hr.mw <= hr.hx + 2);
+  ok('sem erros no botão do jogo', ph.errs.length === 0, ph.errs.join('|'));
+  await ph.context().close();
+
   // Studio: Bibliotecas dentro de Avançado, dimensão Misto e tipo de projeto
   await api('POST', '/admin/studio-defaults', {}, adm.token);
   ok('categorias novas existem por padrão', (await api('GET', '/categories')).categories.some(c => /Battle Royale/.test(c)) && (await api('GET', '/categories')).categories.includes('Engine HTML'));
