@@ -41,6 +41,8 @@ const IMG_RE = /^data:(image\/(?:png|webp|gif|jpeg));base64,([A-Za-z0-9+/=]+)$/;
 const FONT_RE = /^data:(font\/(?:woff2|woff|ttf|otf));base64,([A-Za-z0-9+/=]+)$/;
 const fontMagic = b => { const m = b.subarray(0, 4).toString('latin1'); return m === 'wOF2' ? 'font/woff2' : m === 'wOFF' ? 'font/woff' : m === 'OTTO' ? 'font/otf' : (b[0] === 0 && b[1] === 1 && b[2] === 0 && b[3] === 0) || m === 'true' ? 'font/ttf' : null; };
 const imgMagic = b => { const h = b.subarray(0, 12); const s4 = h.toString('latin1', 0, 4); if (h[0] === 0x89 && s4.slice(1) === 'PNG') return 'image/png'; if (s4 === 'RIFF' && h.toString('latin1', 8, 12) === 'WEBP') return 'image/webp'; if (s4 === 'GIF8') return 'image/gif'; if (h[0] === 0xff && h[1] === 0xd8) return 'image/jpeg'; return null; };
+// texturas do tema do app: cada uma é uma imagem (pode ser animada) em um lugar do app
+export const TEX_KEYS = ['splash', 'hero', 'tile1', 'tile2', 'tile3', 'tile4', 'card', 'icon', 'corner_l', 'corner_r', 'nav'];
 export { IMG_RE, FONT_RE, HEX, DAY, dataOk, fontMagic, imgMagic };
 export const GAME_SHARE = 0.7; // parte do preço que fica com o criador
 
@@ -58,9 +60,10 @@ export function mountStore(c) {
   // ---- itens criados pelo administrador ----
   const today = () => new Date().toISOString().slice(0, 10);
   const inWindow = i => (!i.starts_at || i.starts_at <= today()) && (!i.ends_at || i.ends_at >= today());
-  const rowToSkin = r => ({ id: 'c' + r.id, n: r.id, slot: r.slot, name: r.name, coins: r.coins, premium: !!r.premium, active: !!r.active, tag: r.tag || '', starts_at: r.starts_at || null, ends_at: r.ends_at || null, data: parseJ(r.data, {}), ver: r.ver, hasImg: !!r.hasImg, hasFont: !!r.hasFont, custom: true });
+  const texMap = () => { const m = {}; for (const t of all('SELECT item_id, key FROM store_item_tex')) (m[t.item_id] ||= []).push(t.key); return m; };
+  const rowToSkin = r => ({ id: 'c' + r.id, n: r.id, slot: r.slot, name: r.name, coins: r.coins, premium: !!r.premium, active: !!r.active, tag: r.tag || '', starts_at: r.starts_at || null, ends_at: r.ends_at || null, data: parseJ(r.data, {}), ver: r.ver, hasImg: !!r.hasImg, hasFont: !!r.hasFont, tex: r.tex || all('SELECT key FROM store_item_tex WHERE item_id = ?', r.id).map(t => t.key), custom: true });
   let skinCache = null;
-  const skinItems = () => skinCache || (skinCache = all('SELECT id, slot, name, coins, premium, active, tag, starts_at, ends_at, data, ver, (img IS NOT NULL) AS hasImg, (font IS NOT NULL) AS hasFont FROM store_items ORDER BY id').map(rowToSkin));
+  const skinItems = () => skinCache || (skinCache = (() => { const tm = texMap(); return all('SELECT id, slot, name, coins, premium, active, tag, starts_at, ends_at, data, ver, (img IS NOT NULL) AS hasImg, (font IS NOT NULL) AS hasFont FROM store_items ORDER BY id').map(r => rowToSkin({ ...r, tex: tm[r.id] })); })());
   const skinDirty = () => { skinCache = null; };
   skinFn = () => skinItems();
   const pubSkin = i => { const { n, active, ...r } = i; return r; };
@@ -313,6 +316,13 @@ export function mountStore(c) {
   };
   app.get('/api/store/img/:id', blob('img', IMG_RE));
   app.get('/api/store/font/:id', blob('font', FONT_RE));
+  app.get('/api/store/tex/:id/:key', (req, res) => {
+    const id = Number(String(req.params.id).replace(/^c/, ''));
+    const r = Number.isInteger(id) && TEX_KEYS.includes(req.params.key) ? get('SELECT img FROM store_item_tex WHERE item_id = ? AND key = ?', id, req.params.key) : null;
+    const m = r && IMG_RE.exec(r.img);
+    if (!m) return res.status(404).end();
+    res.set({ 'Content-Type': m[1], 'Cache-Control': 'public, max-age=86400, immutable', 'X-Content-Type-Options': 'nosniff', 'Access-Control-Allow-Origin': '*', 'Cross-Origin-Resource-Policy': 'cross-origin' }).send(Buffer.from(m[2], 'base64'));
+  });
 
   app.post('/api/store/coupon', auth, wrap((req, res) => {
     const cat = catalog(), id = String(req.body.id || ''), plan = cat.plans.find(p => p.id === id), pack = cat.packs.find(p => p.id === id), item = plan || pack;
@@ -579,7 +589,7 @@ export function mountStore(c) {
   }));
 
   // ---- criador de itens (administrador) ----
-  const SK_MAX_IMG = 1_400_000, SK_MAX_FONT = 560_000;
+  const SK_MAX_IMG = 4_200_000, SK_MAX_FONT = 560_000, SK_MAX_TEX_TOTAL = 12_000_000;
   const colorOf = (v, nm, req_ = false) => { if (v === undefined || v === null || v === '') { if (req_) bad(nm + ': escolha uma cor'); return ''; } if (!HEX.test(String(v))) bad(nm + ': cor inválida'); return String(v).toLowerCase(); };
   const cleanData = (slot, d) => {
     d = d && typeof d === 'object' ? d : {}; const o = {};
@@ -600,7 +610,7 @@ export function mountStore(c) {
   const imgIn = (v, cur) => {
     if (v === undefined || v === 'keep') return cur;
     if (v === null || v === '') return null;
-    if (!dataOk(v, SK_MAX_IMG)) bad('Imagem muito grande (máximo cerca de 1 MB)');
+    if (!dataOk(v, SK_MAX_IMG)) bad('Imagem muito grande (máximo 3 MB)');
     const m = IMG_RE.exec(v); if (!m) bad('Use imagem PNG, APNG, WebP, GIF ou JPG');
     const real = imgMagic(Buffer.from(m[2], 'base64')); if (!real) bad('O arquivo não parece uma imagem válida');
     return `data:${real};base64,${m[2]}`;
@@ -617,6 +627,16 @@ export function mountStore(c) {
   const adminSkin = r => { const s = rowToSkin(r); return { ...pubSkin(s), id: s.id, active: s.active, owners: get('SELECT COUNT(*) AS n FROM user_items WHERE item_id = ?', s.id).n, onSale: s.active && inWindow(s) }; };
   const skinRows = () => all('SELECT id, slot, name, coins, premium, active, tag, starts_at, ends_at, data, ver, (img IS NOT NULL) AS hasImg, (font IS NOT NULL) AS hasFont FROM store_items ORDER BY id DESC');
   app.get('/api/admin/store-items', auth, adminOnly, (_req, res) => res.json({ items: skinRows().map(adminSkin), fonts: Object.keys(SKIN_FONTS), slots: SKIN_SLOTS }));
+  const applyTex = (id, texIn) => {
+    let changed = false;
+    for (const [k, v] of Object.entries(texIn)) {
+      if (v === null) { if (run('DELETE FROM store_item_tex WHERE item_id = ? AND key = ?', id, k).changes) changed = true; }
+      else { run('INSERT INTO store_item_tex (item_id, key, img) VALUES (?,?,?) ON CONFLICT(item_id, key) DO UPDATE SET img = excluded.img', id, k, v); changed = true; }
+    }
+    const tot = get('SELECT COALESCE(SUM(LENGTH(img)), 0) AS n FROM store_item_tex WHERE item_id = ?', id).n;
+    if (tot > SK_MAX_TEX_TOTAL) { run('DELETE FROM store_item_tex WHERE item_id = ?', id); bad('As texturas deste tema passam de 9 MB juntas. Use imagens menores.'); }
+    return changed;
+  };
   const saveSkin = (req, id) => {
     const b = req.body || {}, cur = id ? get('SELECT * FROM store_items WHERE id = ?', id) : null;
     if (id && !cur) bad('Item não encontrado', 404);
@@ -630,15 +650,28 @@ export function mountStore(c) {
     if (slot === 'frame' && !img && !data.glow) bad('Moldura: coloque uma imagem ou escolha a cor do brilho');
     if (slot === 'banner' && !img && !data.c1) bad('Fundo: coloque uma imagem ou escolha ao menos a cor 1');
     if (slot === 'theme' && !data.accent) bad('Tema: escolha a cor principal');
+    // texturas (só tema): { chave: 'keep' | dataURL | null }
+    const texIn = {};
+    if (slot === 'theme' && b.tex && typeof b.tex === 'object') {
+      for (const [k, v] of Object.entries(b.tex)) {
+        if (!TEX_KEYS.includes(k)) bad('Textura desconhecida: ' + k);
+        if (v === 'keep' || v === undefined) continue;
+        texIn[k] = v === null || v === '' ? null : imgIn(v, null);
+      }
+    }
     const premium = b.premium !== undefined ? (b.premium ? 1 : 0) : (cur ? cur.premium : 0), active = b.active !== undefined ? (b.active ? 1 : 0) : (cur ? cur.active : 1);
     const tag = String(b.tag !== undefined ? b.tag : (cur ? cur.tag : '')).trim().slice(0, 24);
     if (cur) {
       const visual = img !== cur.img || font !== cur.font || JSON.stringify(data) !== cur.data;
       run("UPDATE store_items SET name = ?, coins = ?, premium = ?, active = ?, tag = ?, starts_at = ?, ends_at = ?, data = ?, img = ?, font = ?, ver = ver + ?, updated_at = datetime('now') WHERE id = ?", name, coins, premium, active, tag, starts, ends, JSON.stringify(data), img, font, visual ? 1 : 0, cur.id);
+      const texChanged = applyTex(cur.id, texIn);
+      if (texChanged && !visual) run('UPDATE store_items SET ver = ver + 1 WHERE id = ?', cur.id);
       return cur.id;
     }
     if (get('SELECT COUNT(*) AS n FROM store_items').n >= 300) bad('Limite de 300 itens criados');
-    return run('INSERT INTO store_items (slot, name, coins, premium, active, tag, starts_at, ends_at, data, img, font) VALUES (?,?,?,?,?,?,?,?,?,?,?)', slot, name, coins, premium, active, tag, starts, ends, JSON.stringify(data), img, font).lastInsertRowid;
+    const nid = run('INSERT INTO store_items (slot, name, coins, premium, active, tag, starts_at, ends_at, data, img, font) VALUES (?,?,?,?,?,?,?,?,?,?,?)', slot, name, coins, premium, active, tag, starts, ends, JSON.stringify(data), img, font).lastInsertRowid;
+    applyTex(Number(nid), texIn);
+    return nid;
   };
   const lastSkin = id => adminSkin(get('SELECT id, slot, name, coins, premium, active, tag, starts_at, ends_at, data, ver, (img IS NOT NULL) AS hasImg, (font IS NOT NULL) AS hasFont FROM store_items WHERE id = ?', id));
   app.post('/api/admin/store-items', auth, adminOnly, wrap((req, res) => {
@@ -658,7 +691,7 @@ export function mountStore(c) {
     const key = 'c' + id;
     for (const sl of SKIN_SLOTS) run(`UPDATE users SET ${sl} = NULL WHERE ${sl} = ?`, key);
     const owners = get('SELECT COUNT(*) AS n FROM user_items WHERE item_id = ?', key).n;
-    run('DELETE FROM user_items WHERE item_id = ?', key); run('DELETE FROM store_items WHERE id = ?', id); skinDirty();
+    run('DELETE FROM user_items WHERE item_id = ?', key); run('DELETE FROM store_item_tex WHERE item_id = ?', id); run('DELETE FROM store_items WHERE id = ?', id); skinDirty();
     logAct(req, 'Loja: item apagado', `${r.name} (${r.slot}) · ${owners} jogador(es) tinham`);
     res.json({ ok: true, owners });
   }));

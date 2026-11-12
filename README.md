@@ -355,3 +355,7 @@ Em Perfil → Configurações → **Criar itens da Loja** (ou na Loja, aba Skins
 
 Servidor: tabela `store_items` (ids `c1`, `c2`…), rotas `GET/POST/PUT/DELETE /api/admin/store-items`, imagens e fontes em `/api/store/img/:id` e `/api/store/font/:id` (cache imutável, conferidas pelos bytes reais do arquivo; SVG não é aceito), definições públicas em `/api/skins`. Os itens entram em `/api/store` com preço, dados e etiqueta. Testes: `test/skins.js` e a parte "itens criados" de `test/gp-browser.js`.
 
+#### Texturas do tema (estilo "Halloween completo")
+
+Além da imagem de fundo, o tema aceita imagens (animadas ou não) em cada parte do app: tela de abertura, banner de boas-vindas, os 4 cartões da Início ("Jogar agora", "Publicar", "Chamar amigos", "Comunidade"), demais cartões e listas, ícone dos títulos, enfeites nos cantos de baixo e a barra do menu. Todas são opcionais. Imagem parada é reduzida e vira WebP automaticamente no editor; animada (WebP animado, APNG, GIF) vai como está, até 3 MB cada e 9 MB por tema. Servidor: tabela `store_item_tex`, rota `/api/store/tex/:id/:lugar`.
+

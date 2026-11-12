@@ -57,6 +57,29 @@ async function main() {
   r = await call('POST', '/api/admin/store-items', { slot: 'bubble', name: 'Balão abóbora', coins: 10, data: { bg: '#c2410c', fg: '#ffffff' } }, ADM);
   const bb = r.j.item; ok('admin cria balão de chat', r.s === 200, r.txt);
 
+  // texturas do tema (tela de abertura, cartões, cantos…)
+  r = await call('POST', '/api/admin/store-items', { slot: 'theme', name: 'Halloween completo', coins: 100, tag: 'Halloween', data: { accent: '#f97316' }, tex: { splash: WEBP, tile1: PNG, corner_l: PNG, icon: PNG } }, ADM);
+  const tx = r.j.item;
+  ok('tema aceita várias texturas', r.s === 200 && tx && ['splash', 'tile1', 'corner_l', 'icon'].every(k => tx.tex.includes(k)) && tx.tex.length === 4, r.txt);
+  ok('cada textura é servida com cache', await fetch(BASE + '/api/store/tex/' + tx.id + '/splash').then(x => x.status === 200 && x.headers.get('content-type') === 'image/webp' && /immutable/.test(x.headers.get('cache-control'))));
+  ok('textura que não existe dá 404', (await fetch(BASE + '/api/store/tex/' + tx.id + '/nav')).status === 404 && (await fetch(BASE + '/api/store/tex/' + tx.id + '/xyz')).status === 404);
+  r = await call('POST', '/api/admin/store-items', { slot: 'theme', name: 'Textura errada', data: { accent: '#f97316' }, tex: { rodape: PNG } }, ADM);
+  ok('lugar de textura desconhecido é recusado', r.s === 400, r.txt);
+  r = await call('POST', '/api/admin/store-items', { slot: 'theme', name: 'Textura falsa', data: { accent: '#f97316' }, tex: { nav: 'data:image/png;base64,' + Buffer.from('nao').toString('base64') } }, ADM);
+  ok('textura que não é imagem é recusada', r.s === 400, r.txt);
+  r = await call('PUT', '/api/admin/store-items/' + tx.id.slice(1), { tex: { splash: 'keep', nav: PNG, tile1: null } }, ADM);
+  ok('editar: mantém, adiciona e remove texturas', r.s === 200 && r.j.item.tex.includes('splash') && r.j.item.tex.includes('nav') && !r.j.item.tex.includes('tile1') && r.j.item.tex.includes('corner_l'), r.txt);
+  ok('mudar textura aumenta a versão (limpa o cache)', r.j.item.ver === tx.ver + 1);
+  r = await call('PUT', '/api/admin/store-items/' + tx.id.slice(1), { name: 'Halloween completo 2' }, ADM);
+  ok('mudar só o nome não mexe nas texturas', r.s === 200 && r.j.item.tex.length === 4);
+  r = await call('GET', '/api/skins');
+  ok('as definições públicas dizem quais texturas o tema tem', r.j.skins.some(i => i.id === tx.id && i.tex.includes('nav')));
+  r = await call('POST', '/api/admin/store-items', { slot: 'frame', name: 'Moldura com textura', data: { glow: '#ffffff' }, tex: { splash: PNG } }, ADM);
+  ok('textura só vale para tema (ignorada nos outros itens)', r.s === 200 && r.j.item.tex.length === 0, r.txt);
+  await call('DELETE', '/api/admin/store-items/' + r.j.item.id.slice(1), null, ADM);
+  r = await call('DELETE', '/api/admin/store-items/' + tx.id.slice(1), null, ADM);
+  ok('apagar o tema apaga as texturas', r.s === 200 && (await fetch(BASE + '/api/store/tex/' + tx.id + '/splash')).status === 404);
+
   // validações
   r = await call('POST', '/api/admin/store-items', { slot: 'theme', name: 'Ruim', data: { accent: 'vermelho' } }, ADM);
   ok('cor inválida é recusada', r.s === 400, r.txt);

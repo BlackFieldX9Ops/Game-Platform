@@ -525,6 +525,12 @@ CREATE TABLE IF NOT EXISTS store_items (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS store_item_tex (
+  item_id INTEGER NOT NULL,
+  key TEXT NOT NULL,
+  img TEXT NOT NULL,
+  PRIMARY KEY (item_id, key)
+);
 `);
 addCol('users', 'premium_until', 'TEXT');
 addCol('users', 'daily_at', 'TEXT');

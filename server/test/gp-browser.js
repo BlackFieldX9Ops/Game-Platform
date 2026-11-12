@@ -536,7 +536,8 @@ async function main() {
 
   // ---------- itens criados pelo administrador: tema do app, moldura, editor ----------
   const WEBPX = 'data:image/webp;base64,' + Buffer.concat([Buffer.from('RIFF'), Buffer.from([30, 0, 0, 0]), Buffer.from('WEBPVP8 '), Buffer.alloc(30)]).toString('base64');
-  const hwI = (await api('POST', '/admin/store-items', { slot: 'theme', name: 'Halloween', coins: 200, tag: 'Halloween', img: WEBPX, data: { accent: '#f97316', accent2: '#7c2d12', bg: '#0b0610', surface: '#1a0f22', fg: '#fde68a', font: 'gotica', shade: 30 } }, adm.token)).item;
+  const PNGU = 'data:image/png;base64,' + PNG1.toString('base64');
+  const hwI = (await api('POST', '/admin/store-items', { slot: 'theme', name: 'Halloween', coins: 200, tag: 'Halloween', tex: { splash: PNGU, hero: PNGU, tile1: PNGU, card: PNGU, icon: PNGU, corner_l: PNGU, corner_r: PNGU, nav: PNGU }, img: WEBPX, data: { accent: '#f97316', accent2: '#7c2d12', bg: '#0b0610', surface: '#1a0f22', fg: '#fde68a', font: 'gotica', shade: 30 } }, adm.token)).item;
   const frI = (await api('POST', '/admin/store-items', { slot: 'frame', name: 'Teia animada', coins: 50, img: 'data:image/png;base64,' + PNG1.toString('base64'), data: { glow: '#a78bfa', anim: 'pulse' } }, adm.token)).item;
   const ncI = (await api('POST', '/admin/store-items', { slot: 'ncolor', name: 'Nome fogo', coins: 10, data: { c1: '#f97316', c2: '#facc15' } }, adm.token)).item;
   ok('itens de teste criados', !!hwI && !!frI && !!ncI);
@@ -560,6 +561,8 @@ async function main() {
   await goto(pk); await pk.waitForTimeout(1200);
   const eq = await pk.evaluate(() => { const r = document.documentElement, cs = getComputedStyle(r); return { th: r.getAttribute('data-skth'), acc: cs.getPropertyValue('--accent').trim(), css: (document.getElementById('gpSkinCss') || {}).textContent || '' }; });
   ok('o tema comprado fica aplicado ao abrir o app', eq.th === hwI.id && eq.acc === '#f97316', JSON.stringify(eq).slice(0, 160));
+  const txs = await pk.evaluate(() => { const g = (el, ps) => getComputedStyle(el, ps || null).backgroundImage, r = document.documentElement, sh = document.querySelector('.shp'), h2 = document.querySelector('.sec h2'), app = document.getElementById('app'); return { tx: r.getAttribute('data-tx') || '', var: getComputedStyle(r).getPropertyValue('--sk-splash'), tile: sh ? g(sh) : '', icon: h2 ? g(h2, '::before') : '', cl: g(app, '::before'), cr: g(app, '::after'), nav: g(document.getElementById('nav')) }; });
+  ok('o tema entrega as texturas (tela de abertura, cartões, ícone, cantos, menu)', /splash/.test(txs.tx) && /\/api\/store\/tex\/c\d+\/splash/.test(txs.var) && /\/tex\/c\d+\/tile1/.test(txs.tile) && /\/tex\/c\d+\/icon/.test(txs.icon) && /\/tex\/c\d+\/corner_l/.test(txs.cl) && /\/tex\/c\d+\/corner_r/.test(txs.cr) && /\/tex\/c\d+\/nav/.test(txs.nav), JSON.stringify(txs).slice(0, 400));
   ok('o app gera o estilo das molduras e cores criadas', eq.css.includes('.' + frI.id) && eq.css.includes('.' + ncI.id) && /skpulse/.test(eq.css));
   await pk.evaluate(() => document.querySelector('[data-a=go][data-v=profile]').click()); await pk.waitForTimeout(700);
   const pfv = await pk.evaluate(([fid, nid]) => { const av = document.querySelector('.pf-av .avatar'), pa = av ? getComputedStyle(av, '::after') : null, h = document.querySelector('.pf-info h1'); return { frame: !!document.querySelector('.pf-av.' + fid), after: pa ? pa.backgroundImage : '', nameCls: h ? h.className : '', col: h ? getComputedStyle(h).backgroundImage : '' }; }, [frI.id, ncI.id]);
@@ -584,12 +587,17 @@ async function main() {
   await pq.fill('#skName', 'Natal Mágico'); await pq.waitForTimeout(150);
   await pq.evaluate(() => { const c = document.querySelector('[data-sk="d.accent"]'); c.value = '#00ff88'; c.dispatchEvent(new Event('input', { bubbles: true })); }); await pq.waitForTimeout(200);
   ok('a prévia muda enquanto edita a cor', await pq.evaluate(() => /0,\s*255,\s*136/.test(document.querySelector('#skPv .skpvb').style.background) || /00ff88/i.test(document.querySelector('#skPv .skpvb').getAttribute('style'))));
+  ok('o editor lista as texturas do tema', (await pq.$$('.sktx')).length === 11);
+  const [fcX] = await Promise.all([pq.waitForEvent('filechooser'), pq.evaluate(() => document.querySelector('[data-a=sktx][data-v=tile1]').click())]);
+  await fcX.setFiles({ name: 'fantasma.png', mimeType: 'image/png', buffer: PNG1 }); await pq.waitForTimeout(900);
+  ok('escolher uma textura mostra a miniatura', await pq.evaluate(() => /url\(/.test(document.querySelectorAll('.skth')[2].getAttribute('style') || '')));
   const [fcT] = await Promise.all([pq.waitForEvent('filechooser'), pq.evaluate(() => document.querySelector('[data-a=skimg]').click())]);
   await fcT.setFiles({ name: 'neve.png', mimeType: 'image/png', buffer: PNG1 }); await pq.waitForTimeout(500);
   ok('escolher imagem do tema mostra na prévia', await pq.evaluate(() => /url\(/.test(document.querySelector('#skPv .skpvt').getAttribute('style'))));
   await pq.evaluate(() => document.querySelector('[data-a=sksave]').click()); await pq.waitForTimeout(1500);
   const lst = await api('GET', '/admin/store-items', null, adm.token);
   const nat = lst.items.find(i => i.name === 'Natal Mágico');
+  ok('a textura escolhida foi salva no tema', !!nat && nat.tex.includes('tile1'));
   ok('salvar cria o tema no servidor com imagem, cor e letra', !!nat && nat.hasImg && nat.data.accent === '#00ff88' && nat.data.font === 'cursiva' && nat.tag === 'Natal', JSON.stringify(nat || {}).slice(0, 200));
   ok('depois de salvar a lista do editor mostra o novo item', (await pq.$$('.skli')).length === 4 && /Natal Mágico/.test(await txt(pq, '#view')));
   await pq.evaluate(() => { [...document.querySelectorAll('[data-a=skedit]')][0].click(); }); await pq.waitForTimeout(400);

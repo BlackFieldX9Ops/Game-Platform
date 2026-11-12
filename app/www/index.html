@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="4907b06cf8b9">
+<meta name="gp-ui" content="6ef7ebe44352">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -1188,6 +1188,25 @@ html[data-skth] body{background:var(--bg)}
 .skli .body{flex:1 1 160px;min-width:0;display:grid;gap:2px}
 .skbtn{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .badge.ok{background:#34d3991f;color:var(--ok)}
+
+/* ===== texturas do tema do app (cada uma só aparece se o tema tiver a imagem) ===== */
+html[data-tx~=splash] #splash{background:var(--sk-splash) center/cover no-repeat,#0a0d1c}
+html[data-tx~=hero] .hero:not(.img){background:linear-gradient(90deg,#000c 0%,#0000 68%),var(--sk-hero) center/cover no-repeat,#0a0d1c}
+html[data-tx~=card] .shp,html[data-tx~=card] .li{background:var(--sk-card) right 8px center/auto 70% no-repeat,var(--surface)}
+html[data-tx~=tile1] .shp:nth-child(1){background:var(--sk-tile1) right 8px bottom 8px/auto 66% no-repeat,var(--surface)}
+html[data-tx~=tile2] .shp:nth-child(2){background:var(--sk-tile2) right 8px bottom 8px/auto 66% no-repeat,var(--surface)}
+html[data-tx~=tile3] .shp:nth-child(3){background:var(--sk-tile3) right 8px bottom 8px/auto 66% no-repeat,var(--surface)}
+html[data-tx~=tile4] .shp:nth-child(4){background:var(--sk-tile4) right 8px bottom 8px/auto 66% no-repeat,var(--surface)}
+html[data-tx~=icon] .sec h2::before{content:"";display:inline-block;width:1.5em;height:1.5em;margin-right:8px;vertical-align:-.4em;background:var(--sk-icon) center/contain no-repeat}
+html[data-tx~=nav] nav.bar{background:var(--sk-nav) center/cover no-repeat,var(--nav,#0d1124)}
+html[data-tx~=corner_l] #app::before,html[data-tx~=corner_r] #app::after{content:"";position:absolute;bottom:0;width:19%;max-width:92px;aspect-ratio:1;pointer-events:none;z-index:40}
+html[data-tx~=corner_l] #app::before{left:0;background:var(--sk-corner_l) left bottom/contain no-repeat}
+html[data-tx~=corner_r] #app::after{right:0;background:var(--sk-corner_r) right bottom/contain no-repeat}
+html.kb #app::before,html.kb #app::after{display:none}
+.sktx{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.sktx:first-of-type{border-top:0}
+.skth{flex:none;width:64px;height:64px;border-radius:10px;border:1px dashed var(--line2);background:var(--surface2) center/contain no-repeat}
+.sktb{min-width:0;display:grid;gap:1px}
 </style>
 
 <div id="ws" hidden></div>
@@ -4909,6 +4928,7 @@ S.skins=ld('gp_skins',{})||{};
 S.skprev='';
 function skDef(id){return id&&SK_ID.test(String(id))&&S.skins&&S.skins[id]||null}
 function skUrl(k,d){return base()+'/api/store/'+k+'/'+d.id+'?v='+(d.ver||1)}
+function skTexUrl(d,k){return base()+'/api/store/tex/'+d.id+'/'+k+'?v='+(d.ver||1)}
 function skHex(v){return typeof v==='string'&&SK_HEX.test(v)?v:''}
 function skCss(){
  var o=[];
@@ -4952,19 +4972,21 @@ function skLoad(){return api('GET','/skins').then(function(r){skSet(r.skins);if(
 /* ----- tema do app (substitui cores, letra e imagem de fundo do app inteiro) ----- */
 var skUiOrig=uiApply,skThemeOrig=applyTheme;
 var SK_KEYS=['--accent','--accent2','--soft','--soft2','--glow','--bg','--halo','--nav','--surface','--surface2','--surface3','--line','--line2','--fg','--muted','--font','--skbg'];
+var SK_TEX=['splash','hero','tile1','tile2','tile3','tile4','card','icon','corner_l','corner_r','nav'];
+function skTexClear(){var r=document.documentElement;SK_TEX.forEach(function(k){r.style.removeProperty('--sk-'+k)});r.removeAttribute('data-tx')}
 function skThemeApply(){
  var r=document.documentElement,st=r.style,id=S.skprev||(on()&&S.user&&S.user.theme)||'',d=skDef(id);
  if(!d||d.slot!=='theme'){
   if(r.getAttribute('data-skth')){
    r.removeAttribute('data-skth');
-   SK.busy=1;try{SK_KEYS.forEach(function(k){st.removeProperty(k)});skUiOrig();skThemeOrig()}catch(e){}SK.busy=0;
+   SK.busy=1;try{SK_KEYS.forEach(function(k){st.removeProperty(k)});skTexClear();skUiOrig();skThemeOrig()}catch(e){}SK.busy=0;
    var f=document.getElementById('gpSkinFont');if(f)f.textContent=''
   }
   return;
  }
  SK.busy=1;
  try{
-  SK_KEYS.forEach(function(k){st.removeProperty(k)});
+  SK_KEYS.forEach(function(k){st.removeProperty(k)});skTexClear();
   skUiOrig();skThemeOrig();
   var x=d.data||{},A=skHex(x.accent)||'#8b5cf6',A2=skHex(x.accent2)||A,bg=skHex(x.bg),sf=skHex(x.surface),fg=skHex(x.fg),mu=skHex(x.muted),ln=skHex(x.line),lt=!!x.light;
   st.setProperty('--accent',A);st.setProperty('--accent2',A2);st.setProperty('--soft',A+'1f');st.setProperty('--soft2',A+'3a');st.setProperty('--glow','0 10px 24px -10px '+A+'aa');
@@ -4984,6 +5006,8 @@ function skThemeApply(){
    st.setProperty('--skbg',ov+'url("'+skUrl('img',d)+'") '+(x.fit==='tile'?'0 0/auto repeat':'center/cover no-repeat'));
   }
   var mt=document.querySelector('meta[name=theme-color]');if(mt&&bg)mt.setAttribute('content',bg);
+  var tk=Array.isArray(d.tex)?d.tex:[];tk.forEach(function(k){if(SK_TEX.indexOf(k)>=0)st.setProperty('--sk-'+k,'url("'+skTexUrl(d,k)+'")')});
+  if(tk.length)r.setAttribute('data-tx',tk.join(' '));
   r.setAttribute('data-skth',id);
  }catch(e){try{console.error('tema do app: '+e.message+' '+String(e.stack).split('\n').slice(0,8).join(' | '))}catch(q){}}
  SK.busy=0;
@@ -5031,8 +5055,55 @@ function skEdLoad(){
  api('GET','/admin/store-items').then(function(r){var E=S.ske;E.busy=0;E.list=r.items||[];E.fonts=r.fonts||[];if(S.sub==='sked')render(true)}).catch(function(e){if(S.ske){S.ske.busy=0;S.ske.err=e.message}if(S.sub==='sked')render(true)});
 }
 function skYear(m,d){var n=new Date(),y=n.getFullYear(),end=y+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[3]).slice(-2);if(end<n.toISOString().slice(0,10))y++;return y}
-function skBlank(slot){return{id:0,slot:slot,name:'',coins:100,premium:false,active:true,tag:'',starts_at:'',ends_at:'',data:slot==='frame'?{anim:'none'}:slot==='theme'?{accent:'#8b5cf6',font:'padrao',shade:0,fit:'cover'}:slot==='banner'?{c1:'#4c1d95',c2:'#0e7490'}:slot==='ncolor'?{c1:'#f97316'}:slot==='bubble'?{bg:'#7c3aed',fg:'#ffffff'}:{},img:null,imgSrc:'',font:null,fontSrc:'',fontName:'',hasFont:false}}
-function skFromItem(it){return{id:it.n||+String(it.id).slice(1),cid:it.id,slot:it.slot,name:it.name,coins:it.coins,premium:!!it.premium,active:it.active!==false,tag:it.tag||'',starts_at:it.starts_at||'',ends_at:it.ends_at||'',data:JSON.parse(JSON.stringify(it.data||{})),img:it.hasImg?'keep':null,imgSrc:it.hasImg?skUrl('img',it):'',font:it.hasFont?'keep':null,fontSrc:it.hasFont?skUrl('font',it):'',fontName:it.hasFont?'(fonte enviada)':'',hasFont:!!it.hasFont}}
+function skBlank(slot){return{id:0,slot:slot,name:'',coins:100,premium:false,active:true,tag:'',starts_at:'',ends_at:'',data:slot==='frame'?{anim:'none'}:slot==='theme'?{accent:'#8b5cf6',font:'padrao',shade:0,fit:'cover'}:slot==='banner'?{c1:'#4c1d95',c2:'#0e7490'}:slot==='ncolor'?{c1:'#f97316'}:slot==='bubble'?{bg:'#7c3aed',fg:'#ffffff'}:{},img:null,imgSrc:'',font:null,fontSrc:'',fontName:'',hasFont:false,tex:{}}}
+var SK_TEXN={
+ splash:['Tela de abertura','Imagem que aparece inteira enquanto o app carrega (vertical, ex.: 830×1870).',1280],
+ hero:['Banner de boas-vindas','Fundo do banner da Início quando o slide não tem imagem própria.',1100],
+ tile1:['Cartão "Jogar agora"','Ilustração no canto direito do cartão.',520],
+ tile2:['Cartão "Publicar um jogo"','Ilustração no canto direito do cartão.',520],
+ tile3:['Cartão "Chamar amigos"','Ilustração no canto direito do cartão.',520],
+ tile4:['Cartão "Comunidade"','Ilustração no canto direito do cartão.',520],
+ card:['Outros cartões e listas','Ilustração suave no canto dos demais cartões (atualizações, listas).',420],
+ icon:['Ícone dos títulos','Pequeno desenho antes de cada título de seção (ex.: abóbora).',128],
+ corner_l:['Enfeite canto esquerdo','Fica no canto de baixo, à esquerda, sobre o menu (ex.: abóboras e velas).',360],
+ corner_r:['Enfeite canto direito','Fica no canto de baixo, à direita, sobre o menu.',360],
+ nav:['Barra de baixo (menu)','Textura atrás dos botões do menu.',900]
+};
+function skAnimated(buf,type){
+ try{
+  var u=new Uint8Array(buf),has=function(t,lim){var b=[t.charCodeAt(0),t.charCodeAt(1),t.charCodeAt(2),t.charCodeAt(3)];for(var i=0;i<Math.min(u.length-4,lim);i++)if(u[i]===b[0]&&u[i+1]===b[1]&&u[i+2]===b[2]&&u[i+3]===b[3])return true;return false};
+  if(type==='image/gif')return true;
+  if(type==='image/png')return has('acTL',4096);
+  if(type==='image/webp')return has('ANIM',512);
+ }catch(e){}
+ return false;
+}
+/* imagem parada vira WebP menor (mantém transparência); animada é enviada como está */
+function skPrep(f,key,done){
+ var MAXB=3000000;
+ if(!/^image\/(png|webp|gif|jpeg)$/.test(f.type)){toast('Use PNG, APNG, WebP, GIF ou JPG');return}
+ var fr=new FileReader();
+ fr.onerror=function(){toast('Não foi possível ler a imagem')};
+ fr.onload=function(){
+  var buf=fr.result,anim=skAnimated(buf,f.type),read=function(){var r2=new FileReader();r2.onload=function(){done(r2.result)};r2.readAsDataURL(f)};
+  if(anim){if(f.size>MAXB){toast('Imagem animada pesada ('+(f.size/1e6).toFixed(1)+' MB). O máximo é 3 MB: reduza o tamanho ou os quadros.');return}read();return}
+  var u=URL.createObjectURL(f),im=new Image(),maxd=(SK_TEXN[key]&&SK_TEXN[key][2])||1280;
+  im.onload=function(){
+   try{
+    var sc=Math.min(1,maxd/Math.max(im.naturalWidth,im.naturalHeight)),w=Math.max(1,Math.round(im.naturalWidth*sc)),h=Math.max(1,Math.round(im.naturalHeight*sc)),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);
+    URL.revokeObjectURL(u);
+    var out='',qs=[.9,.8,.7,.6,.5];
+    for(var i=0;i<qs.length;i++){out=c.toDataURL('image/webp',qs[i]);if(!/^data:image\/webp/.test(out))out=c.toDataURL('image/png');if(out.length*0.75<=MAXB)break}
+    if(out.length*0.75>MAXB){toast('Imagem pesada demais, mesmo reduzida. Escolha outra.');return}
+    done(out);
+   }catch(e){toast('Não foi possível usar essa imagem')}
+  };
+  im.onerror=function(){URL.revokeObjectURL(u);toast('Não foi possível abrir essa imagem')};
+  im.src=u;
+ };
+ fr.readAsArrayBuffer(f.slice(0,262144));
+}
+function skFromItem(it){return{id:it.n||+String(it.id).slice(1),cid:it.id,slot:it.slot,name:it.name,coins:it.coins,premium:!!it.premium,active:it.active!==false,tag:it.tag||'',starts_at:it.starts_at||'',ends_at:it.ends_at||'',data:JSON.parse(JSON.stringify(it.data||{})),img:it.hasImg?'keep':null,imgSrc:it.hasImg?skUrl('img',it):'',font:it.hasFont?'keep':null,fontSrc:it.hasFont?skUrl('font',it):'',fontName:it.hasFont?'(fonte enviada)':'',hasFont:!!it.hasFont,tex:(function(){var o={};(it.tex||[]).forEach(function(k){o[k]={img:'keep',src:skTexUrl(it,k)}});return o})()}}
 function skColor(label,key,F,opt){
  var v=F.data[key]||'';
  return '<div class="skc"><label class="f" style="margin:0">'+label+'</label><div class="dev" style="margin:4px 0 0"><input type="color" data-sk="d.'+key+'" value="'+(v||'#888888')+'" class="skcol'+(v?'':' off')+'" aria-label="'+esc(label)+'"><span class="note" style="margin:0">'+(v||(opt?'não usar':'escolha'))+'</span>'+(opt&&v?'<button class="btn ghost sm" data-a="skclr" data-v="'+key+'">Limpar</button>':'')+'</div></div>';
@@ -5075,13 +5146,14 @@ function skForm(F,E){
   h+='<div class="panel" style="margin-top:12px"><b>Cores do app</b><p class="note" style="margin:2px 0 8px">Só a cor principal é obrigatória. As outras trocam fundo, cartões e letras do app inteiro.</p><div class="skgrid">'+skColor('Cor principal','accent',F)+skColor('Cor secundária','accent2',F,1)+skColor('Fundo','bg',F,1)+skColor('Cartões','surface',F,1)+skColor('Texto','fg',F,1)+skColor('Texto fraco','muted',F,1)+'</div><label class="tg" style="margin-top:8px"><span>Tema claro (fundo claro, letra escura)</span><input type="checkbox" data-sk="d.light"'+(F.data.light?' checked':'')+'></label></div>'
    +'<div class="panel" style="margin-top:12px"><b>Letras</b><label class="f" for="skFont">Estilo da letra</label><select class="in" id="skFont" data-sk="d.font">'+Object.keys(SK_FONTN).map(function(k){return '<option value="'+k+'"'+(F.data.font===k?' selected':'')+'>'+SK_FONTN[k]+'</option>'}).join('')+'</select>'
    +'<div class="dev" style="margin:10px 0 0"><button class="btn ghost sm" data-a="skfont">'+ic('file')+(F.font?'Trocar fonte':'Enviar fonte própria')+'</button>'+(F.font?'<button class="btn ghost sm" data-a="skfontx">Tirar fonte</button>':'')+'</div><p class="note" style="margin:6px 0 0">Fonte própria: arquivo .woff2, .woff, .ttf ou .otf de até 400 KB. '+(F.fontName?esc(F.fontName):'')+'</p></div>'
-   +'<div class="panel" style="margin-top:12px"><b>Imagem de fundo (pode ser animada)</b><div class="dev" style="margin:8px 0 0"><button class="btn ghost sm" data-a="skimg">'+ic('image')+(F.img?'Trocar imagem':'Escolher imagem')+'</button>'+(F.img?'<button class="btn ghost sm" data-a="skimgx">Tirar</button>':'')+'</div><p class="note" style="margin:6px 0 0">WebP animado, PNG animado (APNG), GIF ou JPG, até 1 MB.</p>'
+   +'<div class="panel" style="margin-top:12px"><b>Imagem de fundo (pode ser animada)</b><div class="dev" style="margin:8px 0 0"><button class="btn ghost sm" data-a="skimg">'+ic('image')+(F.img?'Trocar imagem':'Escolher imagem')+'</button>'+(F.img?'<button class="btn ghost sm" data-a="skimgx">Tirar</button>':'')+'</div><p class="note" style="margin:6px 0 0">WebP animado, PNG animado (APNG), GIF ou JPG, até 3 MB.</p>'
    +'<div class="skrow"><div><label class="f">Escurecer a imagem</label><input type="range" min="0" max="90" step="5" data-sk="d.shade" value="'+(+F.data.shade||0)+'"></div><div><label class="f">Ajuste</label><select class="in" data-sk="d.fit"><option value="cover"'+(F.data.fit!=='tile'?' selected':'')+'>Cobrir a tela</option><option value="tile"'+(F.data.fit==='tile'?' selected':'')+'>Repetir (textura)</option></select></div></div></div>';
+  h+=skTexPanel(F);
  }else if(F.slot==='frame'){
-  h+='<div class="panel" style="margin-top:12px"><b>Imagem da moldura</b><div class="dev" style="margin:8px 0 0"><button class="btn ghost sm" data-a="skimg">'+ic('image')+(F.img?'Trocar imagem':'Escolher imagem')+'</button>'+(F.img?'<button class="btn ghost sm" data-a="skimgx">Tirar</button>':'')+'</div><p class="note" style="margin:6px 0 0">PNG animado (APNG), WebP animado ou GIF com fundo transparente, até 1 MB. A imagem fica em volta da foto de perfil.</p>'
+  h+='<div class="panel" style="margin-top:12px"><b>Imagem da moldura</b><div class="dev" style="margin:8px 0 0"><button class="btn ghost sm" data-a="skimg">'+ic('image')+(F.img?'Trocar imagem':'Escolher imagem')+'</button>'+(F.img?'<button class="btn ghost sm" data-a="skimgx">Tirar</button>':'')+'</div><p class="note" style="margin:6px 0 0">PNG animado (APNG), WebP animado ou GIF com fundo transparente, até 3 MB. A imagem fica em volta da foto de perfil.</p>'
    +'<div class="skgrid">'+skColor('Cor do brilho','glow',F,1)+'</div><label class="f">Movimento</label><select class="in" data-sk="d.anim">'+[['none','Parado'],['pulse','Pulsando'],['spin','Girando']].map(function(a){return '<option value="'+a[0]+'"'+(F.data.anim===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join('')+'</select></div>';
  }else if(F.slot==='banner'){
-  h+='<div class="panel" style="margin-top:12px"><b>Fundo do perfil</b><div class="dev" style="margin:8px 0 0"><button class="btn ghost sm" data-a="skimg">'+ic('image')+(F.img?'Trocar imagem':'Escolher imagem')+'</button>'+(F.img?'<button class="btn ghost sm" data-a="skimgx">Tirar</button>':'')+'</div><p class="note" style="margin:6px 0 0">Imagem (WebP animado, APNG, GIF ou JPG, até 1 MB) ou, sem imagem, um degradê de até 3 cores.</p>'
+  h+='<div class="panel" style="margin-top:12px"><b>Fundo do perfil</b><div class="dev" style="margin:8px 0 0"><button class="btn ghost sm" data-a="skimg">'+ic('image')+(F.img?'Trocar imagem':'Escolher imagem')+'</button>'+(F.img?'<button class="btn ghost sm" data-a="skimgx">Tirar</button>':'')+'</div><p class="note" style="margin:6px 0 0">Imagem (WebP animado, APNG, GIF ou JPG, até 3 MB) ou, sem imagem, um degradê de até 3 cores.</p>'
    +'<div class="skgrid">'+skColor('Cor 1','c1',F)+skColor('Cor 2','c2',F,1)+skColor('Cor 3','c3',F,1)+'</div><label class="f">Movimento do degradê</label><select class="in" data-sk="d.fx"><option value="none"'+(F.data.fx!=='move'?' selected':'')+'>Parado</option><option value="move"'+(F.data.fx==='move'?' selected':'')+'>Ondulando</option></select></div>';
  }else if(F.slot==='ncolor'){
   h+='<div class="panel" style="margin-top:12px"><b>Cores do nome</b><div class="skgrid">'+skColor('Cor 1','c1',F)+skColor('Cor 2 (degradê)','c2',F,1)+'</div></div>';
@@ -5091,6 +5163,14 @@ function skForm(F,E){
  h+='<div class="dev" style="margin-top:12px"><button class="btn" data-a="sksave"'+(E.saving?' disabled':'')+'>'+(E.saving?'Salvando…':'Salvar item')+'</button><button class="btn ghost" data-a="skx">Cancelar</button></div>'
   +'<input type="file" id="skFile" accept="image/png,image/webp,image/gif,image/jpeg" hidden><input type="file" id="skFontFile" accept=".woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf" hidden>';
  return h;
+}
+function skTexPanel(F){
+ var h='<div class="panel" style="margin-top:12px"><b>Texturas do tema</b><p class="note" style="margin:2px 0 8px">Cada textura é uma imagem em um lugar do app. Todas são opcionais e podem ser animadas (WebP animado, PNG animado ou GIF, até 3 MB cada). Imagens paradas são reduzidas sozinhas.</p>';
+ h+=Object.keys(SK_TEXN).map(function(k){
+  var t=F.tex[k],n=SK_TEXN[k];
+  return '<div class="sktx"><div class="skth" style="'+(t&&t.src?'background-image:url(\''+esc(t.src)+'\')':'')+'"></div><div class="sktb"><b>'+n[0]+'</b><span class="note" style="margin:0">'+n[1]+'</span><div class="dev" style="margin:6px 0 0"><button class="btn ghost sm" data-a="sktx" data-v="'+k+'">'+ic('image')+(t&&t.src?'Trocar':'Escolher')+'</button>'+(t&&t.src?'<button class="btn ghost sm" data-a="sktxx" data-v="'+k+'">Tirar</button>':'')+'</div></div></div>';
+ }).join('');
+ return h+'</div>';
 }
 function skStatus(i){return !i.active?'<span class="badge">Desligado</span>':!i.onSale?'<span class="badge">Fora das datas</span>':'<span class="badge ok">À venda</span>'}
 function skEditor(){
@@ -5135,7 +5215,7 @@ function skFile(kind,f){
 function skBody(F){
  var o={name:F.name,coins:Math.max(0,parseInt(F.coins,10)||0),premium:!!F.premium,active:!!F.active,tag:F.tag||'',starts_at:F.starts_at||'',ends_at:F.ends_at||'',data:F.data,img:F.img===null?null:F.img};
  if(!F.id)o.slot=F.slot;
- if(F.slot==='theme')o.font=F.font===null?null:F.font;
+ if(F.slot==='theme'){o.font=F.font===null?null:F.font;o.tex={};Object.keys(F.tex||{}).forEach(function(k){var t=F.tex[k];o.tex[k]=t&&t.img?t.img:null})}
  return o;
 }
 document.addEventListener('input',function(e){skField(e)});
@@ -5158,7 +5238,9 @@ function skField(e,ch){
  if(a==='skpreset'&&E){var p=SK_PRESETS[v];if(!p)return true;var F=skBlank('theme'),y=skYear(p.m);F.name=p.name;F.tag=p.tag;F.coins=p.coins;F.data=Object.assign({},F.data,p.d);F.starts_at=y+'-'+('0'+p.m[0]).slice(-2)+'-'+('0'+p.m[1]).slice(-2);F.ends_at=(p.m[2]<p.m[0]?y+1:y)+'-'+('0'+p.m[2]).slice(-2)+'-'+('0'+p.m[3]).slice(-2);E.form=F;render(true);return true}
  if(a==='skedit'&&E){var it=E.list.filter(function(x){return x.id===v})[0];if(it){E.form=skFromItem(it);render(true)}return true}
  if(a==='skx'&&E){E.form=null;render(true);return true}
- if(a==='skimg'&&E&&E.form){var f=document.getElementById('skFile');if(f){f.value='';f.onchange=function(){skFile('img',f.files&&f.files[0])};f.click()}return true}
+ if(a==='skimg'&&E&&E.form){var f=document.getElementById('skFile');if(f){f.value='';f.onchange=function(){var fl=f.files&&f.files[0];if(fl)skPrep(fl,'splash',function(url){E.form.img=url;E.form.imgSrc=url;render(true)})};f.click()}return true}
+ if(a==='sktx'&&E&&E.form){var tf=document.getElementById('skFile');if(tf){tf.value='';tf.onchange=function(){var fl=tf.files&&tf.files[0];if(fl)skPrep(fl,v,function(url){E.form.tex[v]={img:url,src:url};render(true)})};tf.click()}return true}
+ if(a==='sktxx'&&E&&E.form){E.form.tex[v]={img:null,src:''};render(true);return true}
  if(a==='skimgx'&&E&&E.form){E.form.img=null;E.form.imgSrc='';render(true);return true}
  if(a==='skfont'&&E&&E.form){var g=document.getElementById('skFontFile');if(g){g.value='';g.onchange=function(){skFile('font',g.files&&g.files[0])};g.click()}return true}
  if(a==='skfontx'&&E&&E.form){E.form.font=null;E.form.fontSrc='';E.form.fontName='';E.form.hasFont=false;render(true);return true}
