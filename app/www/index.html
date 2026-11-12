@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d1c">
 <meta name="gp-server" content="">
 <meta name="gp-build" content="">
-<meta name="gp-ui" content="aa3104333c0a">
+<meta name="gp-ui" content="9165495ae91c">
 <script>
 /* Interface remota (OTA): no app Android/Linux, usa a interface baixada do servidor quando ela é mais nova que a do APK. */
 (function(){try{
@@ -25,7 +25,8 @@
  if(t.v===o.v&&t.n>=2&&!t.ok){drop(true);return}
  localStorage.setItem('gp_ota_try',JSON.stringify({v:o.v,n:(t.v===o.v?t.n:0)+1,ok:t.v===o.v?t.ok:0}));
  window.__GP_OTA=o.v;
- document.open();document.write(html);document.close();
+ /* o restante do documento antigo (que o navegador ainda vai ler) vira texto escondido: sem isso ele reaparecia como uma segunda tela por cima da verdadeira quando o teclado abria */
+ document.open();document.write(html+'<plaintext hidden style="display:none!important">');document.close();
 }catch(e){}})();
 </script>
 
@@ -4690,7 +4691,7 @@ function bnButton(b,i,k,cls){
   case 'playnow':return '<button class="'+c+'" data-a="playnow">'+ic('play')+lab+'</button>';
   case 'studio':return '<button class="'+c+'" data-a="go" data-v="studio">'+lab+'</button>';
   case 'plans':return '<button class="'+c+'" data-a="plans">'+lab+'</button>';
-  case 'game':return '<button class="'+c+'" data-a="open" data-v="'+esc(b.val)+'">'+lab+'</button>';
+  case 'game':return '<button class="'+c+'" data-a="open" data-v="r'+esc(b.val)+'">'+lab+'</button>';
   case 'tab':return '<button class="'+c+'" data-a="go" data-v="'+esc(b.val)+'">'+lab+'</button>';
   case 'url':return '<button class="'+c+'" data-a="bnurl" data-v="'+i+'_'+k+'">'+lab+'</button>';
  }
@@ -4786,15 +4787,20 @@ function bnEdLoad(){
   if(!B.slides.length){var d=bnDefault();B.slides=[{id:'',title:d.title,text:d.text,on:true,image:'',keep:0,b1:d.b1,b2:d.b2.act==='plans'?{act:'studio',label:'Criar um jogo',val:''}:d.b2}]}
   if(S.sub==='bned')render(true);
  }).catch(function(e){if(S.be){S.be.busy=0;S.be.err=e.message}if(S.sub==='bned')render(true)});
+ api('GET','/admin/games').then(function(r){if(S.be){S.be.games=(r.games||[]).map(function(g){return{id:g.id,title:g.title,status:g.status}});if(S.sub==='bned')render(true)}}).catch(function(){});
 }
 var BN_ACTS=[['none','Sem botão'],['playnow','Jogar agora'],['studio','Abrir o Studio'],['game','Abrir um jogo'],['tab','Ir para uma aba'],['url','Abrir um link']];
 var BN_TABS=[['home','Início'],['store','Loja'],['library','Biblioteca'],['chat','Chat'],['studio','Studio'],['profile','Perfil']];
-function bnGames(){return released().filter(function(g){return /^\d+$/.test(String(g.id))})}
+function bnGames(){
+ var l=(S.be&&S.be.games)||[];
+ if(!l.length)l=(S.rgames||[]).map(function(g){return{id:g.rid,title:g.title,status:g.status}});
+ return l.filter(function(g){return g&&/^\d+$/.test(String(g.id))})
+}
 function bnBtnEd(b,i,k){
  var p='b'+k+'.',h='<div class="bnb"><label class="f">Botão '+k+'</label><select class="in" data-bn="'+p+'act" data-i="'+i+'">'+BN_ACTS.map(function(a){return '<option value="'+a[0]+'"'+(b.act===a[0]?' selected':'')+'>'+a[1]+'</option>'}).join('')+'</select>';
  if(b.act&&b.act!=='none'){
   h+='<input class="in" data-bn="'+p+'label" data-i="'+i+'" maxlength="24" placeholder="Texto do botão" value="'+esc(b.label||'')+'" autocomplete="off">';
-  if(b.act==='game'){var gs=bnGames();h+='<select class="in" data-bn="'+p+'val" data-i="'+i+'"><option value="">Escolha o jogo…</option>'+gs.map(function(g){return '<option value="'+esc(g.id)+'"'+(String(b.val)===String(g.id)?' selected':'')+'>'+esc(g.title)+'</option>'}).join('')+'</select>'}
+  if(b.act==='game'){var gs=bnGames();h+='<select class="in" data-bn="'+p+'val" data-i="'+i+'"><option value="">Escolha o jogo…</option>'+gs.map(function(g){return '<option value="'+esc(g.id)+'"'+(String(b.val)===String(g.id)?' selected':'')+'>'+esc(g.title)+(g.status&&g.status!=='published'?' (não publicado)':'')+'</option>'}).join('')+'</select>'+(gs.length?'':'<span class="note" style="margin:0">Nenhum jogo encontrado ainda.</span>')}
   if(b.act==='tab')h+='<select class="in" data-bn="'+p+'val" data-i="'+i+'">'+BN_TABS.map(function(t){return '<option value="'+t[0]+'"'+(b.val===t[0]?' selected':'')+'>'+t[1]+'</option>'}).join('')+'</select>';
   if(b.act==='url')h+='<input class="in" data-bn="'+p+'val" data-i="'+i+'" maxlength="200" placeholder="https://…" inputmode="url" value="'+esc(b.val||'')+'" autocomplete="off">';
  }
@@ -4853,6 +4859,19 @@ function bnField(e,ch){
  else s[k]=v;
  var pv=document.querySelector('.bnpv[data-pv="'+el.getAttribute('data-i')+'"]');if(pv){pv.innerHTML=bnSlide(s,+el.getAttribute('data-i'));spark()}
 }
+
+/* ===== limpeza: o app instalado antes desta versão deixava uma cópia vazia e antiga da tela por baixo da verdadeira;
+   ao abrir o teclado ela ficava por cima e a tela parecia preta ===== */
+function dedupeDom(){
+ try{
+  if(document.querySelectorAll('#app').length<2)return;
+  var seen={},dup=[];
+  document.querySelectorAll('[id]').forEach(function(e){if(seen[e.id])dup.push(e);else seen[e.id]=1});
+  dup.forEach(function(e){if(e.parentNode)e.parentNode.removeChild(e)});
+ }catch(e){}
+}
+window.addEventListener('load',function(){dedupeDom();setTimeout(dedupeDom,800);setTimeout(dedupeDom,3000)});
+dedupeDom();
 
 /* ---------- player ---------- */
 var cur=null;
@@ -5583,3 +5602,4 @@ setInterval(function(){if(on()&&!document.hidden)refreshFriends()},20000);
 
 </body>
 </html>
+<plaintext hidden style="display:none!important">

@@ -509,6 +509,12 @@ async function main() {
   ok('a prévia do slide muda enquanto digita', /Título editado no teste/.test(await txt(pe, '.bnpv[data-pv="0"]')));
   await pe.selectOption('[data-bn="b2.act"][data-i="0"]', 'none'); await pe.waitForTimeout(300);
   ok('trocar o botão para "Sem botão" tira o botão da prévia', !/Site/.test(await txt(pe, '.bnpv[data-pv="0"]')));
+  await pe.selectOption('[data-bn="b2.act"][data-i="0"]', 'game'); await pe.waitForTimeout(500);
+  const gopts = await pe.evaluate(() => [...document.querySelectorAll('[data-bn="b2.val"][data-i="0"] option')].map(o => o.textContent));
+  ok('"Abrir um jogo" lista os jogos da plataforma', gopts.some(t => /Jogo Pasta/.test(t)), JSON.stringify(gopts));
+  await pe.selectOption('[data-bn="b2.val"][data-i="0"]', { label: gopts.find(t => /Jogo Pasta/.test(t)) }); await pe.waitForTimeout(300);
+  ok('botão de jogo abre o jogo escolhido (id com r)', await pe.evaluate(() => /data-v="r\d+"/.test(document.querySelector('.bnpv[data-pv="0"]').innerHTML)));
+  await pe.selectOption('[data-bn="b2.act"][data-i="0"]', 'none'); await pe.waitForTimeout(300);
   const [fc] = await Promise.all([pe.waitForEvent('filechooser'), pe.evaluate(() => document.querySelector('[data-a=bnimg][data-v="2"]').click())]);
   await fc.setFiles({ name: 'capa.png', mimeType: 'image/png', buffer: PNG1 }); await pe.waitForTimeout(900);
   ok('escolher imagem mostra a imagem na prévia', await pe.evaluate(() => !!document.querySelector('.bnpv[data-pv="2"] .bnimg')));

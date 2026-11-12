@@ -336,3 +336,9 @@ Ao publicar (ou editar) um jogo, o servidor lê o arquivo (`server/src/scan.js`)
 ## Atualização da interface (OTA) sem confusão
 - Quando o servidor tem uma interface mais nova que a do APK, o app baixa e guarda. Se o app acabou de abrir (menos de 45 s) e está parado fora de jogo, reinicia sozinho uma vez por versão; senão a Início mostra **Interface nova pronta · Reiniciar agora** (também em Atualização do app). Se o app ficar mais de 30 s em segundo plano, também aplica ao voltar.
 - Para a primeira vez, quando o app instalado ainda é de uma versão sem esse aviso: feche o app por completo e abra duas vezes (a 1ª baixa, a 2ª aplica).
+
+### Tela preta ao digitar (correção)
+
+Ao trocar a interface por OTA, um APK antigo deixava o resto do documento antigo rodando por baixo da interface nova (duas telas, dois conjuntos de scripts). Com o teclado aberto, a cópia vazia ficava por cima e a tela parecia preta. Agora a interface termina com `<plaintext hidden>` (o que o navegador ainda ler vira texto escondido), o `ota_boot.html` faz o mesmo ao escrever a interface e o app remove elementos duplicados ao abrir. Isso vale para os APKs já instalados (via OTA) e para os novos.
+
+O editor do banner agora lista os jogos da plataforma (inclusive os ainda não publicados, marcados como tal) na opção "Abrir um jogo".
